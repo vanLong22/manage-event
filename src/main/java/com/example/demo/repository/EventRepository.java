@@ -1,0 +1,136 @@
+package com.example.demo.repository;
+
+import com.example.demo.model.Event;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public class EventRepository {
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    
+    public List<Event> findAll() {
+        return jdbcTemplate.query("SELECT * FROM su_kien", new BeanPropertyRowMapper<>(Event.class));
+    }
+
+    public List<Event> findFeatured() {
+        return jdbcTemplate.query("SELECT * FROM su_kien WHERE trang_thai = 'DangDienRa' ORDER BY ngay_tao DESC LIMIT 3", 
+            new BeanPropertyRowMapper<>(Event.class));
+    }
+
+    public List<Event> findByUserId(Long userId) {
+        System.out.println("su kiện của người dùng đăng ký là   : " +userId);
+        return jdbcTemplate.query("SELECT sk.* FROM su_kien sk INNER JOIN dang_ky_su_kien dk ON sk.su_kien_id = dk.su_kien_id WHERE dk.nguoi_dung_id = ?", 
+            new BeanPropertyRowMapper<>(Event.class), userId);
+    }
+
+    public Event findById(Long id) {
+        try {
+            return jdbcTemplate.queryForObject("SELECT * FROM su_kien WHERE su_kien_id = ?", 
+                new BeanPropertyRowMapper<>(Event.class), id);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public int countRegistrations(Long suKienId) {
+        return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM dang_ky_su_kien WHERE su_kien_id = ? AND trang_thai = 'DA_DUYET'", Integer.class, suKienId);
+    }
+
+    public List<Event> findTop6PublicUpcoming() {
+        String sql = """
+            SELECT * FROM su_kien 
+            WHERE loai_su_kien = 'CongKhai' 
+              AND trang_thai IN ('SapDienRa', 'DangDienRa')
+              AND so_luong_da_dang_ky < so_luong_toi_da
+            ORDER BY thoi_gian_bat_dau ASC 
+            LIMIT 6
+            """;
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class));
+    }
+
+    public List<Event> findPublicAvailable() {
+        String sql = """
+            SELECT * FROM su_kien 
+            WHERE loai_su_kien = 'CongKhai' 
+              AND trang_thai IN ('SapDienRa', 'DangDienRa')
+              AND so_luong_da_dang_ky < so_luong_toi_da
+            ORDER BY thoi_gian_bat_dau ASC
+            """;
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class));
+    }
+
+    public List<Event> searchEvents(String keyword) {
+        String sql = """
+            SELECT * FROM su_kien 
+            WHERE (ten_su_kien LIKE ? OR mo_ta LIKE ? OR dia_diem LIKE ?)
+            AND loai_su_kien = 'CongKhai'
+            AND trang_thai IN ('SapDienRa', 'DangDienRa')
+            ORDER BY 
+            CASE 
+                WHEN ten_su_kien LIKE ? THEN 1
+                WHEN mo_ta LIKE ? THEN 2
+                ELSE 3 
+            END,
+            thoi_gian_bat_dau DESC
+            LIMIT 10
+            """;
+
+        String likePattern = "%" + keyword + "%";
+        String exactPattern = keyword + "%";
+
+        return jdbcTemplate.query(sql, 
+            new BeanPropertyRowMapper<>(Event.class),
+            likePattern, likePattern, likePattern,
+            exactPattern, exactPattern
+        );
+    }
+
+    public List<Event> findByOrganizer(Long organizerId) {
+        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId);
+    }
+
+    public void save(Event suKien) {
+        String sql = "INSERT INTO su_kien (ten_su_kien, mo_ta, dia_diem, anh_bia, nguoi_to_chuc_id, " +
+                     "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_kien, trang_thai, so_luong_toi_da, ngay_tao) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        jdbcTemplate.update(sql, suKien.getTenSuKien(), suKien.getMoTa(), suKien.getDiaDiem(), 
+                suKien.getAnhBia(), suKien.getNguoiToChucId(), suKien.getThoiGianBatDau(), 
+                suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getTrangThai(), 
+                suKien.getSoLuongToiDa(), suKien.getNgayTao());
+    }
+
+    // Thêm mới: Upcoming by organizer
+    public List<Event> findUpcomingByOrganizer(Long organizerId) {
+        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ? AND thoi_gian_bat_dau > NOW() ORDER BY thoi_gian_bat_dau ASC";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId);
+    }
+
+    // Thêm mới: Popular by organizer (top 5 by registrations)
+    public List<Event> findPopularByOrganizer(Long organizerId) {
+        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ? ORDER BY so_luong_da_dang_ky DESC LIMIT 5";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId);
+    }
+
+    // Thêm mới: Update
+    public void update(Event suKien) {
+        String sql = "UPDATE su_kien SET ten_su_kien = ?, mo_ta = ?, dia_diem = ?, anh_bia = ?, " +
+                     "thoi_gian_bat_dau = ?, thoi_gian_ket_thuc = ?, loai_su_kien = ?, trang_thai = ?, so_luong_toi_da = ? " +
+                     "WHERE su_kien_id = ?";
+        jdbcTemplate.update(sql, suKien.getTenSuKien(), suKien.getMoTa(), suKien.getDiaDiem(), 
+                suKien.getAnhBia(), suKien.getThoiGianBatDau(), suKien.getThoiGianKetThuc(), 
+                suKien.getLoaiSuKien(), suKien.getTrangThai(), suKien.getSoLuongToiDa(), suKien.getSuKienId());
+    }
+
+    // Thêm mới: Delete
+    public void delete(Long id) {
+        String sql = "DELETE FROM su_kien WHERE su_kien_id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+}

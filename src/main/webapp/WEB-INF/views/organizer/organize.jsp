@@ -630,7 +630,7 @@
                 </div>
                 <div class="user-info">
                     <div class="user-avatar" id="user-avatar">
-                        <c:out value="${fn:toUpperCase(fn:substring(user.hoTen, 0, 2))}"/>
+                        <c:out value="${user.hoTen}"/>
                     </div>
                     <div class="user-details">
                         <h4 id="user-name"><c:out value="${user.hoTen}"/></h4>
@@ -688,7 +688,7 @@
                             <div class="event-content">
                                 <h4 class="event-title"><c:out value="${event.tenSuKien}"/></h4>
                                 <div class="event-meta">
-                                    <span><i class="far fa-calendar"></i> <c:out value="${event.thoiGianBatDau}"/></span>
+                                    <span><i class="far fa-calendar"></i> <fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/></span>
                                     <span><i class="fas fa-map-marker-alt"></i> <c:out value="${event.diaDiem}"/></span>
                                 </div>
                                 <p><c:out value="${event.moTa}"/></p>
@@ -755,7 +755,7 @@
                     <h3 class="section-title">Tạo sự kiện mới</h3>
                 </div>
 
-                <form id="event-form">
+                <form id="event-form" enctype="multipart/form-data">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="event-name">Tên sự kiện *</label>
@@ -766,7 +766,7 @@
                             <select id="event-type" required>
                                 <option value="">Chọn loại sự kiện</option>
                                 <c:forEach var="type" items="${eventTypes}">
-                                    <option value="<c:out value="${type.tenLoai}"/>"><c:out value="${type.tenLoai}"/></option>
+                                    <option value="<c:out value="${type.loaiSuKienId}"/>"><c:out value="${type.tenLoai}"/></option>
                                 </c:forEach>
                             </select>
                         </div>
@@ -901,10 +901,10 @@
                         <tbody>
                             <c:forEach var="reg" items="${allRegistrations}">
                                 <tr>
-                                    <td><c:out value="${reg.userHoTen}"/></td>
-                                    <td><c:out value="${reg.userEmail}"/></td>
-                                    <td><c:out value="${reg.userSoDienThoai}"/></td>
-                                    <td><c:out value="${reg.eventTenSuKien}"/></td>
+                                    <td><c:out value="${reg.user.hoTen}"/></td> <!-- Điều chỉnh để lấy từ Registration có reference User -->
+                                    <td><c:out value="${reg.user.email}"/></td>
+                                    <td><c:out value="${reg.user.soDienThoai}"/></td>
+                                    <td><c:out value="${reg.suKien.tenSuKien}"/></td>
                                     <td><span class="status <c:out value="${fn:toLowerCase(reg.trangThai)}"/>"><c:out value="${reg.trangThai}"/></span></td>
                                     <td class="action-buttons">
                                         <div class="action-btn view-detail" title="Xem chi tiết">
@@ -989,8 +989,6 @@
                                     <tr>
                                         <td><c:out value="${event.tenSuKien}"/></td>
                                         <td><c:out value="${event.soLuongDaDangKy}"/></td>
-                                        <td><c:out value="${event.tyLeThamGia}"/>%</td>
-                                        <td><c:out value="${event.danhGiaTrungBinh}"/>/5</td>
                                     </tr>
                                 </c:forEach>
                             </tbody>
@@ -1011,7 +1009,7 @@
                             <label for="user-avatar">Ảnh đại diện</label>
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px;" id="account-avatar">
-                                    <c:out value="${fn:toUpperCase(fn:substring(user.hoTen, 0, 2))}"/>
+                                    <c:out value="${user.hoTen}"/>
                                 </div>
                                 <button type="button" class="btn btn-outline" id="change-avatar">
                                     <i class="fas fa-camera"></i> Thay đổi ảnh
@@ -1079,7 +1077,7 @@
     </div>
 
     <script>
-        // Giả sử userId từ session
+        // Lấy userId từ session
         const userId = <c:out value="${sessionScope.userId}"/>;
 
         // Navigation functionality
@@ -1148,34 +1146,34 @@
                 let html = '';
                 data.forEach(event => {
                     html += `
-                        <div class="event-card" data-event-id="` + event.suKienId + `">
+                        <div class="event-card" data-event-id="${event.suKienId}">
                             <div class="event-image">
-                                <img src="` + (event.anhBia || '/default.jpg') + `" alt="">
+                                <img src="${event.anhBia || '/default.jpg'}" alt="">
                             </div>
                             <div class="event-content">
-                                <h4 class="event-title">` + event.tenSuKien + `</h4>
+                                <h4 class="event-title">${event.tenSuKien}</h4>
                                 <div class="event-meta">
-                                    <span><i class="far fa-calendar"></i> ` + event.thoiGianBatDau + `</span>
-                                    <span><i class="fas fa-map-marker-alt"></i> ` + event.diaDiem + `</span>
+                                    <span><i class="far fa-calendar"></i> <fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/></span>
+                                    <span><i class="fas fa-map-marker-alt"></i> ${event.diaDiem}</span>
                                 </div>
-                                <p>` + event.moTa + `</p>
+                                <p>${event.moTa}</p>
                                 <div class="event-footer">
-                                    <span class="status ` + event.trangThai.toLowerCase() + `">` + event.trangThai + `</span>
-                                    <span><i class="fas fa-users"></i> ` + event.soLuongDaDangKy + `/` + event.soLuongToiDa + `</span>
+                                    <span class="status ${event.trangThai.toLowerCase()}">${event.trangThai}</span>
+                                    <span><i class="fas fa-users"></i> ${event.soLuongDaDangKy} / ${event.soLuongToiDa}</span>
                                 </div>
                             </div>
                         </div>
                     `;
                 });
-                document.getElementById('upcoming-events-grid').innerHTML = html;
+                $('#upcoming-events-grid').html(html);
             });
 
             // Load stats
             $.get('/organizer/api/analytics/stats', function(data) {
-                document.getElementById('active-events').textContent = data.activeEvents;
-                document.getElementById('total-participants').textContent = data.totalParticipants;
-                document.getElementById('upcoming-events').textContent = data.upcomingEvents;
-                document.getElementById('attention-events').textContent = data.attentionEvents;
+                $('#active-events').text(data.activeEvents);
+                $('#total-participants').text(data.totalParticipants);
+                $('#upcoming-events').text(data.upcomingEvents);
+                $('#attention-events').text(data.attentionEvents);
             });
         }
 
@@ -1185,94 +1183,98 @@
                 let html = '';
                 data.forEach(event => {
                     html += `
-                        <tr data-event-id="` + event.suKienId + `">
-                            <td>` + event.tenSuKien + `</td>
-                            <td>` + event.thoiGianBatDau + `</td>
-                            <td>` + event.diaDiem + `</td>
-                            <td><span class="status ` + event.trangThai.toLowerCase() + `">` + event.trangThai + `</span></td>
-                            <td>` + event.soLuongDaDangKy + `/` + event.soLuongToiDa + `</td>
+                        <tr data-event-id="${event.suKienId}">
+                            <td>${event.tenSuKien}</td>
+                            <td><fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/></td>
+                            <td>${event.diaDiem}</td>
+                            <td><span class="status ${event.trangThai.toLowerCase()}">${event.trangThai}</span></td>
+                            <td>${event.soLuongDaDangKy} / ${event.soLuongToiDa}</td>
                             <td class="action-buttons">
-                                <div class="action-btn edit-event" data-event-id="` + event.suKienId + `" title="Chỉnh sửa">
+                                <div class="action-btn edit-event" data-event-id="${event.suKienId}" title="Chỉnh sửa">
                                     <i class="fas fa-edit"></i>
                                 </div>
-                                <div class="action-btn delete-event" data-event-id="` + event.suKienId + `" title="Xóa">
+                                <div class="action-btn delete-event" data-event-id="${event.suKienId}" title="Xóa">
                                     <i class="fas fa-trash"></i>
                                 </div>
-                                <div class="action-btn export-event" data-event-id="` + event.suKienId + `" title="Xuất danh sách">
+                                <div class="action-btn export-event" data-event-id="${event.suKienId}" title="Xuất danh sách">
                                     <i class="fas fa-file-export"></i>
                                 </div>
                             </td>
                         </tr>
                     `;
                 });
-                document.querySelector('#events-table tbody').innerHTML = html;
+                $('#events-table tbody').html(html);
             });
         }
 
         function editEvent(suKienId) {
-            $.get(`/organizer/api/events/` + suKienId, function(event) {
-                document.getElementById('event-name').value = event.tenSuKien;
-                document.getElementById('event-type').value = event.loaiSuKien;
-                document.getElementById('event-description').value = event.moTa;
-                document.getElementById('event-start-date').value = event.thoiGianBatDau.replace(' ', 'T');
-                document.getElementById('event-end-date').value = event.thoiGianKetThuc.replace(' ', 'T');
-                document.getElementById('event-location').value = event.diaDiem;
-                document.getElementById('event-capacity').value = event.soLuongToiDa;
-                document.getElementById('event-privacy').value = event.loaiSuKien;
-                document.getElementById('event-form').dataset.editId = suKienId;
+            $.get(`/organizer/api/events/${suKienId}`, function(event) {
+                $('#event-name').val(event.tenSuKien);
+                $('#event-type').val(event.loaiSuKienId); // Sử dụng ID
+                $('#event-description').val(event.moTa);
+                $('#event-start-date').val(new Date(event.thoiGianBatDau).toISOString().slice(0,16));
+                $('#event-end-date').val(new Date(event.thoiGianKetThuc).toISOString().slice(0,16));
+                $('#event-location').val(event.diaDiem);
+                $('#event-capacity').val(event.soLuongToiDa);
+                $('#event-privacy').val(event.loaiSuKien);
+                $('#event-form')[0].dataset.editId = suKienId;
                 document.querySelector('[data-target="create-event"]').click();
-                document.getElementById('page-title').textContent = 'Chỉnh sửa sự kiện';
+                $('#page-title').text('Chỉnh sửa sự kiện');
             });
         }
 
         function deleteEvent(suKienId) {
             if (confirm('Xác nhận xóa sự kiện?')) {
-                $.post('/organizer/api/events/delete', JSON.stringify({ suKienId }), function(response) {
-                    if (response.success) {
-                        alert(response.message);
-                        loadEvents();
+                $.ajax({
+                    url: '/organizer/api/events/delete',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ suKienId }),
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            loadEvents();
+                        }
                     }
                 });
             }
         }
 
         function exportEventList(suKienId) {
-            window.location.href = `/organizer/api/events/export?suKienId=` + suKienId;
+            window.location.href = `/organizer/api/events/export?suKienId=${suKienId}`;
         }
 
         // Attach events for events table
-        document.querySelector('#events-table tbody').addEventListener('click', function(e) {
-            const target = e.target.closest('.action-btn');
-            if (target) {
-                const eventId = target.dataset.eventId;
-                if (target.classList.contains('edit-event')) {
-                    editEvent(eventId);
-                } else if (target.classList.contains('delete-event')) {
-                    deleteEvent(eventId);
-                } else if (target.classList.contains('export-event')) {
-                    exportEventList(eventId);
-                }
+        $('#events-table tbody').on('click', '.action-btn', function() {
+            const target = $(this);
+            const eventId = target.data('event-id');
+            if (target.hasClass('edit-event')) {
+                editEvent(eventId);
+            } else if (target.hasClass('delete-event')) {
+                deleteEvent(eventId);
+            } else if (target.hasClass('export-event')) {
+                exportEventList(eventId);
             }
         });
 
         // Submit event form (create or edit)
-        document.getElementById('event-form').addEventListener('submit', function(e) {
+        $('#event-form').on('submit', function(e) {
             e.preventDefault();
             const isEdit = this.dataset.editId;
             const formData = new FormData();
             const event = {
                 suKienId: isEdit ? parseInt(isEdit) : null,
-                tenSuKien: document.getElementById('event-name').value,
-                loaiSuKien: document.getElementById('event-type').value,
-                moTa: document.getElementById('event-description').value,
-                thoiGianBatDau: document.getElementById('event-start-date').value,
-                thoiGianKetThuc: document.getElementById('event-end-date').value,
-                diaDiem: document.getElementById('event-location').value,
-                soLuongToiDa: document.getElementById('event-capacity').value,
-                loaiSuKien: document.getElementById('event-privacy').value
+                tenSuKien: $('#event-name').val(),
+                loaiSuKienId: $('#event-type').val(),
+                moTa: $('#event-description').val(),
+                thoiGianBatDau: $('#event-start-date').val(),
+                thoiGianKetThuc: $('#event-end-date').val(),
+                diaDiem: $('#event-location').val(),
+                soLuongToiDa: $('#event-capacity').val(),
+                loaiSuKien: $('#event-privacy').val()
             };
             formData.append('event', JSON.stringify(event));
-            const imageFile = document.getElementById('event-image').files[0];
+            const imageFile = $('#event-image')[0].files[0];
             if (imageFile) {
                 formData.append('anhBiaFile', imageFile);
             }
@@ -1289,6 +1291,8 @@
                         this.reset();
                         delete this.dataset.editId;
                         document.querySelector('[data-target="events"]').click();
+                    } else {
+                        alert(response.message || 'Lỗi xảy ra!');
                     }
                 }.bind(this)
             });
@@ -1299,67 +1303,77 @@
             $.get('/organizer/api/events', function(data) {
                 let html = '<option value="">Chọn sự kiện</option>';
                 data.forEach(event => {
-                    html += `<option value="` + event.suKienId + `">` + event.tenSuKien + `</option>`;
+                    html += `<option value="${event.suKienId}">${event.tenSuKien}</option>`;
                 });
-                document.getElementById('select-event-attendance').innerHTML = html;
+                $('#select-event-attendance').html(html);
             });
         }
 
         // Load attendance for selected event
-        document.getElementById('select-event-attendance').addEventListener('change', function() {
+        $('#select-event-attendance').on('change', function() {
             const suKienId = this.value;
             if (suKienId) {
-                $.get(`/organizer/api/registrations?suKienId=` + suKienId, function(data) {
+                $.get(`/organizer/api/registrations?suKienId=${suKienId}`, function(data) {
                     let html = '';
                     data.forEach(reg => {
+                        const statusClass = reg.trangThai.toLowerCase();
+                        const diemDanhText = reg.trangThai == 'DaThamGia' ? 'Đã tham gia' : 'Chưa tham gia';
+                        const toggleIcon = reg.trangThai == 'DaThamGia' ? 'fa-times' : 'fa-check';
+                        const newStatus = reg.trangThai != 'DaThamGia';
                         html += `
-                            <tr data-reg-id="` + reg.dangKyId + `">
-                                <td>` + reg.userHoTen + `</td>
-                                <td>` + reg.userEmail + `</td>
-                                <td>` + reg.userSoDienThoai + `</td>
-                                <td>` + reg.thoiGianDangKy + `</td>
-                                <td><span class="status ` + (reg.trangThaiDiemDanh ? 'approved' : 'pending') + `">` + (reg.trangThaiDiemDanh ? 'Đã tham gia' : 'Chưa điểm danh') + `</span></td>
+                            <tr data-reg-id="${reg.dangKyId}">
+                                <td>${reg.user.hoTen}</td>
+                                <td>${reg.user.email}</td>
+                                <td>${reg.user.soDienThoai}</td>
+                                <td><fmt:formatDate value="${event.thoiGianDangKy}" pattern="dd/MM/yyyy HH:mm"/></td>
+                                <td><span class="status ${statusClass}">${diemDanhText}</span></td>
                                 <td class="action-buttons">
-                                    <div class="action-btn toggle-attendance" data-reg-id="` + reg.dangKyId + `" data-new-status="` + (!reg.trangThaiDiemDanh) + `" title="` + (reg.trangThaiDiemDanh ? 'Đánh dấu vắng' : 'Đánh dấu tham gia') + `">
-                                        <i class="fas ` + (reg.trangThaiDiemDanh ? 'fa-times' : 'fa-check') + `"></i>
+                                    <div class="action-btn toggle-attendance" data-reg-id="${reg.dangKyId}" data-new-status="${newStatus}" title="${reg.trangThai == 'DaThamGia' ? 'Đánh dấu vắng' : 'Đánh dấu tham gia'}">
+                                        <i class="fas ${toggleIcon}"></i>
                                     </div>
                                 </td>
                             </tr>
                         `;
                     });
-                    document.querySelector('#attendance-table tbody').innerHTML = html;
+                    $('#attendance-table tbody').html(html);
                 });
             }
         });
 
         // Attach toggle attendance
-        document.querySelector('#attendance-table tbody').addEventListener('click', function(e) {
-            const target = e.target.closest('.toggle-attendance');
-            if (target) {
-                const dangKyId = target.dataset.regId;
-                const newStatus = target.dataset.newStatus === 'true';
-                toggleAttendance(dangKyId, newStatus);
-            }
+        $('#attendance-table tbody').on('click', '.toggle-attendance', function() {
+            const target = $(this);
+            const dangKyId = target.data('reg-id');
+            const newStatus = target.data('new-status');
+            toggleAttendance(dangKyId, newStatus);
         });
 
         function toggleAttendance(dangKyId, newStatus) {
-            $.post('/organizer/api/attendance/update', JSON.stringify({ dangKyId, trangThaiDiemDanh: newStatus }), function(response) {
-                if (response.success) {
-                    document.getElementById('select-event-attendance').dispatchEvent(new Event('change'));
+            $.ajax({
+                url: '/organizer/api/attendance/update',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ dangKyId, trangThaiDiemDanh: newStatus }),
+                success: function(response) {
+                    if (response.success) {
+                        $('#select-event-attendance').trigger('change');
+                    }
                 }
             });
         }
 
         // Save attendance (if batch)
-        document.getElementById('save-attendance').addEventListener('click', function() {
+        $('#save-attendance').on('click', function() {
             alert('Điểm danh đã lưu!');
         });
 
         // Export attendance
-        document.getElementById('export-attendance').addEventListener('click', function() {
-            const suKienId = document.getElementById('select-event-attendance').value;
+        $('#export-attendance').on('click', function() {
+            const suKienId = $('#select-event-attendance').val();
             if (suKienId) {
-                window.location.href = `/organizer/api/attendance/export?suKienId=` + suKienId;
+                window.location.href = `/organizer/api/attendance/export?suKienId=${suKienId}`;
+            } else {
+                alert('Vui lòng chọn sự kiện!');
             }
         });
 
@@ -1368,25 +1382,26 @@
             $.get('/organizer/api/events', function(data) {
                 let html = '<option value="">Tất cả sự kiện</option>';
                 data.forEach(event => {
-                    html += `<option value="` + event.suKienId + `">` + event.tenSuKien + `</option>`;
+                    html += `<option value="${event.suKienId}">${event.tenSuKien}</option>`;
                 });
-                document.getElementById('filter-event-participants').innerHTML = html;
+                $('#filter-event-participants').html(html);
             });
         }
 
         // Load participants for selected event
-        document.getElementById('filter-event-participants').addEventListener('change', function() {
+        $('#filter-event-participants').on('change', function() {
             const suKienId = this.value;
-            $.get(`/organizer/api/registrations` + (suKienId ? '?suKienId=' + suKienId : ''), function(data) {
+            const url = suKienId ? `/organizer/api/registrations?suKienId=${suKienId}` : '/organizer/api/registrations';
+            $.get(url, function(data) {
                 let html = '';
                 data.forEach(reg => {
                     html += `
                         <tr>
-                            <td>` + reg.userHoTen + `</td>
-                            <td>` + reg.userEmail + `</td>
-                            <td>` + reg.userSoDienThoai + `</td>
-                            <td>` + reg.eventTenSuKien + `</td>
-                            <td><span class="status ` + reg.trangThai.toLowerCase() + `">` + reg.trangThai + `</span></td>
+                            <td>${reg.user.hoTen}</td>
+                            <td>${reg.user.email}</td>
+                            <td>${reg.user.soDienThoai}</td>
+                            <td>${reg.suKien.tenSuKien}</td>
+                            <td><span class="status ${reg.trangThai.toLowerCase()}">${reg.trangThai}</span></td>
                             <td class="action-buttons">
                                 <div class="action-btn view-detail" title="Xem chi tiết">
                                     <i class="fas fa-eye"></i>
@@ -1398,23 +1413,24 @@
                         </tr>
                     `;
                 });
-                document.querySelector('#participants-table tbody').innerHTML = html;
+                $('#participants-table tbody').html(html);
             });
         });
 
         // Export participants
-        document.getElementById('export-participants').addEventListener('click', function() {
-            const suKienId = document.getElementById('filter-event-participants').value;
-            window.location.href = `/organizer/api/participants/export` + (suKienId ? '?suKienId=' + suKienId : '');
+        $('#export-participants').on('click', function() {
+            const suKienId = $('#filter-event-participants').val();
+            const param = suKienId ? `?suKienId=${suKienId}` : '';
+            window.location.href = `/organizer/api/participants/export${param}`;
         });
 
         // Load analytics
         function loadAnalytics() {
-            $.get('/organizer/api/analytics', function(data) {
-                document.getElementById('avg-attendance-rate').textContent = data.avgAttendanceRate + '%';
-                document.getElementById('satisfaction-rate').textContent = data.satisfactionRate + '%';
-                document.getElementById('estimated-revenue').textContent = data.estimatedRevenue + 'M';
-                document.getElementById('cancellation-rate').textContent = data.cancellationRate + '%';
+            $.get('/organizer/api/analytics/stats', function(data) {
+                $('#avg-attendance-rate').text(data.avgAttendanceRate + '%'); // Giả sử stats có field này
+                $('#satisfaction-rate').text(data.satisfactionRate + '%');
+                $('#estimated-revenue').text(data.estimatedRevenue + 'M');
+                $('#cancellation-rate').text(data.cancellationRate + '%');
             });
 
             // Load popular events
@@ -1423,43 +1439,42 @@
                 data.forEach(event => {
                     html += `
                         <tr>
-                            <td>` + event.tenSuKien + `</td>
-                            <td>` + event.soLuongDangKy + `</td>
-                            <td>` + event.tyLeThamGia + `%</td>
-                            <td>` + event.danhGiaTrungBinh + `/5</td>
+                            <td>${event.tenSuKien}</td>
+                            <td>${event.soLuongDaDangKy}</td>
                         </tr>
                     `;
                 });
-                document.querySelector('#popular-events-table tbody').innerHTML = html;
+                $('#popular-events-table tbody').html(html);
             });
         }
 
         // Report period change
-        document.getElementById('report-period').addEventListener('change', loadAnalytics);
+        $('#report-period').on('change', loadAnalytics);
 
         // Load account
         function loadAccount() {
-            $.get(`/organizer/api/account?userId=` + userId, function(user) {
-                document.getElementById('first-name').value = user.hoTen.split(' ')[0] || '';
-                document.getElementById('last-name').value = user.hoTen.split(' ').slice(1).join(' ') || '';
-                document.getElementById('user-email').value = user.email;
-                document.getElementById('user-phone').value = user.soDienThoai;
-                document.getElementById('user-address').value = user.diaChi;
-                document.getElementById('user-bio').value = user.bio || '';
-                document.getElementById('account-avatar').textContent = user.hoTen.split(' ').map(n => n[0]).join('');
+            $.get(`/organizer/api/account`, function(user) {
+                const names = user.hoTen.split(' ');
+                $('#first-name').val(names[0] || '');
+                $('#last-name').val(names.slice(1).join(' ') || '');
+                $('#user-email').val(user.email);
+                $('#user-phone').val(user.soDienThoai);
+                $('#user-address').val(user.diaChi);
+                $('#user-bio').val(user.bio || ''); // Giả sử field bio
+                $('#account-avatar').text(user.hoTen.split(' ').map(n => n[0]).join(''));
             });
         }
 
         // Submit account update
-        document.getElementById('account-form').addEventListener('submit', function(e) {
+        $('#account-form').on('submit', function(e) {
             e.preventDefault();
             const user = {
                 nguoiDungId: userId,
-                hoTen: document.getElementById('first-name').value + ' ' + document.getElementById('last-name').value,
-                email: document.getElementById('user-email').value,
-                soDienThoai: document.getElementById('user-phone').value,
-                diaChi: document.getElementById('user-address').value,
-                bio: document.getElementById('user-bio').value
+                hoTen: $('#first-name').val() + ' ' + $('#last-name').val(),
+                email: $('#user-email').val(),
+                soDienThoai: $('#user-phone').val(),
+                diaChi: $('#user-address').val(),
+                bio: $('#user-bio').val()
             };
             $.ajax({
                 url: '/organizer/api/account/update',
@@ -1476,74 +1491,67 @@
         });
 
         // Modal functionality
-        const eventModal = document.getElementById('event-modal');
-        const closeModal = document.querySelector('.close-modal');
+        const eventModal = $('#event-modal');
+        $('.close-modal').on('click', function() {
+            eventModal.hide();
+        });
+
+        $(window).on('click', function(e) {
+            if (e.target == eventModal[0]) {
+                eventModal.hide();
+            }
+        });
 
         function openEventModal(suKienId) {
-            $.get(`/organizer/api/events/` + suKienId, function(event) {
+            $.get(`/organizer/api/events/${suKienId}`, function(event) {
                 let html = `
                     <div class="event-image" style="margin-bottom: 20px;">
-                        <img src="` + (event.anhBia || '/default.jpg') + `" alt="` + event.tenSuKien + `">
+                        <img src="${event.anhBia || '/default.jpg'}" alt="${event.tenSuKien}">
                     </div>
-                    <h4 style="margin-bottom: 15px;">` + event.tenSuKien + `</h4>
+                    <h4 style="margin-bottom: 15px;">${event.tenSuKien}</h4>
                     <div class="event-meta" style="margin-bottom: 15px;">
-                        <span><i class="far fa-calendar"></i> ` + event.thoiGianBatDau + `</span>
-                        <span><i class="fas fa-map-marker-alt"></i> ` + event.diaDiem + `</span>
+                        <span><i class="far fa-calendar"></i> <fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/></span>
+                        <span><i class="fas fa-map-marker-alt"></i> ${event.diaDiem}</span>
                     </div>
-                    <p style="margin-bottom: 20px;">` + event.moTa + `</p>
+                    <p style="margin-bottom: 20px;">${event.moTa}</p>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Trạng thái:</label>
-                            <span class="status ` + event.trangThai.toLowerCase() + `">` + event.trangThai + `</span>
+                            <span class="status ${event.trangThai.toLowerCase()}">${event.trangThai}</span>
                         </div>
                         <div class="form-group">
                             <label>Số người tham gia:</label>
-                            <span>` + event.soLuongDaDangKy + `/` + event.soLuongToiDa + `</span>
+                            <span>${event.soLuongDaDangKy} / ${event.soLuongToiDa}</span>
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 20px;">
-                        <button class="btn btn-primary edit-event-from-modal" data-event-id="` + event.suKienId + `">
+                        <button class="btn btn-primary edit-event-from-modal" data-event-id="${event.suKienId}">
                             <i class="fas fa-edit"></i> Chỉnh sửa
                         </button>
-                        <button class="btn btn-outline export-event-from-modal" data-event-id="` + event.suKienId + `">
+                        <button class="btn btn-outline export-event-from-modal" data-event-id="${event.suKienId}">
                             <i class="fas fa-file-export"></i> Xuất danh sách
                         </button>
                     </div>
                 `;
-                document.getElementById('event-modal-body').innerHTML = html;
-                eventModal.style.display = 'flex';
+                $('#event-modal-body').html(html);
+                eventModal.show();
             });
         }
 
-        closeModal.addEventListener('click', function() {
-            eventModal.style.display = 'none';
-        });
-
-        window.addEventListener('click', function(e) {
-            if (e.target === eventModal) {
-                eventModal.style.display = 'none';
-            }
-        });
-
         // Attach open modal for event cards
-        document.querySelector('#upcoming-events-grid').addEventListener('click', function(e) {
-            const target = e.target.closest('.event-card');
-            if (target) {
-                const eventId = target.dataset.eventId;
-                openEventModal(eventId);
-            }
+        $('#upcoming-events-grid').on('click', '.event-card', function() {
+            const eventId = $(this).data('event-id');
+            openEventModal(eventId);
         });
 
         // Attach events for modal buttons
-        document.getElementById('event-modal-body').addEventListener('click', function(e) {
-            const target = e.target.closest('button');
-            if (target) {
-                const eventId = target.dataset.eventId;
-                if (target.classList.contains('edit-event-from-modal')) {
-                    editEvent(eventId);
-                } else if (target.classList.contains('export-event-from-modal')) {
-                    exportEventList(eventId);
-                }
+        $('#event-modal-body').on('click', 'button', function() {
+            const target = $(this);
+            const eventId = target.data('event-id');
+            if (target.hasClass('edit-event-from-modal')) {
+                editEvent(eventId);
+            } else if (target.hasClass('export-event-from-modal')) {
+                exportEventList(eventId);
             }
         });
 

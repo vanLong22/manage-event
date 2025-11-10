@@ -1,235 +1,14 @@
-// // package com.example.demo.controller;
-
-// // import org.springframework.stereotype.Controller;
-// // import org.springframework.web.bind.annotation.GetMapping;
-
-
-// // import com.example.demo.model.Event;
-// // import com.example.demo.model.User;
-// // import com.example.demo.service.eventService;
-// // import com.example.demo.service.UserService;
-// // import org.springframework.beans.factory.annotation.Autowired;
-// // import org.springframework.ui.Model;
-// // import org.springframework.web.bind.annotation.*;
-
-// // import java.security.Principal;
-// // import java.util.HashMap;
-// // import java.util.List;
-// // import java.util.Map;
-
-// // @Controller
-// // @RequestMapping("/organizer")
-// // public class OrganizerController {
-
-// //     @Autowired
-// //     private eventService eventService;
-
-// //     @Autowired
-// //     private UserService userService;
-
-// //     //@Autowired
-// //     //private FileStorageService fileStorageService;
-
-// //     @GetMapping("/")
-// //     public String showOrganizerPage() {
-// //         return "organizer/organize";   
-// //     }
-
-// //     @GetMapping("/dashboard")
-// //     public String dashboard(Model model, Principal principal) {
-// //         //User organizer = userService.findByUsername(principal.getName());
-        
-// //         // Thống kê
-// //         Map<String, Object> stats = new HashMap<>();
-// //         stats.put("activeEvents", 12);
-// //         stats.put("totalParticipants", 342);
-// //         stats.put("upcomingEvents", 5);
-// //         stats.put("attentionEvents", 2);
-// //         model.addAttribute("stats", stats);
-// // /* 
-// //         // Sự kiện sắp tới
-// //         List<SuKien> upcomingEvents = eventService.getSuKienByOrganizer(organizer.getNguoiDungId());
-// //         model.addAttribute("upcomingEvents", upcomingEvents);
-// // */
-// //         return "organizer/organize";
-// //     }
-
-// //     @GetMapping("/events")
-// //     public String eventsManagement(Model model, Principal principal) {
-// //         User organizer = userService.findByUsername(principal.getName());
-// //         List<Event> events = eventService.getSuKienByOrganizer(organizer.getNguoiDungId());
-// //         model.addAttribute("events", events);
-// //         return "organizer/events";
-// //     }
-
-// //     @GetMapping("/events/create")
-// //     public String createEventForm(Model model) {
-// //         model.addAttribute("suKien", new Event());
-// //         return "organizer/create-event";
-// //     }
-// // /*
-// //     @PostMapping("/events/create")
-// //     public String createEvent(@ModelAttribute SuKien suKien, 
-// //                             @RequestParam("anhBiaFile") MultipartFile file,
-// //                             Principal principal) {
-// //         User organizer = userService.findByUsername(principal.getName());
-        
-// //         // Xử lý upload ảnh
-// //         if (!file.isEmpty()) {
-// //             String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-// //             fileStorageService.store(file, filename);
-// //             suKien.setAnhBia(filename);
-// //         }
-        
-// //         suKien.setNguoiToChucId(organizer.getNguoiDungId());
-// //         eventService.createSuKien(suKien);
-        
-// //         return "redirect:/organizer/events";
-// //     }
-// // */
-// // }
-
-
-
-
-
-// // Controller: OrganizerController
-// package com.example.demo.controller;
-
-// import com.example.demo.model.Event;
-// import com.example.demo.model.Registration;
-// import com.example.demo.model.User;
-// import com.example.demo.service.OrganizerService;
-// import com.example.demo.service.UserService;
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.stereotype.Controller;
-// import org.springframework.ui.Model;
-// import org.springframework.web.bind.annotation.*;
-
-// import java.util.List;
-// import java.util.Map;
-
-// @Controller
-// @RequestMapping("/organizer")
-// public class OrganizerController {
-
-//     @Autowired
-//     private OrganizerService organizerService;
-//     @Autowired
-//     private UserService userService;
-
-//     @GetMapping("/dashboard")
-//     public String dashboard(Model model) {
-//         Long userId = 1L; // Từ session
-//         User user = userService.findById(userId);
-//         model.addAttribute("user", user);
-//         return "organizer/dashboard";
-//     }
-
-//     @GetMapping("/api/events")
-//     public ResponseEntity<List<Event>> getEvents() {
-//         Long organizerId = 1L;
-//         return ResponseEntity.ok(organizerService.getEventsByOrganizer(organizerId));
-//     }
-
-//     @GetMapping("/api/events/upcoming")
-//     public ResponseEntity<List<Event>> getUpcomingEvents() {
-//         Long organizerId = 1L;
-//         return ResponseEntity.ok(organizerService.getUpcomingEvents(organizerId)); // Thêm method
-//     }
-
-//     @PostMapping("/api/events/create")
-//     public ResponseEntity<Map<String, Object>> createEvent(@RequestBody Event event) {
-//         event.setNguoiToChucId(1L); // Từ session
-//         organizerService.createEvent(event);
-//         return ResponseEntity.ok(Map.of("success", true));
-//     }
-
-//     @PostMapping("/api/events/update")
-//     public ResponseEntity<Map<String, Object>> updateEvent(@RequestBody Event event) {
-//         organizerService.updateEvent(event);
-//         return ResponseEntity.ok(Map.of("success", true));
-//     }
-
-//     @PostMapping("/api/events/delete")
-//     public ResponseEntity<Map<String, Object>> deleteEvent(@RequestBody Map<String, Long> request) {
-//         organizerService.deleteEvent(request.get("suKienId"));
-//         return ResponseEntity.ok(Map.of("success", true));
-//     }
-
-//     @GetMapping("/api/events/{suKienId}")
-//     public ResponseEntity<Event> getEvent(@PathVariable Long suKienId) {
-//         return ResponseEntity.ok(organizerService.getEventById(suKienId)); // Thêm method
-//     }
-
-//     @GetMapping("/api/registrations")
-//     public ResponseEntity<List<Registration>> getRegistrations(@RequestParam(required = false) Long suKienId) {
-//         if (suKienId != null) {
-//             return ResponseEntity.ok(organizerService.getRegistrationsByEvent(suKienId));
-//         } else {
-//             return ResponseEntity.ok(organizerService.getAllRegistrationsForOrganizer(1L)); // Thêm method
-//         }
-//     }
-
-//     @PostMapping("/api/attendance/update")
-//     public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request) {
-//         Long dangKyId = Long.parseLong(request.get("dangKyId").toString());
-//         boolean trangThaiDiemDanh = (boolean) request.get("trangThaiDiemDanh");
-//         organizerService.updateAttendance(dangKyId, trangThaiDiemDanh);
-//         return ResponseEntity.ok(Map.of("success", true));
-//     }
-
-//     @GetMapping("/api/analytics/stats")
-//     public ResponseEntity<Map<String, Object>> getStats() {
-//         return ResponseEntity.ok(organizerService.getAnalytics(1L));
-//     }
-
-//     @GetMapping("/api/analytics/popular")
-//     public ResponseEntity<List<Event>> getPopularEvents() {
-//         return ResponseEntity.ok(organizerService.getPopularEvents(1L));
-//     }
-
-//     @GetMapping("/api/account")
-//     public ResponseEntity<User> getAccount() {
-//         return ResponseEntity.ok(userService.findById(1L));
-//     }
-
-//     @PostMapping("/api/account/update")
-//     public ResponseEntity<Map<String, Object>> updateAccount(@RequestBody User user) {
-//         userService.update(user);
-//         return ResponseEntity.ok(Map.of("success", true));
-//     }
-
-//     // Export endpoints (return CSV or PDF, use library like iText or CSVWriter)
-//     @GetMapping("/api/events/export")
-//     public ResponseEntity<String> exportEvent(@RequestParam Long suKienId) {
-//         // Logic export
-//         return ResponseEntity.ok("Exported");
-//     }
-
-//     @GetMapping("/api/attendance/export")
-//     public ResponseEntity<String> exportAttendance(@RequestParam Long suKienId) {
-//         // Logic
-//         return ResponseEntity.ok("Exported");
-//     }
-
-//     @GetMapping("/api/participants/export")
-//     public ResponseEntity<String> exportParticipants(@RequestParam(required = false) Long suKienId) {
-//         // Logic
-//         return ResponseEntity.ok("Exported");
-//     }
-// }
-
 package com.example.demo.controller;
 
 import com.example.demo.model.Event;
+import com.example.demo.model.LoaiSuKien;
 import com.example.demo.model.Registration;
 import com.example.demo.model.User;
 import com.example.demo.service.EventService;
 import com.example.demo.service.LoaiSuKienService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.UserService;
+//import com.example.demo.service.FileStorageService; 
 
 import jakarta.servlet.http.HttpSession;
 
@@ -242,8 +21,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+//import com.opencsv.CSVWriter; // Cần add dependency OpenCSV nếu dùng, hoặc dùng simple string builder
 
 @Controller
 @RequestMapping("/organizer")
@@ -251,7 +37,7 @@ public class OrganizerController {
 
     @Autowired
     private EventService eventService;
- 
+
     @Autowired
     private UserService userService;
 
@@ -261,17 +47,26 @@ public class OrganizerController {
     @Autowired
     private LoaiSuKienService loaiSuKienService;
 
+    //@Autowired
+    //private FileStorageService fileStorageService; // Để handle upload anhBia
+
+    // Trang chính organizer
     @GetMapping("/organizer/organize")
     public String dashboard(Model model, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) return "redirect:/login";
+        if (userId == null) {
+            return "redirect:/login";
+        }
 
         User user = userService.findById(userId);
-        if (user == null) { session.invalidate(); return "redirect:/login"; }
+        if (user == null || !"ToChuc".equals(user.getVaiTro())) { // Kiểm tra vai trò
+            session.invalidate();
+            return "redirect:/login";
+        }
         model.addAttribute("user", user);
 
-        // Thống kê (tương tự như analytics stats)
-        Map<String, Object> stats = registrationService.getAnalyticsStats(userId); // organizerId = userId
+        // Thống kê
+        Map<String, Object> stats = registrationService.getAnalyticsStats(userId);
         model.addAttribute("stats", stats);
 
         // Upcoming events
@@ -282,137 +77,292 @@ public class OrganizerController {
         List<Event> popularEvents = eventService.getPopularEvents(userId);
         model.addAttribute("popularEvents", popularEvents);
 
-        // Event types (nếu cần cho form create)
-        model.addAttribute("eventTypes", loaiSuKienService.findAll());
+        // Event types for create form
+        List<LoaiSuKien> eventTypes = loaiSuKienService.findAll();
+        model.addAttribute("eventTypes", eventTypes);
 
-        // Các data khác nếu cần, ví dụ: all events, registrations
+        // All events
         List<Event> allEvents = eventService.getSuKienByOrganizer(userId);
         model.addAttribute("allEvents", allEvents);
 
+        // All registrations
         List<Registration> allRegistrations = registrationService.getAllRegistrationsForOrganizer(userId);
         model.addAttribute("allRegistrations", allRegistrations);
 
-        return "organizer/organize"; // Giả sử file JSP là organizer/dashboard.jsp
+        return "organizer/organize";
     }
 
-    @GetMapping("/events")
-    public ResponseEntity<List<Event>> getEvents(@RequestParam Long organizerId) {
+    // API lấy tất cả events của organizer
+    @GetMapping("/api/events")
+    public ResponseEntity<List<Event>> getEvents(HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(eventService.getSuKienByOrganizer(organizerId));
     }
 
+    // API upcoming events
     @GetMapping("/api/events/upcoming")
-    public ResponseEntity<List<Event>> getUpcomingEvents() {
-        Long organizerId = 1L; // Từ session
+    public ResponseEntity<List<Event>> getUpcomingEvents(HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(eventService.getUpcomingEvents(organizerId));
     }
 
-    @GetMapping("/api/events")
-    public ResponseEntity<List<Event>> getEvents() {
-        Long organizerId = 1L; // Từ session
-        return ResponseEntity.ok(eventService.getSuKienByOrganizer(organizerId));
-    }
-
+    // API get event by id
     @GetMapping("/api/events/{id}")
-    public ResponseEntity<Event> getEvent(@PathVariable Long id) {
-        return ResponseEntity.ok(eventService.getSuKienById(id));
+    public ResponseEntity<Event> getEvent(@PathVariable Long id, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Event event = eventService.getSuKienById(id);
+        if (event != null && event.getNguoiToChucId().equals(organizerId)) {
+            return ResponseEntity.ok(event);
+        }
+        return ResponseEntity.notFound().build();
     }
 
+    // API create event
     @PostMapping("/api/events/create")
-    public ResponseEntity<Map<String, Object>> createEvent(@RequestBody Event event, @RequestParam(required = false) MultipartFile anhBiaFile) {
-        Long organizerId = 1L; // Từ session
+    public ResponseEntity<Map<String, Object>> createEvent(
+            @RequestPart("event") Event event,
+            @RequestPart(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
+            HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         event.setNguoiToChucId(organizerId);
-        // Xử lý upload file nếu có (giả sử lưu path)
         if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
-            // Logic lưu file, ví dụ: String fileName = fileStorageService.store(anhBiaFile); (nếu có service)
-            event.setAnhBia("path/to/" + anhBiaFile.getOriginalFilename()); // Placeholder
+            String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
+            event.setAnhBia(fileName);
         }
         eventService.createSuKien(event);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Tạo sự kiện thành công!"));
+        return ResponseEntity.ok(new HashMap<>() {{
+            put("success", true);
+            put("message", "Tạo sự kiện thành công!");
+        }});
     }
 
+    // API update event
     @PostMapping("/api/events/update")
-    public ResponseEntity<Map<String, Object>> updateEvent(@RequestBody Event event, @RequestParam(required = false) MultipartFile anhBiaFile) {
-        // Xử lý upload file nếu có
+    public ResponseEntity<Map<String, Object>> updateEvent(
+            @RequestPart("event") Event event,
+            @RequestPart(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
+            HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Event existing = eventService.getSuKienById(event.getSuKienId());
+        if (existing == null || !existing.getNguoiToChucId().equals(organizerId)) {
+            return ResponseEntity.notFound().build();
+        }
         if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
-            event.setAnhBia("path/to/" + anhBiaFile.getOriginalFilename()); // Placeholder
+            String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
+            event.setAnhBia(fileName);
+        } else {
+            event.setAnhBia(existing.getAnhBia());
         }
         eventService.updateSuKien(event);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật sự kiện thành công!"));
+        return ResponseEntity.ok(new HashMap<>() {{
+            put("success", true);
+            put("message", "Cập nhật sự kiện thành công!");
+        }});
     }
 
+    // API delete event
     @PostMapping("/api/events/delete")
-    public ResponseEntity<Map<String, Object>> deleteEvent(@RequestBody Map<String, Long> request) {
-        eventService.deleteSuKien(request.get("suKienId"));
-        return ResponseEntity.ok(Map.of("success", true, "message", "Xóa sự kiện thành công!"));
+    public ResponseEntity<Map<String, Object>> deleteEvent(@RequestBody Map<String, Long> request, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Long suKienId = request.get("suKienId");
+        Event event = eventService.getSuKienById(suKienId);
+        if (event != null && event.getNguoiToChucId().equals(organizerId)) {
+            eventService.deleteSuKien(suKienId);
+            return ResponseEntity.ok(new HashMap<>() {{
+                put("success", true);
+                put("message", "Xóa sự kiện thành công!");
+            }});
+        }
+        return ResponseEntity.notFound().build();
     }
 
+    // API registrations
     @GetMapping("/api/registrations")
-    public ResponseEntity<List<Registration>> getRegistrations(@RequestParam(required = false) Long suKienId) {
+    public ResponseEntity<List<Registration>> getRegistrations(
+            @RequestParam(required = false) Long suKienId,
+            HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         if (suKienId != null) {
             return ResponseEntity.ok(registrationService.getRegistrationsByEvent(suKienId));
         } else {
-            Long organizerId = 1L;
             return ResponseEntity.ok(registrationService.getAllRegistrationsForOrganizer(organizerId));
         }
     }
 
+    // API update attendance
     @PostMapping("/api/attendance/update")
-    public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         Long dangKyId = Long.parseLong(request.get("dangKyId").toString());
-        boolean trangThaiDiemDanh = (boolean) request.get("trangThaiDiemDanh");
+        boolean trangThaiDiemDanh = Boolean.parseBoolean(request.get("trangThaiDiemDanh").toString());
+        // Kiểm tra quyền (dangKyId thuộc event của organizer)
+        // Giả sử service handle
         registrationService.updateAttendance(dangKyId, trangThaiDiemDanh);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật điểm danh thành công!"));
+        return ResponseEntity.ok(new HashMap<>() {{
+            put("success", true);
+            put("message", "Cập nhật điểm danh thành công!");
+        }});
     }
 
+    // API analytics stats
     @GetMapping("/api/analytics/stats")
-    public ResponseEntity<Map<String, Object>> getStats() {
-        Long organizerId = 1L;
+    public ResponseEntity<Map<String, Object>> getStats(HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(registrationService.getAnalyticsStats(organizerId));
     }
 
+    // API popular events
     @GetMapping("/api/analytics/popular")
-    public ResponseEntity<List<Event>> getPopularEvents() {
-        Long organizerId = 1L;
+    public ResponseEntity<List<Event>> getPopularEvents(HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(eventService.getPopularEvents(organizerId));
     }
 
+    // API get account
     @GetMapping("/api/account")
-    public ResponseEntity<User> getAccount(@RequestParam Long userId) {
+    public ResponseEntity<User> getAccount(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
         return ResponseEntity.ok(userService.findById(userId));
     }
 
+    // API update account
     @PostMapping("/api/account/update")
-    public ResponseEntity<Map<String, Object>> updateAccount(@RequestBody User user) {
+    public ResponseEntity<Map<String, Object>> updateAccount(@RequestBody User user, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null || !userId.equals(user.getNguoiDungId())) {
+            return ResponseEntity.status(401).build();
+        }
         userService.update(user);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật tài khoản thành công!"));
+        return ResponseEntity.ok(new HashMap<>() {{
+            put("success", true);
+            put("message", "Cập nhật tài khoản thành công!");
+        }});
     }
-
-    // Export endpoints (placeholder, trả về file giả định)
+    /*
+    // Export event list as CSV
     @GetMapping("/api/events/export")
-    public ResponseEntity<byte[]> exportEvent(@RequestParam Long suKienId) {
-        // Logic export CSV/PDF (sử dụng library như OpenCSV hoặc iText)
-        byte[] csvData = "Tên sự kiện,Ngày,Địa điểm\nEvent1,2025-11-03,Hanoi".getBytes(); // Placeholder
+    public ResponseEntity<byte[]> exportEvent(@RequestParam Long suKienId, HttpSession session) throws IOException {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        // Get registrations for event
+        List<Registration> registrations = registrationService.getRegistrationsByEvent(suKienId);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8));
+        // Header
+        writer.writeNext(new String[]{"Họ tên", "Email", "Số điện thoại", "Thời gian đăng ký", "Trạng thái"});
+        for (Registration reg : registrations) {
+            writer.writeNext(new String[]{
+                    reg.getUser().getHoTen(), // Giả sử Registration có field user hoặc fetch
+                    reg.getUser().getEmail(),
+                    reg.getUser().getSoDienThoai(),
+                    reg.getThoiGianDangKy().toString(),
+                    reg.getTrangThai()
+            });
+        }
+        writer.close();
+        byte[] csvData = baos.toByteArray();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=event_" + suKienId + ".csv")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(csvData);
     }
+    
 
+    // Export attendance as CSV
     @GetMapping("/api/attendance/export")
-    public ResponseEntity<byte[]> exportAttendance(@RequestParam Long suKienId) {
-        byte[] csvData = "Họ tên,Email,Trạng thái\nUser1,user1@email.com,Đã tham gia".getBytes(); // Placeholder
+    public ResponseEntity<byte[]> exportAttendance(@RequestParam Long suKienId, HttpSession session) throws IOException {
+        // Tương tự exportEvent, nhưng thêm trạng thái điểm danh
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        List<Registration> registrations = registrationService.getRegistrationsByEvent(suKienId);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8));
+        writer.writeNext(new String[]{"Họ tên", "Email", "Số điện thoại", "Trạng thái điểm danh"});
+        for (Registration reg : registrations) {
+            writer.writeNext(new String[]{
+                    reg.getUser().getHoTen(),
+                    reg.getUser().getEmail(),
+                    reg.getUser().getSoDienThoai(),
+                    reg.getTrangThai() // Hoặc field điểm danh riêng
+            });
+        }
+        writer.close();
+        byte[] csvData = baos.toByteArray();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attendance_" + suKienId + ".csv")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(csvData);
     }
 
+    // Export participants as CSV
     @GetMapping("/api/participants/export")
-    public ResponseEntity<byte[]> exportParticipants(@RequestParam(required = false) Long suKienId) {
-        byte[] csvData = "Họ tên,Email,Sự kiện\nUser1,user1@email.com,Event1".getBytes(); // Placeholder
+    public ResponseEntity<byte[]> exportParticipants(@RequestParam(required = false) Long suKienId, HttpSession session) throws IOException {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        List<Registration> registrations;
+        if (suKienId != null) {
+            registrations = registrationService.getRegistrationsByEvent(suKienId);
+        } else {
+            registrations = registrationService.getAllRegistrationsForOrganizer(organizerId);
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8));
+        writer.writeNext(new String[]{"Họ tên", "Email", "Số điện thoại", "Sự kiện", "Trạng thái"});
+        for (Registration reg : registrations) {
+            writer.writeNext(new String[]{
+                    reg.getUser().getHoTen(),
+                    reg.getUser().getEmail(),
+                    reg.getUser().getSoDienThoai(),
+                    reg.getSuKien().getTenSuKien(),
+                    reg.getTrangThai()
+            });
+        }
+        writer.close();
+        byte[] csvData = baos.toByteArray();
+        String fileName = "participants" + (suKienId != null ? "_" + suKienId : "") + ".csv";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=participants" + (suKienId != null ? "_" + suKienId : "") + ".csv")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(csvData);
     }
+    */
 }

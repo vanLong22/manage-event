@@ -54,7 +54,7 @@ public class EventService {
 
     public void createSuKien(Event suKien) {
         suKien.setNgayTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        suKien.setTrangThai("PENDING");
+        suKien.setTrangThai("SapDienRa");
         eventRepository.save(suKien);
     }
 

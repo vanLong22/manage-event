@@ -84,25 +84,27 @@ public class ParticipantController {
         System.out.println("Returning event: " + event.getTenSuKien()); // Debug
         return ResponseEntity.ok(event);
     }
+
     // API: Tham gia sự kiện
-    @PostMapping("/api/register-event")
+    @PostMapping(value = "/api/register-event", consumes = "application/json")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerEvent(@RequestBody Map<String, Object> payload, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
 
-        Long suKienId = Long.valueOf(payload.get("suKienId").toString());
-        String ghiChu = (String) payload.get("ghiChu");
-        Integer soLuongKhach = Integer.valueOf(payload.get("soLuongKhach").toString());
+        System.err.println("Payload received: " + payload); // Debug
 
         try {
-            registrationService.registerEvent(userId, suKienId, ghiChu, soLuongKhach);
+            Long suKienId = Long.valueOf(payload.get("suKienId").toString());
+            String ghiChu = (String) payload.get("ghiChu");
+
+            registrationService.registerEvent(userId, suKienId, ghiChu);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công!"));
         } catch (Exception e) {
+            e.printStackTrace(); // Debug
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-
 
     // API: Hủy đăng ký
     @PostMapping("/api/cancel-registration")

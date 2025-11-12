@@ -48,12 +48,13 @@ public class ActivityHistoryRepository {
     }
 
     public void save(ActivityHistory history) {
-        String sql = "INSERT INTO lich_su_hoat_dong (nguoi_dung_id, loai_hoat_dong, chi_tiet, thoi_gian) " +
-                     "VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO lich_su_hoat_dong (nguoi_dung_id, loai_hoat_dong, su_kien_id, chi_tiet, thoi_gian) " +
+                     "VALUES (?, ?, ?, ?, ?)";
         
         jdbcTemplate.update(sql,
             history.getNguoiDungId(),
             history.getLoaiHoatDong(),
+            history.getSuKienId(),
             history.getChiTiet(),
             history.getThoiGian()
         );

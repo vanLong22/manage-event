@@ -98,12 +98,12 @@ public class EventRepository {
 
     public void save(Event suKien) {
         String sql = "INSERT INTO su_kien (ten_su_kien, mo_ta, dia_diem, anh_bia, nguoi_to_chuc_id, " +
-                     "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_kien, trang_thai, so_luong_toi_da, ngay_tao) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_kien, trang_thai, so_luong_toi_da, so_luong_da_dang_ky, ngay_tao) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, suKien.getTenSuKien(), suKien.getMoTa(), suKien.getDiaDiem(), 
                 suKien.getAnhBia(), suKien.getNguoiToChucId(), suKien.getThoiGianBatDau(), 
                 suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getTrangThai(), 
-                suKien.getSoLuongToiDa(), suKien.getNgayTao());
+                suKien.getSoLuongToiDa(), 0, suKien.getNgayTao());
     }
 
     // Thêm mới: Upcoming by organizer

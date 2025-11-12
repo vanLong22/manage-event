@@ -1677,28 +1677,16 @@
                     </div>
                 </div>
                 
-                <form id="registration-form">
+                <form id="registration-form" action="POST">
                     <div class="form-group" id="event-code-group" style="display: none;">
                         <label for="event-code">Mã sự kiện (dành cho sự kiện riêng tư) *</label>
-                        <input type="text" id="event-code" placeholder="Nhập mã sự kiện" required>
+                        <input type="text" id="event-code" placeholder="Nhập mã sự kiện" >
                         <small style="color: var(--gray); font-size: 12px;">Mã sự kiện được cung cấp bởi người tổ chức</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="reg-note">Ghi chú cho người tổ chức (tùy chọn)</label>
                         <textarea id="reg-note" placeholder="Nhập ghi chú nếu có..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="reg-guests">Số lượng khách đi cùng</label>
-                        <select id="reg-guests">
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
-                        <small style="color: var(--gray); font-size: 12px;">Số lượng khách tối đa có thể thay đổi tùy sự kiện</small>
                     </div>
                     
                     <div class="form-group">
@@ -1987,7 +1975,6 @@
             const payload = {
                 suKienId: suKienId,
                 ghiChu: $('#reg-note').val(),
-                soLuongKhach: $('#reg-guests').val()
             };
 
             // Thêm mã sự kiện nếu là sự kiện riêng tư

@@ -15,6 +15,10 @@ public class Registration {
     public Event getSuKien() { return suKien; }
     public void setSuKien(Event suKien) { this.suKien = suKien; }
 
+    private User user;
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     public Registration() {
     }

@@ -9,6 +9,7 @@ import com.example.demo.service.LoaiSuKienService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.UserService;
 //import com.example.demo.service.FileStorageService; 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -126,26 +127,64 @@ public class OrganizerController {
         return ResponseEntity.notFound().build();
     }
 
-    // API create event
-    @PostMapping("/api/events/create")
+    // // API create event
+    // @PostMapping("/api/events/create")
+    // public ResponseEntity<Map<String, Object>> createEvent(
+    //         @RequestPart("event") Event event,
+    //         @RequestPart(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
+    //         HttpSession session) {
+    //     Long organizerId = (Long) session.getAttribute("userId");
+    //     if (organizerId == null) {
+    //         return ResponseEntity.status(401).build();
+    //     }
+    //     event.setNguoiToChucId(organizerId);
+    //     if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
+    //         String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
+    //         event.setAnhBia(fileName);
+    //     }
+    //     eventService.createSuKien(event);
+    //     return ResponseEntity.ok(new HashMap<>() {{
+    //         put("success", true);
+    //         put("message", "Tạo sự kiện thành công!");
+    //     }});
+    // }
+
+    // API create event - SỬA LẠI
+    @PostMapping(value = "/api/events/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createEvent(
-            @RequestPart("event") Event event,
-            @RequestPart(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
+            @RequestParam("event") String eventJson, 
+            @RequestParam(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
             HttpSession session) {
+        System.out.println("Id loại sự kiện nhận được trong controller: " + eventJson);
         Long organizerId = (Long) session.getAttribute("userId");
         if (organizerId == null) {
             return ResponseEntity.status(401).build();
         }
-        event.setNguoiToChucId(organizerId);
-        if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
-            String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
-            event.setAnhBia(fileName);
+        
+        try {
+            // Convert JSON string to Event object
+            ObjectMapper objectMapper = new ObjectMapper();
+            Event event = objectMapper.readValue(eventJson, Event.class);
+            
+            event.setNguoiToChucId(organizerId);
+            if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
+                String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
+                event.setAnhBia(fileName);
+            }
+            
+            eventService.createSuKien(event);
+            return ResponseEntity.ok(new HashMap<>() {{
+                put("success", true);
+                put("message", "Tạo sự kiện thành công!");
+            }});
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body(new HashMap<>() {{
+                put("success", false);
+                put("message", "Lỗi khi xử lý dữ liệu: " + e.getMessage());
+            }});
         }
-        eventService.createSuKien(event);
-        return ResponseEntity.ok(new HashMap<>() {{
-            put("success", true);
-            put("message", "Tạo sự kiện thành công!");
-        }});
     }
 
     // API update event
@@ -199,7 +238,10 @@ public class OrganizerController {
     public ResponseEntity<List<Registration>> getRegistrations(
             @RequestParam(required = false) Long suKienId,
             HttpSession session) {
+        System.out.println("sukienID là  : " +suKienId);
         Long organizerId = (Long) session.getAttribute("userId");
+        System.out.println("organizerId là  : " +organizerId);
+
         if (organizerId == null) {
             return ResponseEntity.status(401).build();
         }

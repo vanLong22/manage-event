@@ -25,7 +25,7 @@ public class RegistrationService {
         return registrationRepository.findByUserId(userId);
     }
 
-    public void registerEvent(Long userId, Long suKienId, String ghiChu, Integer soLuongKhach) {
+    public void registerEvent(Long userId, Long suKienId, String ghiChu) {
         // Tạo đối tượng Registration
         Registration registration = new Registration();
         registration.setNguoiDungId(userId);
@@ -41,10 +41,10 @@ public class RegistrationService {
         // Ghi log lịch sử hoạt động
         ActivityHistory history = new ActivityHistory();
         history.setNguoiDungId(userId);
-        history.setLoaiHoatDong("DangKySuKien");
+        history.setLoaiHoatDong("DangKy");
+        history.setSuKienId(suKienId);
         history.setChiTiet("Đăng ký sự kiện: " + suKienId + 
-                          (ghiChu != null && !ghiChu.isEmpty() ? " - Ghi chú: " + ghiChu : "") +
-                          (soLuongKhach != null && soLuongKhach > 0 ? " - Khách: " + soLuongKhach : ""));
+                          (ghiChu != null && !ghiChu.isEmpty() ? " - Ghi chú: " + ghiChu : ""));
         history.setThoiGian(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
         historyRepository.save(history);
     }

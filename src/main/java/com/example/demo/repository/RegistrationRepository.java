@@ -2,11 +2,14 @@ package com.example.demo.repository;
 
 import com.example.demo.model.Event;
 import com.example.demo.model.Registration;
+import com.example.demo.model.User;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,9 +26,20 @@ public class RegistrationRepository {
             new BeanPropertyRowMapper<>(Registration.class), userId);
     }
 
+    @Transactional
     public void save(Registration registration) {
-        String sql = "INSERT INTO dang_ky_su_kien (nguoi_dung_id, su_kien_id, thoi_gian_dang_ky, trang_thai) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, registration.getNguoiDungId(), registration.getSuKienId(), registration.getThoiGianDangKy(), "ChoDuyet");
+        // 1️⃣ Thêm bản ghi đăng ký sự kiện
+        String insertSql = "INSERT INTO dang_ky_su_kien (nguoi_dung_id, su_kien_id, thoi_gian_dang_ky, trang_thai) VALUES (?, ?, ?, ?)";
+        jdbcTemplate.update(insertSql,
+            registration.getNguoiDungId(),
+            registration.getSuKienId(),
+            registration.getThoiGianDangKy(),
+            "DaDuyet" // tự động duyệt luôn
+        );
+
+        // 2️⃣ Tăng số lượng người tham gia trong bảng su_kien
+        String updateSql = "UPDATE su_kien SET so_luong_da_dang_ky = so_luong_da_dang_ky + 1 WHERE su_kien_id = ?";
+        jdbcTemplate.update(updateSql, registration.getSuKienId());
     }
 
     public void cancel(Long dangKyId) {
@@ -80,14 +94,18 @@ public class RegistrationRepository {
         }, userId);
     }
 
-    // Thêm mới: Find by event id (with user info)
+    //Find by event id (with user info)
     public List<Registration> findByEventId(Long suKienId) {
         String sql = """
-            SELECT dk.*, nd.ho_ten AS userHoTen, nd.email AS userEmail, nd.so_dien_thoai AS userSoDienThoai
+            SELECT dk.*, 
+                nd.ho_ten AS userHoTen,
+                nd.email AS userEmail, 
+                nd.so_dien_thoai AS userSoDienThoai
             FROM dang_ky_su_kien dk
             JOIN nguoi_dung nd ON dk.nguoi_dung_id = nd.nguoi_dung_id
             WHERE dk.su_kien_id = ?
             """;
+
         return jdbcTemplate.query(sql, new RowMapper<Registration>() {
             @Override
             public Registration mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -97,11 +115,33 @@ public class RegistrationRepository {
                 reg.setSuKienId(rs.getLong("su_kien_id"));
                 reg.setThoiGianDangKy(rs.getTimestamp("thoi_gian_dang_ky"));
                 reg.setTrangThai(rs.getString("trang_thai"));
-                // Thêm fields tùy chỉnh nếu cần (userHoTen, etc.) - có thể mở rộng model nếu cần
+
+                User user = new User();
+                user.setHoTen(rs.getString("userHoTen"));
+                user.setEmail(rs.getString("userEmail"));
+                user.setSoDienThoai(rs.getString("userSoDienThoai"));
+
+                reg.setUser(user);
+
+                // ✅ Print toàn bộ thông tin
+                System.out.println("Đăng ký ID: " + reg.getDangKyId());
+                System.out.println("Người dùng ID: " + reg.getNguoiDungId());
+                System.out.println("Sự kiện ID: " + reg.getSuKienId());
+                System.out.println("Thời gian đăng ký: " + reg.getThoiGianDangKy());
+                System.out.println("Trạng thái: " + reg.getTrangThai());
+
+                System.out.println("Họ tên người dùng: " + user.getHoTen());
+                System.out.println("Email người dùng: " + user.getEmail());
+                System.out.println("Số điện thoại người dùng: " + user.getSoDienThoai());
+                System.out.println("--------------------------------------------------");
+
+
                 return reg;
             }
         }, suKienId);
     }
+
+
 
     // Thêm mới: All for organizer (join with su_kien)
     public List<Registration> findAllForOrganizer(Long organizerId) {

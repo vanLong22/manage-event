@@ -1,11 +1,18 @@
-<%@ page contentType="text/html; charset=UTF-8" language="java" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EventHub - Quản trị viên</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>         
     <style>
         :root {
             --primary: #9C27B0;
@@ -49,6 +56,12 @@
             transition: var(--transition);
             box-shadow: var(--box-shadow);
             z-index: 100;
+
+            /* Thêm các thuộc tính sau để cố định */
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         .logo {
@@ -786,14 +799,14 @@
                 <div class="header-actions">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Tìm kiếm...">
+                        <input type="text" id="global-search" placeholder="Tìm kiếm...">
                     </div>
                     <div class="notification">
                         <i class="fas fa-bell"></i>
-                        <div class="notification-badge">5</div>
+                        <div class="notification-badge" id="notification-count">0</div>
                     </div>
                     <div class="user-info">
-                        <div class="user-avatar">QA</div>
+                        <div class="user-avatar">AD</div>
                         <div class="user-details">
                             <h4>Quản trị viên</h4>
                             <p>Administrator</p>
@@ -809,110 +822,41 @@
                         <div class="card-icon primary">
                             <i class="fas fa-users"></i>
                         </div>
-                        <h3>1,254</h3>
+                        <h3 id="total-users">0</h3>
                         <p>Tổng số người dùng</p>
                     </div>
                     <div class="card">
                         <div class="card-icon success">
                             <i class="fas fa-calendar-check"></i>
                         </div>
-                        <h3>342</h3>
+                        <h3 id="active-events">0</h3>
                         <p>Sự kiện đang hoạt động</p>
                     </div>
                     <div class="card">
                         <div class="card-icon warning">
                             <i class="fas fa-clock"></i>
                         </div>
-                        <h3>28</h3>
+                        <h3 id="pending-events">0</h3>
                         <p>Sự kiện chờ duyệt</p>
                     </div>
                     <div class="card">
                         <div class="card-icon danger">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
-                        <h3>12</h3>
+                        <h3 id="violation-events">0</h3>
                         <p>Sự kiện vi phạm</p>
                     </div>
                 </div>
 
-                <div class="chart-container">
-                    <div class="section-header">
-                        <h3 class="section-title">Thống kê hoạt động</h3>
-                        <div>
-                            <select id="chart-period">
-                                <option value="week">Tuần này</option>
-                                <option value="month">Tháng này</option>
-                                <option value="quarter">Quý này</option>
-                                <option value="year">Năm nay</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="chart-placeholder">
-                        Biểu đồ thống kê hoạt động hệ thống
-                    </div>
-                </div>
-
+                <!-- Recent Events -->
                 <div class="section-header">
                     <h3 class="section-title">Sự kiện gần đây</h3>
-                    <button class="btn btn-outline">
+                    <button class="btn btn-outline" id="btn-view-all-events">
                         <i class="fas fa-eye"></i> Xem tất cả
                     </button>
                 </div>
-
-                <div class="events-grid">
-                    <div class="event-card">
-                        <div class="event-image">
-                            <i class="fas fa-music"></i>
-                        </div>
-                        <div class="event-content">
-                            <h4 class="event-title">Lễ hội âm nhạc mùa hè 2023</h4>
-                            <div class="event-meta">
-                                <span><i class="far fa-calendar"></i> 15/07/2023</span>
-                                <span><i class="fas fa-map-marker-alt"></i> Công viên Văn hóa</span>
-                            </div>
-                            <p>Lễ hội âm nhạc lớn nhất mùa hè với sự tham gia của nhiều nghệ sĩ nổi tiếng.</p>
-                            <div class="event-footer">
-                                <span class="status approved">Đã duyệt</span>
-                                <span><i class="fas fa-users"></i> 150 người</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="event-card">
-                        <div class="event-image">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                        <div class="event-content">
-                            <h4 class="event-title">Hội thảo khởi nghiệp công nghệ</h4>
-                            <div class="event-meta">
-                                <span><i class="far fa-calendar"></i> 22/07/2023</span>
-                                <span><i class="fas fa-map-marker-alt"></i> Trung tâm Hội nghị Quốc gia</span>
-                            </div>
-                            <p>Hội thảo dành cho các startup và nhà đầu tư trong lĩnh vực công nghệ.</p>
-                            <div class="event-footer">
-                                <span class="status pending">Chờ duyệt</span>
-                                <span><i class="fas fa-users"></i> 80 người</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="event-card">
-                        <div class="event-image">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                        <div class="event-content">
-                            <h4 class="event-title">Lễ hội ẩm thực đường phố</h4>
-                            <div class="event-meta">
-                                <span><i class="far fa-calendar"></i> 30/07/2023</span>
-                                <span><i class="fas fa-map-marker-alt"></i> Phố đi bộ Nguyễn Huệ</span>
-                            </div>
-                            <p>Trải nghiệm ẩm thực đường phố đa dạng từ khắp các vùng miền Việt Nam.</p>
-                            <div class="event-footer">
-                                <span class="status approved">Đã duyệt</span>
-                                <span><i class="fas fa-users"></i> 200 người</span>
-                            </div>
-                        </div>
-                    </div>
+                <div id="recent-events" class="events-grid">
+                    <!-- Recent events will be loaded here -->
                 </div>
             </div>
 
@@ -920,7 +864,7 @@
             <div id="users" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý người dùng</h3>
-                    <button class="btn btn-outline">
+                    <button class="btn btn-outline" id="btn-export-users">
                         <i class="fas fa-file-export"></i> Xuất báo cáo
                     </button>
                 </div>
@@ -931,8 +875,9 @@
                             <label for="user-role">Vai trò</label>
                             <select id="user-role">
                                 <option value="">Tất cả vai trò</option>
-                                <option value="organizer">Người tổ chức</option>
-                                <option value="participant">Người tham gia</option>
+                                <option value="ToChuc">Người tổ chức</option>
+                                <option value="NguoiDung">Người tham gia</option>
+                                <option value="Admin">Quản trị viên</option>
                             </select>
                         </div>
                         <div class="filter-group">
@@ -943,28 +888,11 @@
                                 <option value="inactive">Đã khóa</option>
                             </select>
                         </div>
-                        <div class="filter-group">
-                            <label for="user-register-date">Ngày đăng ký</label>
-                            <select id="user-register-date">
-                                <option value="">Tất cả thời gian</option>
-                                <option value="week">Tuần này</option>
-                                <option value="month">Tháng này</option>
-                                <option value="quarter">Quý này</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="user-sort">Sắp xếp</label>
-                            <select id="user-sort">
-                                <option value="newest">Mới nhất</option>
-                                <option value="oldest">Cũ nhất</option>
-                                <option value="name">Theo tên</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
 
                 <div class="table-container">
-                    <table>
+                    <table id="users-table">
                         <thead>
                             <tr>
                                 <th>Họ tên</th>
@@ -976,55 +904,8 @@
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Nguyễn Văn Tổ Chức</td>
-                                <td>tochuc@example.com</td>
-                                <td>0912345678</td>
-                                <td>Người tổ chức</td>
-                                <td>15/05/2023</td>
-                                <td><span class="status active">Đang hoạt động</span></td>
-                                <td class="action-buttons">
-                                    <div class="action-btn" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </div>
-                                    <div class="action-btn" title="Khóa tài khoản">
-                                        <i class="fas fa-lock"></i>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Trần Thị Tham Gia</td>
-                                <td>thamgia@example.com</td>
-                                <td>0923456789</td>
-                                <td>Người tham gia</td>
-                                <td>20/05/2023</td>
-                                <td><span class="status active">Đang hoạt động</span></td>
-                                <td class="action-buttons">
-                                    <div class="action-btn" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </div>
-                                    <div class="action-btn" title="Khóa tài khoản">
-                                        <i class="fas fa-lock"></i>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Lê Văn Vi Phạm</td>
-                                <td>vipham@example.com</td>
-                                <td>0934567890</td>
-                                <td>Người tổ chức</td>
-                                <td>10/04/2023</td>
-                                <td><span class="status inactive">Đã khóa</span></td>
-                                <td class="action-buttons">
-                                    <div class="action-btn" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </div>
-                                    <div class="action-btn" title="Mở khóa tài khoản">
-                                        <i class="fas fa-unlock"></i>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="users-tbody">
+                            <!-- Users data will be loaded here -->
                         </tbody>
                     </table>
                 </div>
@@ -1034,7 +915,7 @@
             <div id="events" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý sự kiện</h3>
-                    <button class="btn btn-outline">
+                    <button class="btn btn-outline" id="btn-export-events">
                         <i class="fas fa-file-export"></i> Xuất báo cáo
                     </button>
                 </div>
@@ -1045,44 +926,25 @@
                             <label for="event-status">Trạng thái</label>
                             <select id="event-status">
                                 <option value="">Tất cả trạng thái</option>
-                                <option value="approved">Đã duyệt</option>
-                                <option value="pending">Chờ duyệt</option>
-                                <option value="cancelled">Đã hủy</option>
+                                <option value="SapDienRa">Sắp diễn ra</option>
+                                <option value="DangDienRa">Đang diễn ra</option>
+                                <option value="DaKetThuc">Đã kết thúc</option>
+                                <option value="Huy">Đã hủy</option>
                             </select>
                         </div>
                         <div class="filter-group">
                             <label for="event-type">Loại sự kiện</label>
                             <select id="event-type">
                                 <option value="">Tất cả loại</option>
-                                <option value="music">Âm nhạc</option>
-                                <option value="conference">Hội thảo</option>
-                                <option value="food">Ẩm thực</option>
-                                <option value="art">Nghệ thuật</option>
-                                <option value="sports">Thể thao</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="event-date">Ngày diễn ra</label>
-                            <select id="event-date">
-                                <option value="">Tất cả ngày</option>
-                                <option value="week">Tuần này</option>
-                                <option value="month">Tháng này</option>
-                                <option value="upcoming">Sắp diễn ra</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="event-sort">Sắp xếp</label>
-                            <select id="event-sort">
-                                <option value="newest">Mới nhất</option>
-                                <option value="oldest">Cũ nhất</option>
-                                <option value="popular">Phổ biến</option>
+                                <option value="CongKhai">Công khai</option>
+                                <option value="RiengTu">Riêng tư</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
                 <div class="table-container">
-                    <table>
+                    <table id="events-table">
                         <thead>
                             <tr>
                                 <th>Tên sự kiện</th>
@@ -1094,45 +956,8 @@
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Lễ hội âm nhạc mùa hè 2023</td>
-                                <td>Nguyễn Văn Tổ Chức</td>
-                                <td>15/07/2023</td>
-                                <td>Công viên Văn hóa</td>
-                                <td>Âm nhạc</td>
-                                <td><span class="status approved">Đã duyệt</span></td>
-                                <td class="action-buttons">
-                                    <div class="action-btn" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </div>
-                                    <div class="action-btn" title="Chỉnh sửa">
-                                        <i class="fas fa-edit"></i>
-                                    </div>
-                                    <div class="action-btn" title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Hội thảo khởi nghiệp công nghệ</td>
-                                <td>Lê Văn Vi Phạm</td>
-                                <td>22/07/2023</td>
-                                <td>Trung tâm Hội nghị Quốc gia</td>
-                                <td>Hội thảo</td>
-                                <td><span class="status pending">Chờ duyệt</span></td>
-                                <td class="action-buttons">
-                                    <div class="action-btn" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </div>
-                                    <div class="action-btn" title="Phê duyệt">
-                                        <i class="fas fa-check"></i>
-                                    </div>
-                                    <div class="action-btn" title="Từ chối">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="events-tbody">
+                            <!-- Events data will be loaded here -->
                         </tbody>
                     </table>
                 </div>
@@ -1143,37 +968,11 @@
                 <div class="section-header">
                     <h3 class="section-title">Phê duyệt sự kiện</h3>
                     <div>
-                        <span class="status pending" style="font-size: 14px;">28 sự kiện chờ duyệt</span>
+                        <span class="status pending" id="pending-count">0 sự kiện chờ duyệt</span>
                     </div>
                 </div>
-
-                <div class="events-grid">
-                    <div class="event-card">
-                        <div class="event-image">
-                            <i class="fas fa-graduation-cap"></i>
-                        </div>
-                        <div class="event-content">
-                            <h4 class="event-title">Hội thảo khởi nghiệp công nghệ</h4>
-                            <div class="event-meta">
-                                <span><i class="far fa-calendar"></i> 22/07/2023</span>
-                                <span><i class="fas fa-map-marker-alt"></i> Trung tâm Hội nghị Quốc gia</span>
-                            </div>
-                            <p>Hội thảo dành cho các startup và nhà đầu tư trong lĩnh vực công nghệ.</p>
-                            <div class="event-footer">
-                                <div class="action-buttons">
-                                    <div class="action-btn" title="Phê duyệt">
-                                        <i class="fas fa-check"></i>
-                                    </div>
-                                    <div class="action-btn" title="Từ chối">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                    <div class="action-btn" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div id="pending-events-list" class="events-grid">
+                    <!-- Pending events will be loaded here -->
                 </div>
             </div>
 
@@ -1181,44 +980,27 @@
             <div id="analytics" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Thống kê hệ thống</h3>
-                    <button class="btn btn-outline">
+                    <button class="btn btn-outline" id="btn-download-report">
                         <i class="fas fa-download"></i> Tải báo cáo
                     </button>
                 </div>
 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value">1,254</div>
+                        <div class="stat-value" id="stat-total-users">0</div>
                         <div class="stat-label">Tổng số người dùng</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">342</div>
+                        <div class="stat-value" id="stat-active-events">0</div>
                         <div class="stat-label">Sự kiện đang hoạt động</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">28</div>
+                        <div class="stat-value" id="stat-pending-events">0</div>
                         <div class="stat-label">Sự kiện chờ duyệt</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value">85%</div>
+                        <div class="stat-value" id="stat-avg-participation">0%</div>
                         <div class="stat-label">Tỷ lệ tham gia trung bình</div>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <div class="section-header">
-                        <h3 class="section-title">Phân tích người dùng</h3>
-                        <div>
-                            <select id="user-analytics-period">
-                                <option value="week">Tuần này</option>
-                                <option value="month">Tháng này</option>
-                                <option value="quarter">Quý này</option>
-                                <option value="year">Năm nay</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="chart-placeholder">
-                        Biểu đồ phân tích người dùng
                     </div>
                 </div>
             </div>
@@ -1227,8 +1009,8 @@
             <div id="suggestions" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý gợi ý sự kiện</h3>
-                    <button class="btn btn-primary">
-                        <i class="fas fa-cog"></i> Cấu hình thuật toán
+                    <button class="btn btn-primary" id="btn-save-suggestion-config">
+                        <i class="fas fa-cog"></i> Lưu cấu hình
                     </button>
                 </div>
 
@@ -1242,24 +1024,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="suggestion-factors">Yếu tố ưu tiên</label>
+                    <label>Yếu tố ưu tiên</label>
                     <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
                         <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" checked> Lịch sử tìm kiếm
+                            <input type="checkbox" id="factor-history" checked> Lịch sử tìm kiếm
                         </label>
                         <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" checked> Sự kiện đã tham gia
+                            <input type="checkbox" id="factor-participation" checked> Sự kiện đã tham gia
                         </label>
                         <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" checked> Sở thích người dùng
+                            <input type="checkbox" id="factor-preferences" checked> Sở thích người dùng
                         </label>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <button class="btn btn-primary">
-                        <i class="fas fa-save"></i> Lưu cấu hình
-                    </button>
                 </div>
             </div>
 
@@ -1280,7 +1056,7 @@
                 </div>
 
                 <div class="form-group">
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary" id="btn-save-settings">
                         <i class="fas fa-save"></i> Lưu cài đặt
                     </button>
                 </div>
@@ -1296,218 +1072,675 @@
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                    <div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px;">NT</div>
-                    <div>
-                        <h4 style="margin-bottom: 5px;">Nguyễn Văn Tổ Chức</h4>
-                        <p>Người tổ chức sự kiện</p>
-                    </div>
+                <div id="user-modal-content">
+                    <!-- User details will be loaded here -->
                 </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Email:</label>
-                        <p>tochuc@example.com</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Số điện thoại:</label>
-                        <p>0912345678</p>
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-top: 20px;">
-                    <button class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Chỉnh sửa
-                    </button>
-                    <button class="btn btn-danger">
-                        <i class="fas fa-lock"></i> Khóa tài khoản
-                    </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Detail Modal -->
+    <div class="modal" id="event-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chi tiết sự kiện</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="event-modal-content">
+                    <!-- Event details will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Navigation functionality - FIXED VERSION
-        document.querySelectorAll('.menu-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault(); // Ngăn chặn hành vi mặc định của thẻ <a>
+        // Global variables
+        let currentUsers = [];
+        let currentEvents = [];
+
+        // Initialize page
+        $(document).ready(function() {
+            loadDashboardData();
+            setupEventListeners();
+        });
+
+        // Navigation functionality
+        function setupEventListeners() {
+            // Menu navigation
+            $('.menu-link').click(function(e) {
+                e.preventDefault();
                 
                 // Remove active class from all links and sections
-                document.querySelectorAll('.menu-link').forEach(item => {
-                    item.classList.remove('active');
-                });
-                document.querySelectorAll('.content-section').forEach(section => {
-                    section.classList.remove('active');
-                });
+                $('.menu-link').removeClass('active');
+                $('.content-section').removeClass('active');
                 
                 // Add active class to clicked link
-                this.classList.add('active');
+                $(this).addClass('active');
                 
                 // Show corresponding section
-                const target = this.getAttribute('data-target');
-                const targetSection = document.getElementById(target);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                }
+                const target = $(this).data('target');
+                $('#' + target).addClass('active');
                 
-                // Update page title
-                const pageTitle = document.getElementById('page-title');
-                const pageSubtitle = document.getElementById('page-subtitle');
-                
+                // Load data for the section
                 switch(target) {
                     case 'dashboard':
-                        pageTitle.textContent = 'Tổng quan hệ thống';
-                        pageSubtitle.textContent = 'Quản lý và giám sát toàn bộ hệ thống EventHub';
+                        loadDashboardData();
                         break;
                     case 'users':
-                        pageTitle.textContent = 'Quản lý người dùng';
-                        pageSubtitle.textContent = 'Quản lý tài khoản người dùng và phân quyền';
+                        loadUsers();
                         break;
                     case 'events':
-                        pageTitle.textContent = 'Quản lý sự kiện';
-                        pageSubtitle.textContent = 'Quản lý và giám sát tất cả sự kiện';
+                        loadEvents();
                         break;
                     case 'approvals':
-                        pageTitle.textContent = 'Phê duyệt sự kiện';
-                        pageSubtitle.textContent = 'Xem xét và phê duyệt sự kiện mới';
+                        loadPendingEvents();
                         break;
                     case 'analytics':
-                        pageTitle.textContent = 'Thống kê hệ thống';
-                        pageSubtitle.textContent = 'Phân tích và báo cáo hệ thống';
-                        break;
-                    case 'suggestions':
-                        pageTitle.textContent = 'Gợi ý sự kiện';
-                        pageSubtitle.textContent = 'Quản lý thuật toán gợi ý sự kiện';
-                        break;
-                    case 'settings':
-                        pageTitle.textContent = 'Cài đặt hệ thống';
-                        pageSubtitle.textContent = 'Cấu hình hệ thống và tùy chọn';
+                        loadAnalytics();
                         break;
                 }
+                
+                updatePageTitle(target);
             });
-        });
 
-        // Modal functionality
-        const userModal = document.getElementById('user-modal');
-        const closeModals = document.querySelectorAll('.close-modal');
-        
-        // Open user modal when clicking on user rows
-        document.querySelectorAll('#users .action-btn .fa-eye').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userModal.style.display = 'flex';
+            // Global search
+            $('#global-search').on('input', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                filterTables(searchTerm);
             });
-        });
-        
-        // Close modals
-        closeModals.forEach(closeBtn => {
-            closeBtn.addEventListener('click', function() {
-                userModal.style.display = 'none';
+
+            // Modal functionality
+            $('.close-modal').click(function() {
+                $('#user-modal, #event-modal').hide();
             });
-        });
-        
-        window.addEventListener('click', function(e) {
-            if (e.target === userModal) {
-                userModal.style.display = 'none';
+
+            $(window).click(function(e) {
+                if ($(e.target).hasClass('modal')) {
+                    $('#user-modal, #event-modal').hide();
+                }
+            });
+
+            // Button events
+            $('#btn-view-all-events').click(function() {
+                loadAllEvents();
+            });
+
+            $('#btn-export-users').click(function() {
+                exportUsers();
+            });
+
+            $('#btn-export-events').click(function() {
+                exportEvents();
+            });
+
+            $('#btn-download-report').click(function() {
+                downloadReport();
+            });
+
+            $('#btn-save-suggestion-config').click(function() {
+                saveSuggestionConfig();
+            });
+
+            $('#btn-save-settings').click(function() {
+                saveSystemSettings();
+            });
+
+            // Filter events
+            $('#user-role, #user-status').change(function() {
+                loadUsers();
+            });
+
+            $('#event-status, #event-type').change(function() {
+                loadEvents();
+            });
+
+            // Event delegation for dynamic content
+            $(document).on('click', '.btn-view-user', function() {
+                const userId = $(this).data('user-id');
+                viewUser(userId);
+            });
+
+            $(document).on('click', '.btn-toggle-user-status', function() {
+                const userId = $(this).data('user-id');
+                const isActive = $(this).data('is-active');
+                toggleUserStatus(userId, isActive);
+            });
+
+            $(document).on('click', '.btn-view-event', function() {
+                const eventId = $(this).data('event-id');
+                viewEvent(eventId);
+            });
+
+            $(document).on('click', '.btn-approve-event', function() {
+                const eventId = $(this).data('event-id');
+                approveEvent(eventId);
+            });
+
+            $(document).on('click', '.btn-reject-event', function() {
+                const eventId = $(this).data('event-id');
+                rejectEvent(eventId);
+            });
+
+            $(document).on('click', '.btn-delete-event', function() {
+                const eventId = $(this).data('event-id');
+                deleteEvent(eventId);
+            });
+        }
+
+        function updatePageTitle(section) {
+            const titles = {
+                'dashboard': ['Tổng quan hệ thống', 'Quản lý và giám sát toàn bộ hệ thống EventHub'],
+                'users': ['Quản lý người dùng', 'Quản lý tài khoản người dùng và phân quyền'],
+                'events': ['Quản lý sự kiện', 'Quản lý và giám sát tất cả sự kiện'],
+                'approvals': ['Phê duyệt sự kiện', 'Xem xét và phê duyệt sự kiện mới'],
+                'analytics': ['Thống kê hệ thống', 'Phân tích và báo cáo hệ thống'],
+                'suggestions': ['Gợi ý sự kiện', 'Quản lý thuật toán gợi ý sự kiện'],
+                'settings': ['Cài đặt hệ thống', 'Cấu hình hệ thống và tùy chọn']
+            };
+            
+            $('#page-title').text(titles[section][0]);
+            $('#page-subtitle').text(titles[section][1]);
+        }
+
+        // API Functions
+        function loadDashboardData() {
+            $.get('/admin/admin', function(data) {
+                $('#total-users').text(data.totalUsers);
+                $('#active-events').text(data.activeEvents);
+                $('#pending-events').text(data.pendingEvents);
+                $('#violation-events').text(data.violationEvents);
+                $('#notification-count').text(data.notificationCount);
+                
+                displayRecentEvents(data.recentEvents);
+            }).fail(function() {
+                showError('Lỗi tải dữ liệu dashboard');
+            });
+        }
+
+        function loadUsers() {
+            const role = $('#user-role').val();
+            const status = $('#user-status').val();
+            
+            const filters = { role: role, status: status };
+            
+            $.get('/admin/api/users', filters, function(users) {
+                currentUsers = users;
+                let html = '';
+                
+                if (users.length == 0) {
+                    html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray);">' +
+                        '<i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                        '<h3>Không tìm thấy người dùng</h3>' +
+                        '<p>Không có người dùng nào phù hợp với bộ lọc của bạn.</p>' +
+                        '</td></tr>';
+                } else {
+                    users.forEach(function(user) {
+                        const statusClass = user.trangThai == 'active' ? 'active' : 'inactive';
+                        const statusText = user.trangThai == 'active' ? 'Đang hoạt động' : 'Đã khóa';
+                        const registrationDate = user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A';
+                        
+                        html += '<tr>' +
+                            '<td>' + user.hoTen + '</td>' +
+                            '<td>' + user.email + '</td>' +
+                            '<td>' + (user.soDienThoai || 'N/A') + '</td>' +
+                            '<td>' + user.vaiTro + '</td>' +
+                            '<td>' + registrationDate + '</td>' +
+                            '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+                            '<td class="action-buttons">' +
+                                '<div class="action-btn btn-view-user" data-user-id="' + user.nguoiDungId + '" title="Xem chi tiết">' +
+                                    '<i class="fas fa-eye"></i>' +
+                                '</div>' +
+                                '<div class="action-btn btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 'active') + '" title="' + (user.trangThai == 'active' ? 'Khóa' : 'Mở khóa') + ' tài khoản">' +
+                                    '<i class="fas ' + (user.trangThai == 'active' ? 'fa-lock' : 'fa-unlock') + '"></i>' +
+                                '</div>' +
+                            '</td>' +
+                        '</tr>';
+                    });
+                }
+                $('#users-tbody').html(html);
+            }).fail(function() {
+                showError('Lỗi tải danh sách người dùng');
+            });
+        }
+
+        function loadEvents() {
+            const status = $('#event-status').val();
+            const type = $('#event-type').val();
+            
+            const filters = { status: status, type: type };
+            
+            $.get('/admin/api/events', filters, function(events) {
+                currentEvents = events;
+                let html = '';
+                
+                if (events.length == 0) {
+                    html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray);">' +
+                        '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                        '<h3>Không tìm thấy sự kiện</h3>' +
+                        '<p>Không có sự kiện nào phù hợp với bộ lọc của bạn.</p>' +
+                        '</td></tr>';
+                } else {
+                    events.forEach(function(event) {
+                        const statusClass = getEventStatusClass(event.trangThai);
+                        const statusText = getEventStatusText(event.trangThai);
+                        const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
+                        const eventType = event.loaiSuKien == 'CongKhai' ? 'Công khai' : 'Riêng tư';
+                        
+                        html += '<tr>' +
+                            '<td>' + event.tenSuKien + '</td>' +
+                            '<td>' + (event.organizerName || 'N/A') + '</td>' +
+                            '<td>' + eventDate + '</td>' +
+                            '<td>' + event.diaDiem + '</td>' +
+                            '<td>' + eventType + '</td>' +
+                            '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+                            '<td class="action-buttons">' +
+                                '<div class="action-btn btn-view-event" data-event-id="' + event.suKienId + '" title="Xem chi tiết">' +
+                                    '<i class="fas fa-eye"></i>' +
+                                '</div>' +
+                                '<div class="action-btn" title="Chỉnh sửa">' +
+                                    '<i class="fas fa-edit"></i>' +
+                                '</div>' +
+                                '<div class="action-btn btn-delete-event" data-event-id="' + event.suKienId + '" title="Xóa">' +
+                                    '<i class="fas fa-trash"></i>' +
+                                '</div>' +
+                            '</td>' +
+                        '</tr>';
+                    });
+                }
+                $('#events-tbody').html(html);
+            }).fail(function() {
+                showError('Lỗi tải danh sách sự kiện');
+            });
+        }
+
+        function loadPendingEvents() {
+            $.get('/admin/api/events/pending', function(data) {
+                $('#pending-count').text(data.length + ' sự kiện chờ duyệt');
+                let html = '';
+                
+                if (data.length == 0) {
+                    html = '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
+                        '<i class="fas fa-clipboard-check" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                        '<h3>Không có sự kiện chờ duyệt</h3>' +
+                        '<p>Tất cả sự kiện đã được xử lý.</p>' +
+                        '</div>';
+                } else {
+                    data.forEach(function(event) {
+                        const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
+                        
+                        html += '<div class="event-card">' +
+                            '<div class="event-image">' +
+                                '<i class="fas fa-calendar-alt"></i>' +
+                            '</div>' +
+                            '<div class="event-content">' +
+                                '<h4 class="event-title">' + event.tenSuKien + '</h4>' +
+                                '<div class="event-meta">' +
+                                    '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
+                                    '<span><i class="fas fa-map-marker-alt"></i> ' + event.diaDiem + '</span>' +
+                                '</div>' +
+                                '<p>' + (event.moTa ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : 'Không có mô tả') + '</p>' +
+                                '<div class="event-footer">' +
+                                    '<div class="action-buttons">' +
+                                        '<div class="action-btn btn-approve-event" data-event-id="' + event.suKienId + '" title="Phê duyệt">' +
+                                            '<i class="fas fa-check"></i>' +
+                                        '</div>' +
+                                        '<div class="action-btn btn-reject-event" data-event-id="' + event.suKienId + '" title="Từ chối">' +
+                                            '<i class="fas fa-times"></i>' +
+                                        '</div>' +
+                                        '<div class="action-btn btn-view-event" data-event-id="' + event.suKienId + '" title="Xem chi tiết">' +
+                                            '<i class="fas fa-eye"></i>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
+                    });
+                }
+                $('#pending-events-list').html(html);
+            }).fail(function() {
+                showError('Lỗi tải sự kiện chờ duyệt');
+            });
+        }
+
+        function loadAnalytics() {
+            $.get('/admin/api/analytics', function(data) {
+                $('#stat-total-users').text(data.totalUsers);
+                $('#stat-active-events').text(data.activeEvents);
+                $('#stat-pending-events').text(data.pendingEvents);
+                $('#stat-avg-participation').text(data.avgParticipation + '%');
+            }).fail(function() {
+                showError('Lỗi tải dữ liệu thống kê');
+            });
+        }
+
+        // Display Functions
+        function displayRecentEvents(events) {
+            let html = '';
+            
+            if (events.length == 0) {
+                html = '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
+                    '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                    '<h3>Không có sự kiện gần đây</h3>' +
+                    '<p>Hiện tại không có sự kiện nào để hiển thị.</p>' +
+                    '</div>';
+            } else {
+                events.forEach(function(event) {
+                    const statusClass = getEventStatusClass(event.trangThai);
+                    const statusText = getEventStatusText(event.trangThai);
+                    const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
+                    
+                    html += '<div class="event-card">' +
+                        '<div class="event-image">' +
+                            '<i class="fas fa-calendar-alt"></i>' +
+                        '</div>' +
+                        '<div class="event-content">' +
+                            '<h4 class="event-title">' + event.tenSuKien + '</h4>' +
+                            '<div class="event-meta">' +
+                                '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
+                                '<span><i class="fas fa-map-marker-alt"></i> ' + event.diaDiem + '</span>' +
+                            '</div>' +
+                            '<p>' + (event.moTa ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : 'Không có mô tả') + '</p>' +
+                            '<div class="event-footer">' +
+                                '<span class="status ' + statusClass + '">' + statusText + '</span>' +
+                                '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + ' người</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                });
             }
-        });
+            $('#recent-events').html(html);
+        }
 
-        // Search functionality
-        const searchInput = document.querySelector('.search-box input');
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const userRows = document.querySelectorAll('#users tbody tr');
-            const eventRows = document.querySelectorAll('#events tbody tr');
+        // Action Functions
+        function viewUser(userId) {
+            $.get('/admin/api/users/' + userId, function(user) {
+                const registrationDate = user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A';
+                
+                const content = `
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px;">
+                            ${user.hoTen ? user.hoTen.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 5px;">${user.hoTen}</h4>
+                            <p>${user.vaiTro}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <p>${user.email}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại:</label>
+                            <p>${user.soDienThoai || 'N/A'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Địa chỉ:</label>
+                        <p>${user.diaChi || 'N/A'}</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ngày đăng ký:</label>
+                        <p>${registrationDate}</p>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Chỉnh sửa
+                        </button>
+                        <button class="btn btn-danger btn-toggle-user-status" data-user-id="${user.nguoiDungId}" data-is-active="${user.trangThai == 'active'}">
+                            <i class="fas ${user.trangThai == 'active' ? 'fa-lock' : 'fa-unlock'}"></i>
+                            ${user.trangThai == 'active' ? 'Khóa' : 'Mở khóa'} tài khoản
+                        </button>
+                    </div>
+                `;
+                $('#user-modal-content').html(content);
+                $('#user-modal').show();
+            }).fail(function() {
+                showError('Lỗi tải thông tin người dùng');
+            });
+        }
+
+        function viewEvent(eventId) {
+            $.get('/admin/api/events/' + eventId, function(event) {
+                const startDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleString('vi-VN') : 'N/A';
+                const endDate = event.thoiGianKetThuc ? new Date(event.thoiGianKetThuc).toLocaleString('vi-VN') : 'N/A';
+                const eventType = event.loaiSuKien == 'CongKhai' ? 'Công khai' : 'Riêng tư';
+                const statusClass = getEventStatusClass(event.trangThai);
+                const statusText = getEventStatusText(event.trangThai);
+                
+                const content = `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px;">${event.tenSuKien}</h4>
+                        <p>${event.moTa}</p>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Người tổ chức:</label>
+                            <p>${event.organizerName || 'N/A'}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Địa điểm:</label>
+                            <p>${event.diaDiem}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Thời gian bắt đầu:</label>
+                            <p>${startDate}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Thời gian kết thúc:</label>
+                            <p>${endDate}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Loại sự kiện:</label>
+                            <p>${eventType}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Trạng thái:</label>
+                            <p><span class="status ${statusClass}">${statusText}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Số lượng tối đa:</label>
+                            <p>${event.soLuongToiDa}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Đã đăng ký:</label>
+                            <p>${event.soLuongDaDangKy}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Chỉnh sửa
+                        </button>
+                        <button class="btn btn-danger btn-delete-event" data-event-id="${event.suKienId}">
+                            <i class="fas fa-trash"></i> Xóa sự kiện
+                        </button>
+                    </div>
+                `;
+                $('#event-modal-content').html(content);
+                $('#event-modal').show();
+            }).fail(function() {
+                showError('Lỗi tải thông tin sự kiện');
+            });
+        }
+
+        function toggleUserStatus(userId, isActive) {
+            const action = isActive ? 'lock' : 'unlock';
+            const confirmMessage = isActive ? 
+                'Bạn có chắc chắn muốn khóa tài khoản này?' : 
+                'Bạn có chắc chắn muốn mở khóa tài khoản này?';
             
-            // Search in users table
-            userRows.forEach(row => {
-                const name = row.cells[0].textContent.toLowerCase();
-                const email = row.cells[1].textContent.toLowerCase();
-                
-                if (name.includes(searchTerm) || email.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            
-            // Search in events table
-            eventRows.forEach(row => {
-                const title = row.cells[0].textContent.toLowerCase();
-                const organizer = row.cells[1].textContent.toLowerCase();
-                
-                if (title.includes(searchTerm) || organizer.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
+            if (confirm(confirmMessage)) {
+                $.post('/admin/api/users/' + userId + '/status', { action: action }, function() {
+                    showSuccess(`Đã ${isActive ? 'khóa' : 'mở khóa'} tài khoản thành công`);
+                    loadUsers();
+                    $('#user-modal').hide();
+                }).fail(function() {
+                    showError('Lỗi cập nhật trạng thái người dùng');
+                });
+            }
+        }
 
-        // User account actions
-        document.querySelectorAll('#users .action-btn .fa-lock').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const row = this.closest('tr');
-                const statusCell = row.querySelector('.status');
-                
-                if (statusCell.textContent === 'Đang hoạt động') {
-                    if (confirm('Bạn có chắc chắn muốn khóa tài khoản này?')) {
-                        statusCell.textContent = 'Đã khóa';
-                        statusCell.className = 'status inactive';
-                        this.className = 'fas fa-unlock';
-                        this.parentNode.title = 'Mở khóa tài khoản';
+        function approveEvent(eventId) {
+            if (confirm('Bạn có chắc chắn muốn phê duyệt sự kiện này?')) {
+                $.post('/admin/api/events/' + eventId + '/approve', function() {
+                    showSuccess('Đã phê duyệt sự kiện thành công');
+                    loadPendingEvents();
+                    loadDashboardData();
+                }).fail(function() {
+                    showError('Lỗi phê duyệt sự kiện');
+                });
+            }
+        }
+
+        function rejectEvent(eventId) {
+            if (confirm('Bạn có chắc chắn muốn từ chối sự kiện này?')) {
+                $.post('/admin/api/events/' + eventId + '/reject', function() {
+                    showSuccess('Đã từ chối sự kiện thành công');
+                    loadPendingEvents();
+                    loadDashboardData();
+                }).fail(function() {
+                    showError('Lỗi từ chối sự kiện');
+                });
+            }
+        }
+
+        function deleteEvent(eventId) {
+            if (confirm('Bạn có chắc chắn muốn xóa sự kiện này?')) {
+                $.ajax({
+                    url: '/admin/api/events/' + eventId,
+                    method: 'DELETE',
+                    success: function() {
+                        showSuccess('Đã xóa sự kiện thành công');
+                        loadEvents();
+                        $('#event-modal').hide();
+                    },
+                    error: function() {
+                        showError('Lỗi xóa sự kiện');
                     }
-                } else {
-                    if (confirm('Bạn có chắc chắn muốn mở khóa tài khoản này?')) {
-                        statusCell.textContent = 'Đang hoạt động';
-                        statusCell.className = 'status active';
-                        this.className = 'fas fa-lock';
-                        this.parentNode.title = 'Khóa tài khoản';
-                    }
-                }
-            });
-        });
+                });
+            }
+        }
 
-        // Event approval actions
-        document.querySelectorAll('#approvals .action-btn .fa-check').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const card = this.closest('.event-card');
-                if (confirm('Bạn có chắc chắn muốn phê duyệt sự kiện này?')) {
-                    card.style.opacity = '0.5';
-                    setTimeout(() => {
-                        card.remove();
-                        // Update pending count
-                        const pendingCount = document.querySelector('#approvals .status.pending');
-                        if (pendingCount) {
-                            const currentCount = parseInt(pendingCount.textContent);
-                            pendingCount.textContent = (currentCount - 1) + ' sự kiện chờ duyệt';
-                        }
-                    }, 500);
-                }
-            });
-        });
+        // Utility Functions
+        function getEventStatusClass(status) {
+            const classes = {
+                'SapDienRa': 'pending',
+                'DangDienRa': 'approved',
+                'DaKetThuc': 'completed',
+                'Huy': 'cancelled'
+            };
+            return classes[status] || 'pending';
+        }
 
-        document.querySelectorAll('#approvals .action-btn .fa-times').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const card = this.closest('.event-card');
-                if (confirm('Bạn có chắc chắn muốn từ chối sự kiện này?')) {
-                    card.style.opacity = '0.5';
-                    setTimeout(() => {
-                        card.remove();
-                        // Update pending count
-                        const pendingCount = document.querySelector('#approvals .status.pending');
-                        if (pendingCount) {
-                            const currentCount = parseInt(pendingCount.textContent);
-                            pendingCount.textContent = (currentCount - 1) + ' sự kiện chờ duyệt';
-                        }
-                    }, 500);
+        function getEventStatusText(status) {
+            const texts = {
+                'SapDienRa': 'Sắp diễn ra',
+                'DangDienRa': 'Đang diễn ra',
+                'DaKetThuc': 'Đã kết thúc',
+                'Huy': 'Đã hủy'
+            };
+            return texts[status] || status;
+        }
+
+        function filterTables(searchTerm) {
+            // Filter users table
+            $('#users-tbody tr').each(function() {
+                const text = $(this).text().toLowerCase();
+                $(this).toggle(text.includes(searchTerm));
+            });
+
+            // Filter events table
+            $('#events-tbody tr').each(function() {
+                const text = $(this).text().toLowerCase();
+                $(this).toggle(text.includes(searchTerm));
+            });
+        }
+
+        function showSuccess(message) {
+            alert('Thành công: ' + message); // Có thể thay bằng toast notification
+        }
+
+        function showError(message) {
+            alert('Lỗi: ' + message); // Có thể thay bằng toast notification
+        }
+
+        // Export and other functions
+        function exportUsers() {
+            window.open('/admin/api/users/export', '_blank');
+        }
+
+        function exportEvents() {
+            window.open('/admin/api/events/export', '_blank');
+        }
+
+        function downloadReport() {
+            window.open('/admin/api/analytics/report', '_blank');
+        }
+
+        function saveSuggestionConfig() {
+            const algorithm = $('#suggestion-algorithm').val();
+            const factors = {
+                history: $('#factor-history').is(':checked'),
+                participation: $('#factor-participation').is(':checked'),
+                preferences: $('#factor-preferences').is(':checked')
+            };
+
+            $.ajax({
+                url: '/admin/api/suggestions/config',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ algorithm: algorithm, factors: factors }),
+                success: function() {
+                    showSuccess('Đã lưu cấu hình gợi ý');
+                },
+                error: function() {
+                    showError('Lỗi lưu cấu hình');
                 }
             });
-        });
+        }
+
+        function saveSystemSettings() {
+            const systemName = $('#system-name').val();
+            const systemDescription = $('#system-description').val();
+
+            $.ajax({
+                url: '/admin/api/settings',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ 
+                    systemName: systemName, 
+                    systemDescription: systemDescription 
+                }),
+                success: function() {
+                    showSuccess('Đã lưu cài đặt hệ thống');
+                    },
+                error: function() {
+                    showError('Lỗi lưu cài đặt');
+                }
+            });
+        }
+
+        function loadAllEvents() {
+            // Switch to events tab and load all events
+            $('.menu-link[data-target="events"]').click();
+        }
     </script>
 </body>
 </html>

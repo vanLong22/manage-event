@@ -1003,6 +1003,306 @@
             flex: 1;
             color: #333;
         }
+
+        /* Modal chi tiết sự kiện - CẢI THIỆN */
+        .event-detail-modal {
+            max-width: 700px;
+        }
+
+        .event-detail-header {
+            padding: 25px 30px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .event-detail-header h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .event-detail-body {
+            padding: 0;
+        }
+
+        .event-detail-hero {
+            position: relative;
+            height: 300px;
+            overflow: hidden;
+        }
+
+        .event-detail-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .event-detail-hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            padding: 30px;
+            color: white;
+        }
+
+        .event-detail-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            line-height: 1.2;
+        }
+
+        .event-detail-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .event-detail-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .event-detail-meta-item i {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .event-detail-content {
+            padding: 30px;
+        }
+
+        .event-detail-section {
+            margin-bottom: 25px;
+        }
+
+        .event-detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .event-detail-section h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-detail-section h4 i {
+            color: var(--primary);
+        }
+
+        .event-detail-description {
+            line-height: 1.7;
+            color: #555;
+            font-size: 15px;
+            white-space: pre-wrap;
+        }
+
+        .event-detail-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .event-detail-stat {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--primary);
+        }
+
+        .event-detail-stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .event-detail-stat-label {
+            font-size: 12px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .event-detail-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .event-detail-tag {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .event-detail-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 20px 30px;
+            border-top: 1px solid #f0f0f0;
+            background: #fafbfc;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .event-detail-modal {
+                margin: 20px;
+                width: calc(100% - 40px);
+            }
+            
+            .event-detail-hero {
+                height: 200px;
+            }
+            
+            .event-detail-title {
+                font-size: 22px;
+            }
+            
+            .event-detail-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .event-detail-content {
+                padding: 20px;
+            }
+            
+            .event-detail-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .event-detail-actions {
+                flex-direction: column;
+            }
+            
+            .event-detail-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Animation cho modal */
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-content {
+            animation: modalSlideUp 0.3s ease;
+        }
+
+        /* CSS cho trường mã sự kiện riêng tư */
+        #event-code-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        #event-code-group label {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 15px;
+        }
+
+        #event-code {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        #event-code:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            outline: none;
+        }
+
+        #event-code-group small {
+            display: block;
+            margin-top: 8px;
+            color: #7f8c8d;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* Hiệu ứng khi hiển thị */
+        #event-code-group.show {
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Trạng thái lỗi */
+        #event-code.error {
+            border-color: var(--danger);
+            background-color: #fff5f5;
+        }
+
+        #event-code.success {
+            border-color: var(--success);
+            background-color: #f0fff4;
+        }
+
+        /* Icon cho trường mã */
+        .code-input-container {
+            position: relative;
+        }
+
+        .code-input-container i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .code-input-container:focus-within i {
+            color: var(--primary);
+        }
     </style>
 
 
@@ -1306,7 +1606,20 @@
                                     <td><c:out value="${registration.suKien.diaDiem}"/></td>
                                     <td>
                                         <span class="status ${fn:toLowerCase(registration.trangThai)}">
-                                            <c:out value="${registration.trangThai}"/>
+                                            <c:choose>
+                                                <c:when test="${registration.trangThai == 'DaDuyet'}">
+                                                    Đã duyệt
+                                                </c:when>
+                                                <c:when test="${registration.trangThai == 'ChoDuyet'}">
+                                                    Chờ duyệt
+                                                </c:when>
+                                                <c:when test="${registration.trangThai == 'TuChoi'}">
+                                                    Từ chối
+                                                </c:when>
+                                                <c:otherwise>
+                                                    Không xác định
+                                                </c:otherwise>
+                                            </c:choose>
                                         </span>
                                     </td>
                                     <td class="action-buttons">
@@ -1525,9 +1838,9 @@
                                     <td>
                                         <span class="status ${fn:toLowerCase(suggestion.trangThai)}">
                                             <c:choose>
-                                                <c:when test="${suggestion.trangThai == 'CHO_DUYET'}">Chờ duyệt</c:when>
-                                                <c:when test="${suggestion.trangThai == 'DA_DUYET'}">Đã duyệt</c:when>
-                                                <c:when test="${suggestion.trangThai == 'TU_CHOI'}">Từ chối</c:when>
+                                                <c:when test="${suggestion.trangThai == 'ChoDuyet'}">Chờ duyệt</c:when>
+                                                <c:when test="${suggestion.trangThai == 'DaDuyet'}">Đã duyệt</c:when>
+                                                <c:when test="${suggestion.trangThai == 'TuChoi'}">Từ chối</c:when>
                                                 <c:otherwise><c:out value="${suggestion.trangThai}"/></c:otherwise>
                                             </c:choose>
                                         </span>
@@ -1876,9 +2189,23 @@
 
                     const formatDate = (dateStr) => {
                         if (!dateStr) return 'Chưa xác định';
-                        const date = new Date(dateStr);
-                        return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+                        try {
+                            const date = new Date(dateStr);
+                            if (isNaN(date.getTime())) return 'Chưa xác định';
+                            return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+                        } catch (e) {
+                            return 'Chưa xác định';
+                        }
                     };
+
+                    // Mapping trạng thái sang tiếng Việt
+                    const statusMap = {
+                        'DangDienRa': 'Đang diễn ra',
+                        'SapDienRa': 'Sắp diễn ra', 
+                        'DaKetThuc': 'Đã kết thúc'
+                    };
+                    
+                    const trangThaiText = statusMap[event.trangThai] || event.trangThai || 'Không xác định';
 
                     const html = 
                         '<div class="event-image" style="margin-bottom: 20px;">' +
@@ -1894,11 +2221,11 @@
                         '<div style="display: flex; gap: 20px; margin-bottom: 20px;">' +
                             '<div>' +
                                 '<label style="font-weight: 600; color: #555;">Trạng thái:</label>' +
-                                '<span class="status ' + (event.trangThai ? event.trangThai.toLowerCase() : '') + '" style="margin-left: 8px;">' + (event.trangThai || 'Không xác định') + '</span>' +
+                                '<span class="status ' + (event.trangThai ? event.trangThai.toLowerCase() : '') + '" style="margin-left: 8px;">' + trangThaiText + '</span>' +
                             '</div>' +
                             '<div>' +
                                 '<label style="font-weight: 600; color: #555;">Loại sự kiện:</label>' +
-                                '<span style="margin-left: 8px;">' + (event.loaiSuKien || 'Không xác định') + '</span>' +
+                                '<span style="margin-left: 8px;">' + (event.loaiSuKien == 'RiengTu' ? 'Riêng tư' : 'Công khai') + '</span>' +
                             '</div>' +
                         '</div>' +
                         '<div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">' +
@@ -1915,7 +2242,8 @@
                     console.error('Error loading event detail:', error);
                     alert('Không tải được thông tin sự kiện: ' + error);
                 });
-        }
+        }    
+    
 
         // Tham gia sự kiện từ modal
         $(document).on('click', '.btn-join-event-from-modal', function() {
@@ -1954,7 +2282,7 @@
                     $('#modal-event-capacity').text((event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + ' người');
                     
                     // Hiển thị mã sự kiện nếu là sự kiện riêng tư
-                    if (event.loaiSuKien == 'RIENG_TU') {
+                    if (event.loaiSuKien == 'RiengTu') {
                         $('#event-code-group').show();
                     } else {
                         $('#event-code-group').hide();
@@ -2626,7 +2954,7 @@
         $('#view-all-upcoming').click(function() {
             $('.menu-link[data-target="events"]').click();
         });
-
+        
         // Filter events
         $('.filter-section select').change(function() {
             const filters = {

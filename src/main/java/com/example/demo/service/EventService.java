@@ -81,4 +81,16 @@ public class EventService {
     public void deleteSuKien(Long id) {
         eventRepository.delete(id);
     }
+
+    // Hàm đã viết lại để thực hiện chức năng filter (hỗ trợ lọc theo nhiều tiêu chí: keyword, status, privacy, categoryId)
+    public List<Event> searchEventsWithFilters(String keyword, String status, String privacy, Long categoryId) {
+        // Nếu không có tiêu chí lọc nào, trả về danh sách rỗng hoặc tất cả (tùy theo yêu cầu, ở đây giả sử trả về rỗng nếu không có keyword chính)
+        if ((keyword == null || keyword.trim().isEmpty()) && (status == null || status.trim().isEmpty()) 
+                && (privacy == null || privacy.trim().isEmpty()) && categoryId == null) {
+            return List.of();
+        }
+
+        // Gọi repository để thực hiện filter ở mức SQL cho hiệu suất
+        return eventRepository.searchEventsWithFilters(keyword != null ? keyword.trim() : null, status, privacy, categoryId);
+    }
 }

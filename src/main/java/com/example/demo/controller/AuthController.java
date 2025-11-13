@@ -133,7 +133,7 @@ public class AuthController {
             userService.save(user);
             
             model.addAttribute("message", "Đăng ký thành công! Vui lòng đăng nhập.");
-            return "redirect:/dndk?success=true";
+            return "dndk";
 
         } catch (Exception e) {
             e.printStackTrace();

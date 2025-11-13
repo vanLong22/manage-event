@@ -47,7 +47,7 @@ public class UserRepository {
     public void save(User user) {
         String sql = "INSERT INTO nguoi_dung (ten_dang_nhap, mat_khau, email, so_dien_thoai, ho_ten, " +
                      "dia_chi, gioi_tinh, anh_dai_dien, vai_tro, ngay_tao) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now())";
         
         jdbcTemplate.update(sql, 
             user.getTenDangNhap(),
@@ -58,8 +58,7 @@ public class UserRepository {
             user.getDiaChi(),
             user.getGioiTinh(),
             user.getAnhDaiDien(),
-            user.getVaiTro(),
-            user.getNgayTao()
+            user.getVaiTro()
         );
     }
 

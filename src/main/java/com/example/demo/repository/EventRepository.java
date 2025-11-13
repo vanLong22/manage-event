@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -69,26 +70,49 @@ public class EventRepository {
         String sql = """
             SELECT * FROM su_kien 
             WHERE (ten_su_kien LIKE ? OR mo_ta LIKE ? OR dia_diem LIKE ?)
-            AND loai_su_kien = 'CongKhai'
             AND trang_thai IN ('SapDienRa', 'DangDienRa')
-            ORDER BY 
-            CASE 
-                WHEN ten_su_kien LIKE ? THEN 1
-                WHEN mo_ta LIKE ? THEN 2
-                ELSE 3 
-            END,
-            thoi_gian_bat_dau DESC
             LIMIT 10
             """;
 
         String likePattern = "%" + keyword + "%";
-        String exactPattern = keyword + "%";
 
         return jdbcTemplate.query(sql, 
             new BeanPropertyRowMapper<>(Event.class),
-            likePattern, likePattern, likePattern,
-            exactPattern, exactPattern
+            likePattern, likePattern, likePattern
         );
+    }
+
+    // Trong EventRepository.java
+    public List<Event> searchEventsWithFilters(String keyword, String status, String privacy, Long categoryId) {
+        String sql = "SELECT * FROM su_kien WHERE 1=1";
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.isEmpty()) {
+            String likePattern = "%" + keyword + "%";
+            sql += " AND (ten_su_kien LIKE ? OR mo_ta LIKE ? OR dia_diem LIKE ?)";
+            params.add(likePattern);
+            params.add(likePattern);
+            params.add(likePattern);
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql += " AND trang_thai = ?";
+            params.add(status);
+        }
+
+        if (privacy != null && !privacy.isEmpty()) {
+            sql += " AND loai_su_kien = ?";
+            params.add(privacy);
+        }
+
+        if (categoryId != null) {
+            sql += " AND loai_su_kien_id = ?";
+            params.add(categoryId);
+        }
+
+        sql += " ORDER BY thoi_gian_bat_dau ASC";
+
+        return jdbcTemplate.query(sql, params.toArray(), new BeanPropertyRowMapper<>(Event.class));
     }
 
     public List<Event> findByOrganizer(Long organizerId) {

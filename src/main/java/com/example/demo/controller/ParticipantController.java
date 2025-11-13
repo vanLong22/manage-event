@@ -85,27 +85,50 @@ public class ParticipantController {
         return ResponseEntity.ok(event);
     }
 
+
     // API: Tham gia sự kiện
     @PostMapping(value = "/api/register-event", consumes = "application/json")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerEvent(@RequestBody Map<String, Object> payload, HttpSession session) {
+        System.out.println("Received registration payload: " + payload);
+
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
-
-        System.err.println("Payload received: " + payload); // Debug
 
         try {
             Long suKienId = Long.valueOf(payload.get("suKienId").toString());
             String ghiChu = (String) payload.get("ghiChu");
+            String maSuKien = (String) payload.get("maSuKien"); 
 
-            registrationService.registerEvent(userId, suKienId, ghiChu);
+            // Lấy thông tin sự kiện để kiểm tra
+            Event event = eventService.getEventById(suKienId);
+            if (event == null) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Sự kiện không tồn tại"));
+            }
+
+            // Kiểm tra nếu sự kiện là riêng tư
+            boolean isPrivate = "RiengTu".equals(event.getLoaiSuKien()); 
+            if (isPrivate) {
+                // Nếu riêng tư, yêu cầu mã và kiểm tra tính hợp lệ
+                if (maSuKien == null || maSuKien.trim().isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mã sự kiện là bắt buộc cho sự kiện riêng tư"));
+                }
+                if (!maSuKien.equals(event.getMatKhauSuKienRiengTu())) {  
+                    return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mã sự kiện không đúng"));
+                }
+            } else {
+                // Nếu công khai, không cần mã (có thể bỏ qua nếu được gửi)
+                maSuKien = null; // Đặt null để không sử dụng
+            }
+
+            // Gọi service để đăng ký (giữ nguyên)
+            registrationService.registerEvent(userId, suKienId, ghiChu, maSuKien);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công!"));
         } catch (Exception e) {
-            e.printStackTrace(); // Debug
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-
+    
     // API: Hủy đăng ký
     @PostMapping("/api/cancel-registration")
     @ResponseBody
@@ -131,9 +154,27 @@ public class ParticipantController {
 
     // AJAX: Load tất cả sự kiện
     @GetMapping("/api/events")
-    public ResponseEntity<List<Event>> getAllEvents(@RequestParam Map<String, String> filters) {
-        // TODO: Áp dụng filter (type, date, location, sort)
-        return ResponseEntity.ok(eventService.getAllEvents());
+    public ResponseEntity<List<Event>> getEvents(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String privacy,  // New: for loaiSuKien (CongKhai/RiengTu)
+            @RequestParam(required = false) Long categoryId  // New: for loaiSuKienId
+    ) {
+
+        System.out.println("Filters - keyword: " + keyword + ", status: " + status + ", privacy: " + privacy + ", categoryId: " + categoryId); // Debug
+
+        // Call the rewritten searchEvents method
+        List<Event> events = eventService.searchEventsWithFilters(keyword, status, privacy, categoryId);
+
+        // Optional: Add organizer names or other processing if needed
+        events.forEach(event -> {
+            User organizer = userService.findById(event.getNguoiToChucId());
+            if (organizer != null) {
+                // Handle in frontend or add transient field
+            }
+        });
+
+        return ResponseEntity.ok(events);
     }
 
     // AJAX: Load sự kiện của tôi
@@ -200,6 +241,7 @@ public class ParticipantController {
     @ResponseBody
     public ResponseEntity<List<Event>> searchEvents(@RequestParam String q) {
         List<Event> results = eventService.searchEvents(q);
+        System.out.println("Search query: " + q + ", Results found: " + results.size()); // Debug
         return ResponseEntity.ok(results);
     }
     

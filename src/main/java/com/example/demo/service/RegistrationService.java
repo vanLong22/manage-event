@@ -25,7 +25,7 @@ public class RegistrationService {
         return registrationRepository.findByUserId(userId);
     }
 
-    public void registerEvent(Long userId, Long suKienId, String ghiChu) {
+    public void registerEvent(Long userId, Long suKienId, String ghiChu, String maSuKien)  {
         // Tạo đối tượng Registration
         Registration registration = new Registration();
         registration.setNguoiDungId(userId);

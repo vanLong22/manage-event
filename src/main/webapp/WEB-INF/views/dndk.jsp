@@ -9,7 +9,6 @@
     <title>EventHub - Đăng nhập & Đăng ký</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Giữ nguyên tất cả CSS cũ */
         :root {
             --primary: #4a6bff;
             --primary-light: #e8ecff;
@@ -52,6 +51,7 @@
             border-radius: var(--border-radius);
             overflow: hidden;
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
         }
 
         .welcome-section {
@@ -64,6 +64,7 @@
             justify-content: center;
             position: relative;
             overflow: hidden;
+            transition: var(--transition);
         }
 
         .welcome-section::before {
@@ -119,6 +120,7 @@
             flex-direction: column;
             justify-content: center;
             position: relative;
+            overflow: hidden;
         }
 
         .logo {
@@ -141,6 +143,7 @@
 
         .form-container {
             width: 100%;
+            position: relative;
         }
 
         .form-title {
@@ -158,6 +161,7 @@
 
         .form {
             width: 100%;
+            transition: var(--transition);
         }
 
         .form-group {
@@ -305,30 +309,33 @@
             text-decoration: underline;
         }
 
-        /* Thêm CSS cho chuyển đổi form */
+        /* CSS cải tiến cho chuyển đổi form */
         #register-form {
-            display: none;
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
+            width: 100%;
+            height: 100%;
             background: white;
             padding: 40px;
             transform: translateX(100%);
-            transition: transform 0.5s ease;
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.3s ease;
+            overflow-y: auto;
         }
 
         #register-form.active {
-            display: block;
             transform: translateX(0);
+            opacity: 1;
         }
 
         #login-form {
-            transition: transform 0.5s ease;
+            transition: transform 0.5s ease, opacity 0.3s ease;
         }
 
         #login-form.hidden {
             transform: translateX(-100%);
+            opacity: 0;
         }
 
         .back-to-login {
@@ -413,15 +420,65 @@
             font-size: 14px;
         }
 
+        /* Thêm style cho validation */
+        .error-message {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group.error input, 
+        .form-group.error select {
+            border-color: var(--danger);
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        .form-group.success input, 
+        .form-group.success select {
+            border-color: var(--success);
+        }
+
+        /* Loading state */
+        .btn.loading {
+            position: relative;
+            pointer-events: none;
+            color: transparent;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s ease infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
                 max-width: 450px;
+                min-height: auto;
             }
             
             .welcome-section {
                 padding: 30px;
+                display: none;
             }
             
             .form-section {
@@ -440,15 +497,30 @@
             #register-form {
                 position: relative;
                 transform: translateX(0);
+                opacity: 0;
                 display: none;
+                height: auto;
             }
             
             #register-form.active {
                 display: block;
+                opacity: 1;
             }
             
             #login-form.hidden {
                 display: none;
+            }
+
+            .mobile-welcome {
+                display: block;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .mobile-welcome h2 {
+                font-size: 22px;
+                color: var(--primary);
+                margin-bottom: 10px;
             }
         }
 
@@ -482,6 +554,11 @@
 
         <!-- Form Section -->
         <div class="form-section">
+            <div class="mobile-welcome">
+                <h2>EventHub</h2>
+                <p>Kết nối với cộng đồng sự kiện</p>
+            </div>
+            
             <div class="logo">
                 <i class="fas fa-calendar-alt"></i>
                 <h1>EventHub</h1>
@@ -510,12 +587,14 @@
                             <label for="username">Tên đăng nhập *</label>
                             <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
                             <i class="fas fa-user input-icon"></i>
+                            <div class="error-message" id="username-error">Vui lòng nhập tên đăng nhập</div>
                         </div>
 
                         <div class="form-group">
                             <label for="password">Mật khẩu *</label>
                             <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
                             <i class="fas fa-lock input-icon"></i>
+                            <div class="error-message" id="password-error">Vui lòng nhập mật khẩu</div>
                         </div>
 
                         <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
@@ -526,7 +605,7 @@
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="login-btn">
                                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
                             </button>
                         </div>
@@ -574,22 +653,24 @@
                                     <i class="fas fa-user"></i>
                                     <span>Người tham gia</span>
                                 </div>
-                                <div class="role-option" data-role="ORGANIZER">
+                                <div class="role-option" data-role="ToChuc">
                                     <i class="fas fa-users"></i>
                                     <span>Người tổ chức</span>
                                 </div>
                             </div>
-                            <input type="hidden" id="vaiTro" name="vaiTro" value="PARTICIPANT" required>
+                            <input type="hidden" id="vaiTro" name="vaiTro" value="NguoiDung" required>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="hoTen">Họ tên *</label>
                                 <input type="text" id="hoTen" name="hoTen" value="${user.hoTen}" placeholder="Nhập họ tên" required>
+                                <div class="error-message" id="hoTen-error">Vui lòng nhập họ tên</div>
                             </div>
                             <div class="form-group">
                                 <label for="tenDangNhap">Tên đăng nhập *</label>
                                 <input type="text" id="tenDangNhap" name="tenDangNhap" value="${user.tenDangNhap}" placeholder="Nhập tên đăng nhập" required>
+                                <div class="error-message" id="tenDangNhap-error">Vui lòng nhập tên đăng nhập</div>
                             </div>
                         </div>
 
@@ -597,24 +678,28 @@
                             <label for="email">Email *</label>
                             <input type="email" id="email" name="email" value="${user.email}" placeholder="Nhập địa chỉ email" required>
                             <i class="fas fa-envelope input-icon"></i>
+                            <div class="error-message" id="email-error">Vui lòng nhập email hợp lệ</div>
                         </div>
 
                         <div class="form-group">
                             <label for="soDienThoai">Số điện thoại</label>
                             <input type="tel" id="soDienThoai" name="soDienThoai" value="${user.soDienThoai}" placeholder="Nhập số điện thoại">
                             <i class="fas fa-phone input-icon"></i>
+                            <div class="error-message" id="soDienThoai-error">Vui lòng nhập số điện thoại hợp lệ</div>
                         </div>
 
                         <div class="form-group">
                             <label for="matKhau">Mật khẩu *</label>
                             <input type="password" id="matKhau" name="matKhau" placeholder="Tạo mật khẩu" required>
                             <i class="fas fa-lock input-icon"></i>
+                            <div class="error-message" id="matKhau-error">Mật khẩu phải có ít nhất 6 ký tự</div>
                         </div>
 
                         <div class="form-group">
                             <label for="confirmPassword">Xác nhận mật khẩu *</label>
                             <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" required>
                             <i class="fas fa-lock input-icon"></i>
+                            <div class="error-message" id="confirmPassword-error">Mật khẩu xác nhận không khớp</div>
                         </div>
 
                         <div class="form-group">
@@ -626,20 +711,21 @@
                             <label for="gioiTinh">Giới tính</label>
                             <select id="gioiTinh" name="gioiTinh">
                                 <option value="">Chọn giới tính</option>
-                                <option value="MALE"  <c:if test='${user.gioiTinh == "MALE"}'>selected</c:if>>Nam</option>
-                                <option value="FEMALE" <c:if test='${user.gioiTinh == "FEMALE"}'>selected</c:if>>Nữ</option>
-                                <option value="OTHER" <c:if test='${user.gioiTinh == "OTHER"}'>selected</c:if>>Khác</option>
+                                <option value="Nam" <c:if test='${user.gioiTinh == "Nam"}'>selected</c:if>>Nam</option>
+                                <option value="Nu" <c:if test='${user.gioiTinh == "Nu"}'>selected</c:if>>Nữ</option>
+                                <option value="Khac" <c:if test='${user.gioiTinh == "Khac"}'>selected</c:if>>Khác</option>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label style="font-weight: normal; font-size: 14px;">
-                                <input type="checkbox" required> Tôi đồng ý với <a href="#" style="color: var(--primary);">Điều khoản dịch vụ</a> và <a href="#" style="color: var(--primary);">Chính sách bảo mật</a>
+                                <input type="checkbox" id="terms" required> Tôi đồng ý với <a href="#" style="color: var(--primary);">Điều khoản dịch vụ</a> và <a href="#" style="color: var(--primary);">Chính sách bảo mật</a>
                             </label>
+                            <div class="error-message" id="terms-error">Bạn cần đồng ý với điều khoản dịch vụ</div>
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="register-btn">
                                 <i class="fas fa-user-plus"></i> Đăng ký
                             </button>
                         </div>
@@ -660,24 +746,31 @@
         $('#show-register').click(function() {
             $('#login-form').removeClass('active').addClass('hidden');
             $('#register-form').addClass('active');
+            $('.mobile-welcome').hide();
         });
 
         $('#show-login, #back-to-login').click(function() {
             $('#register-form').removeClass('active');
             $('#login-form').removeClass('hidden').addClass('active');
+            $('.mobile-welcome').show();
         });
 
         // Xử lý form đăng nhập bằng AJAX
         $('#loginForm').on('submit', function(e) {
             e.preventDefault();
+            
+            // Reset lỗi trước khi validate
+            resetErrors();
+            
+            if (!validateLoginForm()) {
+                return;
+            }
 
             const username = $('#username').val().trim();
             const password = $('#password').val();
 
-            if (!username || !password) {
-                showAlert('Vui lòng nhập đầy đủ thông tin!', 'danger');
-                return;
-            }
+            // Hiển thị trạng thái loading
+            $('#login-btn').addClass('loading');
 
             $.ajax({
                 url: '${pageContext.request.contextPath}/api/login',
@@ -688,6 +781,8 @@
                     password: password
                 }),
                 success: function(response) {
+                    $('#login-btn').removeClass('loading');
+                    
                     if (response.success) {
                         showAlert(response.message || 'Đăng nhập thành công!', 'success');
                         setTimeout(() => {
@@ -698,6 +793,7 @@
                     }
                 },
                 error: function(xhr) {
+                    $('#login-btn').removeClass('loading');
                     let msg = 'Lỗi kết nối đến server!';
                     try {
                         const err = xhr.responseJSON;
@@ -720,31 +816,106 @@
         $('#registerForm').on('submit', function(e) {
             e.preventDefault();
             
-            const formData = $(this).serialize();
+            // Reset lỗi trước khi validate
+            resetErrors();
             
-            // Kiểm tra mật khẩu trùng khớp
-            const password = $('#matKhau').val();
-            const confirmPassword = $('#confirmPassword').val();
-            
-            if (password !== confirmPassword) {
-                showAlert('Mật khẩu xác nhận không khớp!', 'danger');
+            if (!validateRegisterForm()) {
                 return;
             }
             
+            const formData = $(this).serialize();
+            
+            // Hiển thị trạng thái loading
+            $('#register-btn').addClass('loading');
+
             $.ajax({
                 url: '${pageContext.request.contextPath}/register-process',
                 type: 'POST',
                 data: formData,
                 success: function(response) {
+                    $('#register-btn').removeClass('loading');
                     // Giả sử response trả về là HTML hoặc redirect
                     // Trong thực tế, bạn nên trả về JSON để xử lý tốt hơn
                     window.location.href = '${pageContext.request.contextPath}/login?message=Đăng ký thành công!';
                 },
                 error: function(xhr) {
+                    $('#register-btn').removeClass('loading');
                     showAlert('Có lỗi xảy ra khi đăng ký!', 'danger');
                 }
             });
         });
+
+        // Hàm validate form đăng nhập
+        function validateLoginForm() {
+            let isValid = true;
+            
+            const username = $('#username').val().trim();
+            const password = $('#password').val();
+            
+            if (!username) {
+                $('#username').parent().addClass('error');
+                isValid = false;
+            }
+            
+            if (!password) {
+                $('#password').parent().addClass('error');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Hàm validate form đăng ký
+        function validateRegisterForm() {
+            let isValid = true;
+            
+            // Họ tên
+            if (!$('#hoTen').val().trim()) {
+                $('#hoTen').parent().addClass('error');
+                isValid = false;
+            }
+            
+            // Tên đăng nhập
+            if (!$('#tenDangNhap').val().trim()) {
+                $('#tenDangNhap').parent().addClass('error');
+                isValid = false;
+            }
+            
+            // Email
+            const email = $('#email').val().trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRegex.test(email)) {
+                $('#email').parent().addClass('error');
+                isValid = false;
+            }
+            
+            // Mật khẩu
+            const password = $('#matKhau').val();
+            if (!password || password.length < 6) {
+                $('#matKhau').parent().addClass('error');
+                isValid = false;
+            }
+            
+            // Xác nhận mật khẩu
+            const confirmPassword = $('#confirmPassword').val();
+            if (password !== confirmPassword) {
+                $('#confirmPassword').parent().addClass('error');
+                isValid = false;
+            }
+            
+            // Điều khoản
+            if (!$('#terms').is(':checked')) {
+                $('#terms').parent().parent().addClass('error');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Reset tất cả lỗi
+        function resetErrors() {
+            $('.form-group').removeClass('error');
+        }
 
         // Hàm hiển thị thông báo
         function showAlert(message, type) {
@@ -770,6 +941,30 @@
                 $('.custom-alert').fadeOut();
             }, 5000);
         }
+        
+        // Xử lý real-time validation cho các trường
+        $('input').on('blur', function() {
+            const $input = $(this);
+            const $formGroup = $input.parent();
+            
+            // Xóa trạng thái lỗi trước đó
+            $formGroup.removeClass('error');
+            
+            // Kiểm tra và thêm lỗi nếu cần
+            if ($input.attr('type') === 'email' && $input.val()) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test($input.val())) {
+                    $formGroup.addClass('error');
+                }
+            }
+            
+            if ($input.attr('id') === 'confirmPassword' && $input.val()) {
+                const password = $('#matKhau').val();
+                if ($input.val() !== password) {
+                    $formGroup.addClass('error');
+                }
+            }
+        });
     });
     </script>
 </body>

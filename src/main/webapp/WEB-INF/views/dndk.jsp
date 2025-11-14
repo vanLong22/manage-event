@@ -533,10 +533,67 @@
                 font-size: 26px;
             }
         }
+
+        /* CSS cho thông báo toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            color: #333;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #dc3545;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            max-width: 300px;
+            pointer-events: auto;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left-color: #06d6a0;
+        }
+
+        .toast.error {
+            border-left-color: #dc3545;
+        }
+
+        .toast .toast-close {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            float: right;
+            margin-left: 10px;
+            color: inherit;
+            opacity: 0.7;
+        }
+
+        .toast .toast-close:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="toast-container" id="toast-container"></div>
+
         <!-- Welcome Section -->
         <div class="welcome-section">
             <div class="welcome-content">
@@ -784,12 +841,12 @@
                     $('#login-btn').removeClass('loading');
                     
                     if (response.success) {
-                        showAlert(response.message || 'Đăng nhập thành công!', 'success');
+                        showToast(response.message || 'Đăng nhập thành công!', true);
                         setTimeout(() => {
                             window.location.href = response.redirect;
                         }, 1000);
                     } else {
-                        showAlert(response.message || 'Đăng nhập thất bại!', 'danger');
+                        showToast(response.message || 'Đăng nhập thất bại!', false);
                     }
                 },
                 error: function(xhr) {
@@ -799,7 +856,7 @@
                         const err = xhr.responseJSON;
                         if (err && err.message) msg = err.message;
                     } catch (e) {}
-                    showAlert(msg, 'danger');
+                    showToast(msg, false);
                 }
             });
         });
@@ -840,7 +897,7 @@
                 },
                 error: function(xhr) {
                     $('#register-btn').removeClass('loading');
-                    showAlert('Có lỗi xảy ra khi đăng ký!', 'danger');
+                    showToast('Có lỗi xảy ra khi đăng ký!', false);
                 }
             });
         });
@@ -918,28 +975,42 @@
         }
 
         // Hàm hiển thị thông báo
-        function showAlert(message, type) {
-            // Xóa alert cũ
-            $('.custom-alert').remove();
-
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            const alertHtml = `
-                <div class="custom-alert ${alertClass}" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; padding: 12px 16px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
-                    ${message}
-                    <button type="button" class="btn-close" style="float: right; background: none; border: none; font-size: 16px; cursor: pointer;">×</button>
-                </div>`;
+        function showToast(message, isSuccess = false) {
+            const toastContainer = $('#toast-container');
             
-            $('body').append(alertHtml);
-
-            // Xử lý đóng alert
-            $('.btn-close').click(function() {
-                $(this).parent().fadeOut();
+            // Tạo toast element
+            const toast = $('<div class="toast"></div>')
+                .addClass(isSuccess ? 'success' : 'error')
+                .html(`
+                    <span>${message}</span>
+                    <button type="button" class="toast-close">&times;</button>
+                `);
+            
+            // Thêm toast vào container
+            toastContainer.append(toast);
+            
+            // Hiển thị toast với hiệu ứng
+            setTimeout(() => {
+                toast.addClass('show');
+            }, 100);
+            
+            // Xử lý đóng toast khi click nút close
+            toast.find('.toast-close').click(function() {
+                hideToast(toast);
             });
-
+            
             // Tự động ẩn sau 5 giây
             setTimeout(() => {
-                $('.custom-alert').fadeOut();
+                hideToast(toast);
             }, 5000);
+        }
+
+        // Hàm ẩn toast
+        function hideToast(toast) {
+            toast.removeClass('show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
         }
         
         // Xử lý real-time validation cho các trường
@@ -951,14 +1022,14 @@
             $formGroup.removeClass('error');
             
             // Kiểm tra và thêm lỗi nếu cần
-            if ($input.attr('type') === 'email' && $input.val()) {
+            if ($input.attr('type') == 'email' && $input.val()) {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test($input.val())) {
                     $formGroup.addClass('error');
                 }
             }
             
-            if ($input.attr('id') === 'confirmPassword' && $input.val()) {
+            if ($input.attr('id') == 'confirmPassword' && $input.val()) {
                 const password = $('#matKhau').val();
                 if ($input.val() !== password) {
                     $formGroup.addClass('error');

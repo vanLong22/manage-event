@@ -6,11 +6,14 @@ import com.example.demo.service.*;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -151,7 +154,7 @@ public class ParticipantController {
     public ResponseEntity<List<Event>> getFeaturedEvents() {
         return ResponseEntity.ok(eventService.getFeaturedEvents());
     }
-
+    /* 
     // AJAX: Load tất cả sự kiện
     @GetMapping("/api/events")
     public ResponseEntity<List<Event>> getEvents(
@@ -176,7 +179,7 @@ public class ParticipantController {
 
         return ResponseEntity.ok(events);
     }
-
+    */
     // AJAX: Load sự kiện của tôi
     @GetMapping("/api/my-events")
     public ResponseEntity<List<Registration>> getMyEvents() {
@@ -316,4 +319,76 @@ public class ParticipantController {
         }
     }
 
+
+
+    // API lọc sự kiện nâng cao
+    @GetMapping("/api/events/filter")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> filterEvents(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String eventType,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String status) {
+
+        try {
+            List<Event> events = eventService.filterEvents(keyword, eventType, startDate, endDate, location, categoryId, status);
+            List<Map<String, Object>> eventsWithVietnameseInfo = eventService.getEventsWithVietnameseInfo(events);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "data", eventsWithVietnameseInfo,
+                "total", events.size()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi lọc sự kiện: " + e.getMessage()));
+        }
+    }
+
+    // API lấy danh sách loại sự kiện
+    @GetMapping("/api/event-types")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getEventTypes() {
+        try {
+            List<Map<String, Object>> eventTypes = eventService.getAllEventTypes();
+            return ResponseEntity.ok(Map.of("success", true, "data", eventTypes));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi tải danh mục sự kiện"));
+        }
+    }
+
+    // Cập nhật API getEvents hiện tại để hỗ trợ tham số mới
+    @GetMapping("/api/events")
+    @ResponseBody
+    public ResponseEntity<List<Event>> getEvents(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String privacy,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
+            @RequestParam(required = false) String location) {
+
+        System.out.println("Filters - keyword: " + keyword + ", status: " + status + ", privacy: " + privacy + 
+                        ", categoryId: " + categoryId + ", startDate: " + startDate + ", endDate: " + endDate + 
+                        ", location: " + location);
+
+        // Sử dụng phương thức lọc nâng cao
+        List<Event> events = eventService.filterEvents(keyword, privacy, startDate, endDate, location, categoryId, status);
+
+        // Optional: Add organizer names or other processing if needed
+        events.forEach(event -> {
+            User organizer = userService.findById(event.getNguoiToChucId());
+            if (organizer != null) {
+                // Handle in frontend or add transient field
+            }
+        });
+
+        return ResponseEntity.ok(events);
+    }
 }

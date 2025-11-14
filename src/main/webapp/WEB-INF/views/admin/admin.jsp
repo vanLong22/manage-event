@@ -822,7 +822,7 @@
                         <div class="card-icon primary">
                             <i class="fas fa-users"></i>
                         </div>
-                        <h3 id="total-users">0</h3>
+                        <h3 id="total-users">${totalUsers}</h3>
                         <p>Tổng số người dùng</p>
                     </div>
                     <div class="card">
@@ -1245,7 +1245,7 @@
 
         // API Functions
         function loadDashboardData() {
-            $.get('/admin/admin', function(data) {
+            $.get('/admin/api/dashboard', function(data) {
                 $('#total-users').text(data.totalUsers);
                 $('#active-events').text(data.activeEvents);
                 $('#pending-events').text(data.pendingEvents);

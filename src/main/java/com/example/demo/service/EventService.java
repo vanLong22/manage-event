@@ -1,19 +1,33 @@
 package com.example.demo.service;
 
 import com.example.demo.model.Event;
+import com.example.demo.model.User;
 import com.example.demo.repository.EventRepository;
+import com.example.demo.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
     @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
@@ -92,5 +106,82 @@ public class EventService {
 
         // Gọi repository để thực hiện filter ở mức SQL cho hiệu suất
         return eventRepository.searchEventsWithFilters(keyword != null ? keyword.trim() : null, status, privacy, categoryId);
+    }
+
+    // Thêm các phương thức mới vào EventService.java
+    public List<Event> filterEvents(String keyword, String eventType, Date startDate, Date endDate,
+                                String location, Long categoryId, String status) {
+        return eventRepository.filterEvents(keyword, eventType, startDate, endDate, location, categoryId, status);
+    }
+
+    // Phương thức để lấy tên loại sự kiện bằng tiếng Việt
+    public String getEventTypeName(Long categoryId) {
+        return eventRepository.getEventTypeName(categoryId);
+    }
+
+    // Phương thức chuyển đổi trạng thái sang tiếng Việt
+    public String getStatusInVietnamese(String status) {
+        if (status == null) return "Không xác định";
+        
+        switch (status) {
+            case "SapDienRa":
+                return "Sắp diễn ra";
+            case "DangDienRa":
+                return "Đang diễn ra";
+            case "DaKetThuc":
+                return "Đã kết thúc";
+            case "DaHuy":
+                return "Đã hủy";
+            default:
+                return status;
+        }
+    }
+
+    // Phương thức chuyển đổi loại sự kiện sang tiếng Việt
+    public String getEventTypeInVietnamese(String eventType) {
+        if (eventType == null) return "Không xác định";
+        
+        switch (eventType) {
+            case "CongKhai":
+                return "Công khai";
+            case "RiengTu":
+                return "Riêng tư";
+            default:
+                return eventType;
+        }
+    }
+
+    // Phương thức lấy tất cả loại sự kiện
+    public List<Map<String, Object>> getAllEventTypes() {
+        return eventRepository.getAllEventTypesWithNames();
+    }
+
+    // Phương thức tạo DTO với thông tin đã dịch
+    public List<Map<String, Object>> getEventsWithVietnameseInfo(List<Event> events) {
+        return events.stream().map(event -> {
+            Map<String, Object> eventMap = new HashMap<>();
+            eventMap.put("suKienId", event.getSuKienId());
+            eventMap.put("tenSuKien", event.getTenSuKien());
+            eventMap.put("moTa", event.getMoTa());
+            eventMap.put("diaDiem", event.getDiaDiem());
+            eventMap.put("anhBia", event.getAnhBia());
+            eventMap.put("thoiGianBatDau", event.getThoiGianBatDau());
+            eventMap.put("thoiGianKetThuc", event.getThoiGianKetThuc());
+            eventMap.put("soLuongToiDa", event.getSoLuongToiDa());
+            eventMap.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
+            eventMap.put("loaiSuKienId", event.getLoaiSuKienId());
+            
+            // Dịch sang tiếng Việt
+            eventMap.put("trangThai", getStatusInVietnamese(event.getTrangThai()));
+            eventMap.put("loaiSuKien", getEventTypeInVietnamese(event.getLoaiSuKien()));
+            eventMap.put("loaiSuKienTen", getEventTypeName(event.getLoaiSuKienId()));
+            
+            return eventMap;
+        }).collect(Collectors.toList());
+    }
+
+    public List<User> findAll() {
+        String sql = "SELECT * FROM nguoi_dung";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class));
     }
 }

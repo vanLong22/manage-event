@@ -1509,42 +1509,77 @@
                 </div>
 
                 <div class="filter-section">
+                    <div class="filter-header">
+                        <h4><i class="fas fa-filter"></i> Bộ lọc nâng cao</h4>
+                        <button class="btn btn-outline btn-sm" id="reset-filters">
+                            <i class="fas fa-redo"></i> Đặt lại
+                        </button>
+                    </div>
+                    
                     <div class="filter-row">
                         <div class="filter-group">
-                            <label for="eventType">Loại sự kiện</label>
-                            <select id="eventType">
+                            <label for="filter-keyword">Từ khóa</label>
+                            <input type="text" id="filter-keyword" placeholder="Tìm theo tên, mô tả...">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="filter-eventType">Loại sự kiện</label>
+                            <select id="filter-eventType">
                                 <option value="">Tất cả loại</option>
+                                <option value="CongKhai">Công khai</option>
+                                <option value="RiengTu">Riêng tư</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="filter-category">Danh mục</label>
+                            <select id="filter-category">
+                                <option value="">Tất cả danh mục</option>
                                 <c:forEach var="type" items="${eventTypes}">
                                     <option value="${type.loaiSuKienId}"><c:out value="${type.tenLoai}"/></option>
                                 </c:forEach>
                             </select>
                         </div>
+                        
                         <div class="filter-group">
-                            <label for="eventDate">Ngày diễn ra</label>
-                            <select id="eventDate">
-                                <option value="">Tất cả ngày</option>
-                                <option value="week">Tuần này</option>
-                                <option value="month">Tháng này</option>
-                                <option value="upcoming">Sắp diễn ra</option>
+                            <label for="filter-status">Trạng thái</label>
+                            <select id="filter-status">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="SapDienRa">Sắp diễn ra</option>
+                                <option value="DangDienRa">Đang diễn ra</option>
+                                <option value="DaKetThuc">Đã kết thúc</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="filter-row">
                         <div class="filter-group">
-                            <label for="eventLocation">Địa điểm</label>
-                            <select id="eventLocation">
-                                <option value="">Tất cả địa điểm</option>
-                                <option value="hanoi">Hà Nội</option>
-                                <option value="hcm">TP.HCM</option>
-                                <option value="danang">Đà Nẵng</option>
-                            </select>
+                            <label for="filter-startDate">Từ ngày</label>
+                            <input type="date" id="filter-startDate">
                         </div>
+                        
                         <div class="filter-group">
-                            <label for="eventSort">Sắp xếp</label>
-                            <select id="eventSort">
-                                <option value="newest">Mới nhất</option>
-                                <option value="popular">Phổ biến</option>
-                                <option value="upcoming">Sắp diễn ra</option>
-                            </select>
+                            <label for="filter-endDate">Đến ngày</label>
+                            <input type="date" id="filter-endDate">
                         </div>
+                        
+                        <div class="filter-group">
+                            <label for="filter-location">Địa điểm</label>
+                            <input type="text" id="filter-location" placeholder="Nhập địa điểm...">
+                        </div>
+                        
+                        <div class="filter-group" style="align-self: flex-end;">
+                            <button class="btn btn-primary" id="apply-filters" style="min-width: 120px;">
+                                <i class="fas fa-search"></i> Áp dụng
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-results-info" id="filter-results-info" style="display: none;">
+                        <span id="results-count">0</span> kết quả phù hợp
+                        <button class="btn-clear-filters" id="clear-filters-text" style="margin-left: 10px;">
+                            <i class="fas fa-times"></i> Xóa bộ lọc
+                        </button>
                     </div>
                 </div>
 
@@ -3001,6 +3036,249 @@
                 }
                 $('#all-events-grid').html(html);
             });
+        });
+
+
+        // Hàm lọc sự kiện nâng cao
+        function applyEventFilters() {
+            const filters = {
+                keyword: $('#filter-keyword').val(),
+                eventType: $('#filter-eventType').val(),
+                categoryId: $('#filter-category').val() || null,
+                status: $('#filter-status').val(),
+                startDate: $('#filter-startDate').val() || null,
+                endDate: $('#filter-endDate').val() || null,
+                location: $('#filter-location').val()
+            };
+
+            // Hiển thị loading
+            $('#all-events-grid').html(
+                '<div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 40px;">' +
+                '<i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i><br>' +
+                'Đang tìm kiếm sự kiện...' +
+                '</div>'
+            );
+
+            // Gọi API lọc
+            $.ajax({
+                url: '/participant/api/events/filter',
+                type: 'GET',
+                data: filters,
+                success: function(response) {
+                    if (response.success) {
+                        displayFilteredEvents(response.data);
+                        updateFilterResultsInfo(response.data.length);
+                    } else {
+                        showNotification('Lỗi khi lọc sự kiện: ' + response.message, 'error');
+                        $('#all-events-grid').html(
+                            '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
+                            '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                            '<h3>Lỗi tải dữ liệu</h3>' +
+                            '<p>Không thể tải danh sách sự kiện.</p>' +
+                            '</div>'
+                        );
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Filter error:', error);
+                    showNotification('Lỗi kết nối khi lọc sự kiện', 'error');
+                    $('#all-events-grid').html(
+                        '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
+                        '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                        '<h3>Lỗi kết nối</h3>' +
+                        '<p>Không thể kết nối đến máy chủ.</p>' +
+                        '</div>'
+                    );
+                }
+            });
+        }
+
+        // Hiển thị kết quả lọc
+        function displayFilteredEvents(events) {
+            let html = '';
+            
+            if (events.length === 0) {
+                html = '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
+                    '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                    '<h3>Không tìm thấy sự kiện</h3>' +
+                    '<p>Không có sự kiện nào phù hợp với tiêu chí lọc của bạn.</p>' +
+                    '</div>';
+            } else {
+                events.forEach(function(event) {
+                    const eventDate = event.thoiGianBatDau ? 
+                        new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') + ' ' + 
+                        new Date(event.thoiGianBatDau).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : 
+                        'Chưa xác định';
+                    
+                    const description = event.moTa ? 
+                        (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : 
+                        'Không có mô tả';
+                    
+                    html += '<div class="event-card" data-event-id="' + event.suKienId + '">' +
+                        '<div class="event-image">' +
+                            '<img src="' + (event.anhBia || '/default-image.jpg') + '" alt="' + event.tenSuKien + '">' +
+                        '</div>' +
+                        '<div class="event-content">' +
+                            '<h4 class="event-title">' + event.tenSuKien + '</h4>' +
+                            '<div class="event-meta">' +
+                                '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
+                                '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'Chưa xác định') + '</span>' +
+                            '</div>' +
+                            '<div class="event-categories">' +
+                                '<span class="event-category">' + (event.loaiSuKienTen || 'Không phân loại') + '</span>' +
+                                '<span class="event-type ' + event.loaiSuKien?.toLowerCase() + '">' + event.loaiSuKien + '</span>' +
+                            '</div>' +
+                            '<p class="event-description">' + description + '</p>' +
+                            '<div class="event-footer">' +
+                                '<span class="status ' + (event.trangThai ? event.trangThai.toLowerCase().replace(' ', '-') : '') + '">' + 
+                                    event.trangThai + 
+                                '</span>' +
+                                '<button class="btn btn-primary btn-sm btn-join-event" ' +
+                                        'data-event-id="' + event.suKienId + '" ' +
+                                        'data-event-name="' + event.tenSuKien + '">' +
+                                    '<i class="fas fa-plus"></i> Tham gia' +
+                                '</button>' +
+                                '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                });
+            }
+            
+            $('#all-events-grid').html(html);
+        }
+
+        // Cập nhật thông tin kết quả lọc
+        function updateFilterResultsInfo(count) {
+            const $info = $('#filter-results-info');
+            const $count = $('#results-count');
+            
+            $count.text(count);
+            $info.show();
+        }
+
+        // Reset bộ lọc
+        function resetFilters() {
+            $('#filter-keyword').val('');
+            $('#filter-eventType').val('');
+            $('#filter-category').val('');
+            $('#filter-status').val('');
+            $('#filter-startDate').val('');
+            $('#filter-endDate').val('');
+            $('#filter-location').val('');
+            
+            $('#filter-results-info').hide();
+            
+            // Tải lại danh sách sự kiện mặc định
+            loadDefaultEvents();
+        }
+
+        // Tải danh sách sự kiện mặc định
+        function loadDefaultEvents() {
+            $('#all-events-grid').html(
+                '<div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 20px;">' +
+                '<i class="fas fa-spinner fa-spin"></i> Đang tải...' +
+                '</div>'
+            );
+            
+            $.get('/participant/api/events')
+                .done(function(events) {
+                    displayFilteredEvents(events);
+                })
+                .fail(function() {
+                    showNotification('Lỗi tải danh sách sự kiện', 'error');
+                });
+        }
+
+        // Thêm CSS cho phần loại sự kiện
+        const filterStyles = `
+        <style>
+        .event-categories {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .event-category {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .event-type {
+            background: var(--secondary-light);
+            color: var(--secondary);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .event-type.congkhai {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .event-type.riengtu {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filter-results-info {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: var(--primary-light);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .btn-clear-filters {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-clear-filters:hover {
+            text-decoration: underline;
+        }
+        </style>
+        `;
+
+        // Thêm CSS vào document
+        $(filterStyles).appendTo('head');
+
+        // Gắn sự kiện cho các nút lọc
+        $(document).ready(function() {
+            $('#apply-filters').click(applyEventFilters);
+            $('#reset-filters').click(resetFilters);
+            $('#clear-filters-text').click(resetFilters);
+            
+            // Enter để áp dụng lọc
+            $('#filter-keyword, #filter-location').keypress(function(e) {
+                if (e.which === 13) {
+                    applyEventFilters();
+                }
+            });
+            
+            // Tải danh sách mặc định khi vào trang events
+            if ($('#events').hasClass('active')) {
+                loadDefaultEvents();
+            }
         });
 
         // Khởi tạo

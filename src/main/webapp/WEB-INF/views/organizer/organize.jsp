@@ -564,6 +564,22 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .form-text {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        #private-event-id-group {
+            transition: all 0.3s ease;
+        }
+
+        #private-event-id {
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body>
@@ -816,6 +832,12 @@
                         </div>
                     </div>
 
+                    <div class="form-group" id="private-event-id-group" style="display: none;">
+                        <label for="private-event-id">Mã sự kiện riêng tư *</label>
+                        <input type="text" id="private-event-id" placeholder="Nhập mã ID cho sự kiện riêng tư">
+                        <small class="form-text">Mã này sẽ được sử dụng để người tham gia truy cập sự kiện riêng tư</small>
+                    </div>
+
                     <div class="form-group">
                         <label for="event-image">Hình ảnh sự kiện</label>
                         <input type="file" id="event-image" accept="image/*">
@@ -986,6 +1008,22 @@
                                 </c:forEach>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Trong <div id="analytics" class="content-section">, sau bảng popular events -->
+                <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Sự Kiện Theo Trạng Thái</h4>
+                        <img id="events-by-status-chart" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Đăng Ký Theo Sự Kiện</h4>
+                        <img id="registrations-by-event-chart" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Đăng Ký Theo Thời Gian</h4>
+                        <img id="registrations-over-time-chart" style="width: 100%; height: auto;">
                     </div>
                 </div>
             </div>
@@ -1292,7 +1330,6 @@
             }
 
             $.get('/organizer/api/events/' + suKienId, function(event) {
-
                 if (!event) {
                     alert("Không tìm thấy sự kiện!");
                     return;
@@ -1305,16 +1342,24 @@
                 $('#event-end-date').val(new Date(event.thoiGianKetThuc).toISOString().slice(0,16));
                 $('#event-location').val(event.diaDiem);
                 $('#event-capacity').val(event.soLuongToiDa);
+                $('#event-privacy').val(event.loaiSuKien);
+
+                // Hiển thị và điền mã riêng tư nếu sự kiện là riêng tư
+                if (event.loaiSuKien === 'RiengTu') {
+                    $('#private-event-id-group').show();
+                    $('#private-event-id').val(event.maRiengTu || '').prop('required', true);
+                } else {
+                    $('#private-event-id-group').hide();
+                    $('#private-event-id').prop('required', false);
+                }
 
                 $('#event-form')[0].dataset.editId = suKienId;
-
                 document.querySelector('[data-target="create-event"]').click();
             })
             .fail(function(xhr) {
                 alert("Không tải được thông tin sự kiện (mã lỗi " + xhr.status + ")");
             });
         }
-
 
         function deleteEvent(suKienId) {
             if (confirm('Xác nhận xóa sự kiện?')) {
@@ -1350,6 +1395,23 @@
             }
         });
 
+        // Hiển thị/ẩn trường mã sự kiện riêng tư
+        $('#event-privacy').on('change', function() {
+            if (this.value === 'RiengTu') {
+                $('#private-event-id-group').show();
+                $('#private-event-id').prop('required', true);
+            } else {
+                $('#private-event-id-group').hide();
+                $('#private-event-id').prop('required', false);
+            }
+        });
+
+        // Khi reset form, ẩn trường mã riêng tư
+        $('#event-form').on('reset', function() {
+            $('#private-event-id-group').hide();
+            $('#private-event-id').prop('required', false);
+        });
+
         // Submit event form (create or edit)
         $('#event-form').on('submit', function(e) {
             e.preventDefault();
@@ -1366,6 +1428,12 @@
                 soLuongToiDa: $('#event-capacity').val(),
                 loaiSuKien: $('#event-privacy').val()
             };
+            
+            // Thêm mã sự kiện riêng tư nếu có
+            if ($('#event-privacy').val() === 'RiengTu') {
+                event.matKhauSuKienRiengTu = $('#private-event-id').val();
+            }
+            
             formData.append('event', JSON.stringify(event));
             var imageFile = $('#event-image')[0].files[0];
             if (imageFile) {
@@ -1384,6 +1452,9 @@
                         alert(isEdit ? 'Cập nhật thành công!' : 'Tạo thành công!');
                         formElement.reset();
                         delete formElement.dataset.editId;
+                        // Ẩn trường mã riêng tư sau khi submit
+                        $('#private-event-id-group').hide();
+                        $('#private-event-id').prop('required', false);
                         document.querySelector('[data-target="events"]').click();
                     } else {
                         alert(response.message || 'Lỗi xảy ra!');
@@ -1391,7 +1462,7 @@
                 }
             });
         });
-
+        
         // Load attendance events
         function loadAttendanceEvents() {
             $.get('/organizer/api/events', function(data) {
@@ -1576,6 +1647,19 @@
                 $('#satisfaction-rate').text(data.satisfactionRate + '%');
                 $('#estimated-revenue').text(data.estimatedRevenue + 'M');
                 $('#cancellation-rate').text(data.cancellationRate + '%');
+                
+                // Set charts từ base64
+                if (data.eventsByStatusChart) {
+                    $('#events-by-status-chart').attr('src', 'data:image/png;base64,' + data.eventsByStatusChart);
+                }
+                if (data.registrationsByEventChart) {
+                    $('#registrations-by-event-chart').attr('src', 'data:image/png;base64,' + data.registrationsByEventChart);
+                }
+                if (data.registrationsOverTimeChart) {
+                    $('#registrations-over-time-chart').attr('src', 'data:image/png;base64,' + data.registrationsOverTimeChart);
+                }
+            }).fail(function(xhr, status, error) {
+                console.log("Lỗi khi load analytics:", error);  // In console browser (F12 để xem)
             });
 
             $.get('/organizer/api/analytics/popular?period=' + period, function(data) {
@@ -1694,6 +1778,21 @@
 
         function openEventModal(suKienId) {
             $.get('/organizer/api/events/' + suKienId, function(event) {
+                var trangThaiHienThi = '';
+
+                switch (event.trangThai) {
+                    case 'DangDienRa':
+                        trangThaiHienThi = 'Đang diễn ra';
+                        break;
+                    case 'SapDienRa':
+                        trangThaiHienThi = 'Sắp diễn ra';
+                        break;
+                    case 'DaKetThuc':
+                        trangThaiHienThi = 'Đã kết thúc';
+                        break;
+                    default:
+                        trangThaiHienThi = 'Không xác định';
+                }
                 var html = '<div class="event-image" style="margin-bottom: 20px;">' +
                                 '<img src="' + (event.anhBia || '/default.jpg') + '" alt="' + event.tenSuKien + '">' +
                             '</div>' +
@@ -1706,7 +1805,7 @@
                             '<div class="form-row">' +
                                 '<div class="form-group">' +
                                     '<label>Trạng thái:</label>' +
-                                    '<span class="status ' + event.trangThai.toLowerCase() + '">' + event.trangThai + '</span>' +
+                                    '<span class="status ' + event.trangThai.toLowerCase() + '">' + trangThaiHienThi + '</span>' +
                                 '</div>' +
                                 '<div class="form-group">' +
                                     '<label>Số người tham gia:</label>' +

@@ -22,13 +22,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import java.io.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 //import com.opencsv.CSVWriter; // Cần add dependency OpenCSV nếu dùng, hoặc dùng simple string builder
 
@@ -149,13 +149,12 @@ public class OrganizerController {
     //     }});
     // }
 
-    // API create event - SỬA LẠI
+    // API create event 
     @PostMapping(value = "/api/events/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createEvent(
             @RequestParam("event") String eventJson, 
             @RequestParam(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
             HttpSession session) {
-        System.out.println("Id loại sự kiện nhận được trong controller: " + eventJson);
         Long organizerId = (Long) session.getAttribute("userId");
         if (organizerId == null) {
             return ResponseEntity.status(401).build();
@@ -269,7 +268,7 @@ public class OrganizerController {
             put("message", "Cập nhật điểm danh thành công!");
         }});
     }
-
+    /*
     // API analytics stats
     @GetMapping("/api/analytics/stats")
     public ResponseEntity<Map<String, Object>> getStats(HttpSession session) {
@@ -279,7 +278,7 @@ public class OrganizerController {
         }
         return ResponseEntity.ok(registrationService.getAnalyticsStats(organizerId));
     }
-
+    */
     // API popular events
     @GetMapping("/api/analytics/popular")
     public ResponseEntity<List<Event>> getPopularEvents(HttpSession session) {
@@ -407,4 +406,89 @@ public class OrganizerController {
                 .body(csvData);
     }
     */
+
+    // API analytics stats (sửa để thêm charts)
+    @GetMapping("/api/analytics/stats")
+    public ResponseEntity<Map<String, Object>> getStats(@RequestParam(defaultValue = "month") String period, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Map<String, Object> stats = registrationService.getAnalyticsStats(organizerId);  // Giữ nguyên
+
+        // Lấy dữ liệu cho charts (tùy chỉnh theo service của bạn)
+        List<Event> events = eventService.getSuKienByOrganizer(organizerId);  // Dữ liệu sự kiện
+        List<Registration> registrations = registrationService.getAllRegistrationsForOrganizer(organizerId);  // Dữ liệu đăng ký
+
+        // Thêm charts vào stats
+        stats.put("eventsByStatusChart", generateChart("events_by_status", events));
+        stats.put("registrationsByEventChart", generateChart("registrations_by_event", eventService.getPopularEvents(organizerId)));  // Popular events
+        stats.put("registrationsOverTimeChart", generateChart("registrations_over_time", registrations));
+
+        return ResponseEntity.ok(stats);
+    }
+
+    private String generateChart(String chartType, List<?> data) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("python", "D:\\2022-2026\\HOC KI 7\\XD HTTT\\quanLySuKien\\demo\\src\\main\\resources\\scripts\\chart.py", chartType);
+            // Remove redirectErrorStream(true) to keep stdout and stderr separate
+            Process p = pb.start();
+
+            // Send JSON to stdin
+            try (OutputStream os = p.getOutputStream()) {
+                ObjectMapper mapper = new ObjectMapper();
+                os.write(mapper.writeValueAsBytes(data));
+                os.flush();
+            }
+
+            // Read stdout (base64) using ByteArrayOutputStream
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (InputStream is = p.getInputStream()) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    baos.write(buffer, 0, bytesRead);
+                }
+            }
+
+            // Optionally read stderr for logging/debugging
+            ByteArrayOutputStream errorBaos = new ByteArrayOutputStream();
+            try (InputStream errorIs = p.getErrorStream()) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = errorIs.read(buffer)) != -1) {
+                    errorBaos.write(buffer, 0, bytesRead);
+                }
+            }
+            String errorOutput = errorBaos.toString("UTF-8").trim();
+            if (!errorOutput.isEmpty()) {
+                System.out.println("Python stderr: " + errorOutput);
+            }
+
+            int exitCode = p.waitFor();
+            String result = baos.toString("UTF-8").trim();
+
+            // Log details (now stderr is separate, so result is clean base64)
+            System.out.println("=== CHART DEBUG ===");
+            System.out.println("Exit code: " + exitCode);
+            System.out.println("Output length: " + result.length() + " chars");
+            System.out.println("First 50: " + result.substring(0, Math.min(50, result.length())));
+            System.out.println("Last 50: " + result.substring(Math.max(0, result.length() - 50)));
+            System.out.println("===================");
+
+            if (exitCode != 0 || result.isEmpty() || result.length() < 5000) {
+                System.err.println("Python failed or base64 too short");
+                return null;
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
 }

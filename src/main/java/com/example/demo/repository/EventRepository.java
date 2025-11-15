@@ -1,3 +1,4 @@
+
 package com.example.demo.repository;
 
 import com.example.demo.model.Event;
@@ -142,6 +143,12 @@ public class EventRepository {
     public List<Event> findPopularByOrganizer(Long organizerId) {
         String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ? ORDER BY so_luong_da_dang_ky DESC LIMIT 5";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId);
+    }
+
+    // Thêm phương thức mới: Popular events toàn hệ thống (top N by registrations)
+    public List<Event> findPopularEvents(int limit) {
+        String sql = "SELECT * FROM su_kien ORDER BY so_luong_da_dang_ky DESC LIMIT ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), limit);
     }
 
     // Thêm mới: Delete

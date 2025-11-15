@@ -547,7 +547,7 @@
             border-top: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* Modal */
+        /* Modal Center Fix */
         .modal {
             display: none;
             position: fixed;
@@ -559,6 +559,7 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         .modal-content {
@@ -569,8 +570,10 @@
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin: auto;
         }
 
+        
         .modal-header {
             padding: 20px 25px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -594,6 +597,18 @@
 
         .modal-body {
             padding: 25px;
+        }
+
+        /* Ensure modal is centered on mobile */
+        @media (max-width: 768px) {
+            .modal {
+                padding: 10px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-width: none;
+            }
         }
 
         /* Filter Section */
@@ -731,6 +746,29 @@
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+        }
+
+
+        .event-card {
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Đảm bảo các nút hành động vẫn hoạt động bình thường */
+        .event-card .action-buttons {
+            cursor: default;
+            pointer-events: auto;
+        }
+
+        .event-card .action-btn {
+            cursor: pointer;
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -1003,6 +1041,25 @@
                         <div class="stat-label">Tỷ lệ tham gia trung bình</div>
                     </div>
                 </div>
+                
+                <!--biểu đồ-->
+                <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px;">
+                    <div class="chart-container">
+                        <h3>Sự Kiện Theo Trạng Thái</h3>
+                        <img id="eventsByStatusChart" src="" alt="Biểu đồ sự kiện theo trạng thái" style="width: 100%; height: auto;">
+                        <div id="eventsByStatusPlaceholder" class="chart-placeholder" style="display: none;">Đang tải biểu đồ...</div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Đăng Ký Theo Sự Kiện Phổ Biến</h3>
+                        <img id="registrationsByEventChart" src="" alt="Biểu đồ đăng ký theo sự kiện" style="width: 100%; height: auto;">
+                        <div id="registrationsByEventPlaceholder" class="chart-placeholder" style="display: none;">Đang tải biểu đồ...</div>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Đăng Ký Theo Thời Gian</h3>
+                        <img id="registrationsOverTimeChart" src="" alt="Biểu đồ đăng ký theo thời gian" style="width: 100%; height: auto;">
+                        <div id="registrationsOverTimePlaceholder" class="chart-placeholder" style="display: none;">Đang tải biểu đồ...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Suggestions Content -->
@@ -1207,11 +1264,6 @@
                 toggleUserStatus(userId, isActive);
             });
 
-            $(document).on('click', '.btn-view-event', function() {
-                const eventId = $(this).data('event-id');
-                viewEvent(eventId);
-            });
-
             $(document).on('click', '.btn-approve-event', function() {
                 const eventId = $(this).data('event-id');
                 approveEvent(eventId);
@@ -1225,6 +1277,20 @@
             $(document).on('click', '.btn-delete-event', function() {
                 const eventId = $(this).data('event-id');
                 deleteEvent(eventId);
+            });
+
+         
+            // Thêm sự kiện click cho card sự kiện
+            $(document).on('click', '.event-card', function(e) {
+                // Ngăn chặn sự kiện khi click vào các nút hành động
+                if ($(e.target).closest('.action-btn').length === 0) {
+                    const eventId = $(this).find('.btn-view-event').data('event-id') || 
+                                $(this).closest('[data-event-id]').data('event-id') ||
+                                $(this).data('event-id');
+                    if (eventId) {
+                        viewEvent(eventId);
+                    }
+                }
             });
         }
 
@@ -1246,15 +1312,30 @@
         // API Functions
         function loadDashboardData() {
             $.get('/admin/api/dashboard', function(data) {
-                $('#total-users').text(data.totalUsers);
-                $('#active-events').text(data.activeEvents);
-                $('#pending-events').text(data.pendingEvents);
-                $('#violation-events').text(data.violationEvents);
-                $('#notification-count').text(data.notificationCount);
+                $('#total-users').text(data.totalUsers || 0);
+                $('#active-events').text(data.activeEvents || 0);
+                $('#pending-events').text(data.pendingEvents || 0);
+                $('#violation-events').text(data.violationEvents || 0);
+                $('#notification-count').text(data.notificationCount || 0);
                 
-                displayRecentEvents(data.recentEvents);
-            }).fail(function() {
-                showError('Lỗi tải dữ liệu dashboard');
+                // Hiển thị sự kiện gần đây từ dữ liệu thực tế
+                if (data.recentEvents && data.recentEvents.length > 0) {
+                    displayRecentEvents(data.recentEvents);
+                } else {
+                    displayRecentEvents([]);
+                }
+            }).fail(function(xhr, status, error) {
+                console.error('Error loading dashboard data:', error);
+                showError('Lỗi tải dữ liệu dashboard: ' + error);
+                
+                // Hiển thị trạng thái lỗi
+                $('#recent-events').html(`
+                    <div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>Lỗi tải dữ liệu</h3>
+                        <p>Không thể tải danh sách sự kiện gần đây.</p>
+                    </div>
+                `);
             });
         }
 
@@ -1263,6 +1344,16 @@
             const status = $('#user-status').val();
             
             const filters = { role: role, status: status };
+            
+            // Hiển thị loading
+            $('#users-tbody').html(`
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary); margin-bottom: 10px;"></i>
+                        <p>Đang tải danh sách người dùng...</p>
+                    </td>
+                </tr>
+            `);
             
             $.get('/admin/api/users', filters, function(users) {
                 currentUsers = users;
@@ -1276,14 +1367,15 @@
                         '</td></tr>';
                 } else {
                     users.forEach(function(user) {
+                        // Xử lý dữ liệu thực tế từ server
                         const statusClass = user.trangThai == 'active' ? 'active' : 'inactive';
                         const statusText = user.trangThai == 'active' ? 'Đang hoạt động' : 'Đã khóa';
                         const registrationDate = user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A';
                         
                         html += '<tr>' +
-                            '<td>' + user.hoTen + '</td>' +
+                            '<td>' + (user.hoTen) + '</td>' +
                             '<td>' + user.email + '</td>' +
-                            '<td>' + (user.soDienThoai || 'N/A') + '</td>' +
+                            '<td>' + (user.soDienThoai) + '</td>' +
                             '<td>' + user.vaiTro + '</td>' +
                             '<td>' + registrationDate + '</td>' +
                             '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
@@ -1299,8 +1391,17 @@
                     });
                 }
                 $('#users-tbody').html(html);
-            }).fail(function() {
-                showError('Lỗi tải danh sách người dùng');
+            }).fail(function(xhr, status, error) {
+                console.error('Error loading users:', error);
+                $('#users-tbody').html(`
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <h3>Lỗi tải dữ liệu</h3>
+                            <p>Không thể tải danh sách người dùng.</p>
+                        </td>
+                    </tr>
+                `);
             });
         }
 
@@ -1327,9 +1428,9 @@
                         const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                         const eventType = event.loaiSuKien == 'CongKhai' ? 'Công khai' : 'Riêng tư';
                         
-                        html += '<tr>' +
+                        html += '<tr class="event-row" data-event-id="' + event.suKienId + '">' +
                             '<td>' + event.tenSuKien + '</td>' +
-                            '<td>' + (event.organizerName || 'N/A') + '</td>' +
+                            '<td>' + event.organizerName + '</td>' +
                             '<td>' + eventDate + '</td>' +
                             '<td>' + event.diaDiem + '</td>' +
                             '<td>' + eventType + '</td>' +
@@ -1369,7 +1470,7 @@
                     data.forEach(function(event) {
                         const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                         
-                        html += '<div class="event-card">' +
+                        html += '<div class="event-card" data-event-id="' + event.suKienId + '">' +
                             '<div class="event-image">' +
                                 '<i class="fas fa-calendar-alt"></i>' +
                             '</div>' +
@@ -1388,9 +1489,6 @@
                                         '<div class="action-btn btn-reject-event" data-event-id="' + event.suKienId + '" title="Từ chối">' +
                                             '<i class="fas fa-times"></i>' +
                                         '</div>' +
-                                        '<div class="action-btn btn-view-event" data-event-id="' + event.suKienId + '" title="Xem chi tiết">' +
-                                            '<i class="fas fa-eye"></i>' +
-                                        '</div>' +
                                     '</div>' +
                                 '</div>' +
                             '</div>' +
@@ -1403,18 +1501,6 @@
             });
         }
 
-        function loadAnalytics() {
-            $.get('/admin/api/analytics', function(data) {
-                $('#stat-total-users').text(data.totalUsers);
-                $('#stat-active-events').text(data.activeEvents);
-                $('#stat-pending-events').text(data.pendingEvents);
-                $('#stat-avg-participation').text(data.avgParticipation + '%');
-            }).fail(function() {
-                showError('Lỗi tải dữ liệu thống kê');
-            });
-        }
-
-        // Display Functions
         function displayRecentEvents(events) {
             let html = '';
             
@@ -1430,7 +1516,7 @@
                     const statusText = getEventStatusText(event.trangThai);
                     const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                     
-                    html += '<div class="event-card">' +
+                    html += '<div class="event-card" data-event-id="' + event.suKienId + '">' +
                         '<div class="event-image">' +
                             '<i class="fas fa-calendar-alt"></i>' +
                         '</div>' +
@@ -1451,61 +1537,69 @@
             }
             $('#recent-events').html(html);
         }
-
-        // Action Functions
+                
+        // Action Functions - Sửa hàm viewUser
         function viewUser(userId) {
             $.get('/admin/api/users/' + userId, function(user) {
                 const registrationDate = user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A';
+                const statusText = user.trangThai == 'active' ? 'Đang hoạt động' : 'Đã khóa';
                 
-                const content = `
-                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                        <div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px;">
-                            ${user.hoTen ? user.hoTen.charAt(0).toUpperCase() : 'U'}
-                        </div>
-                        <div>
-                            <h4 style="margin-bottom: 5px;">${user.hoTen}</h4>
-                            <p>${user.vaiTro}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Email:</label>
-                            <p>${user.email}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>Số điện thoại:</label>
-                            <p>${user.soDienThoai || 'N/A'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Địa chỉ:</label>
-                        <p>${user.diaChi || 'N/A'}</p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Ngày đăng ký:</label>
-                        <p>${registrationDate}</p>
-                    </div>
-                    
-                    <div class="form-group" style="margin-top: 20px;">
-                        <button class="btn btn-primary">
-                            <i class="fas fa-edit"></i> Chỉnh sửa
-                        </button>
-                        <button class="btn btn-danger btn-toggle-user-status" data-user-id="${user.nguoiDungId}" data-is-active="${user.trangThai == 'active'}">
-                            <i class="fas ${user.trangThai == 'active' ? 'fa-lock' : 'fa-unlock'}"></i>
-                            ${user.trangThai == 'active' ? 'Khóa' : 'Mở khóa'} tài khoản
-                        </button>
-                    </div>
-                `;
-                $('#user-modal-content').html(content);
+                let html = '';
+                html += '<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">' +
+                    '<div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px;">' +
+                        (user.hoTen ? user.hoTen.charAt(0).toUpperCase() : 'U') +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 style="margin-bottom: 5px;">' + user.hoTen + '</h4>' +
+                        '<p>' + user.vaiTro + '</p>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label>Email:</label>' +
+                        '<p>' + user.email + '</p>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Số điện thoại:</label>' +
+                        '<p>' + (user.soDienThoai || 'N/A') + '</p>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<div class="form-group">' +
+                    '<label>Địa chỉ:</label>' +
+                    '<p>' + (user.diaChi || 'N/A') + '</p>' +
+                '</div>' +
+                
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label>Ngày đăng ký:</label>' +
+                        '<p>' + registrationDate + '</p>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Trạng thái:</label>' +
+                        '<p><span class="status ' + (user.trangThai == 'active' ? 'active' : 'inactive') + '">' + statusText + '</span></p>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<div class="form-group" style="margin-top: 20px;">' +
+                    '<button class="btn btn-primary">' +
+                        '<i class="fas fa-edit"></i> Chỉnh sửa' +
+                    '</button>' +
+                    '<button class="btn ' + (user.trangThai == 'active' ? 'btn-danger' : 'btn-success') + ' btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 'active') + '" style="margin-left: 10px;">' +
+                        '<i class="fas ' + (user.trangThai == 'active' ? 'fa-lock' : 'fa-unlock') + '"></i>' +
+                        (user.trangThai == 'active' ? ' Khóa' : ' Mở khóa') + ' tài khoản' +
+                    '</button>' +
+                '</div>';
+                
+                $('#user-modal-content').html(html);
                 $('#user-modal').show();
             }).fail(function() {
                 showError('Lỗi tải thông tin người dùng');
             });
         }
 
+        // Action Functions - Sửa hàm viewEvent
         function viewEvent(eventId) {
             $.get('/admin/api/events/' + eventId, function(event) {
                 const startDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleString('vi-VN') : 'N/A';
@@ -1514,72 +1608,118 @@
                 const statusClass = getEventStatusClass(event.trangThai);
                 const statusText = getEventStatusText(event.trangThai);
                 
-                const content = `
-                    <div style="margin-bottom: 20px;">
-                        <h4 style="margin-bottom: 10px;">${event.tenSuKien}</h4>
-                        <p>${event.moTa}</p>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Người tổ chức:</label>
-                            <p>${event.organizerName || 'N/A'}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>Địa điểm:</label>
-                            <p>${event.diaDiem}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Thời gian bắt đầu:</label>
-                            <p>${startDate}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>Thời gian kết thúc:</label>
-                            <p>${endDate}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Loại sự kiện:</label>
-                            <p>${eventType}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>Trạng thái:</label>
-                            <p><span class="status ${statusClass}">${statusText}</span></p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Số lượng tối đa:</label>
-                            <p>${event.soLuongToiDa}</p>
-                        </div>
-                        <div class="form-group">
-                            <label>Đã đăng ký:</label>
-                            <p>${event.soLuongDaDangKy}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group" style="margin-top: 20px;">
-                        <button class="btn btn-primary">
-                            <i class="fas fa-edit"></i> Chỉnh sửa
-                        </button>
-                        <button class="btn btn-danger btn-delete-event" data-event-id="${event.suKienId}">
-                            <i class="fas fa-trash"></i> Xóa sự kiện
-                        </button>
-                    </div>
-                `;
-                $('#event-modal-content').html(content);
+                let html = '';
+                html += '<div style="margin-bottom: 20px;">' +
+                    '<h4 style="margin-bottom: 10px;">' + event.tenSuKien + '</h4>' +
+                    '<p>' + (event.moTa || 'Không có mô tả') + '</p>' +
+                '</div>' +
+                
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label>Người tổ chức:</label>' +
+                        '<p>' + event.organizerName + '</p>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Địa điểm:</label>' +
+                        '<p>' + event.diaDiem + '</p>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label>Thời gian bắt đầu:</label>' +
+                        '<p>' + startDate + '</p>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Thời gian kết thúc:</label>' +
+                        '<p>' + endDate + '</p>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label>Loại sự kiện:</label>' +
+                        '<p>' + eventType + '</p>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Trạng thái:</label>' +
+                        '<p><span class="status ' + statusClass + '">' + statusText + '</span></p>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<div class="form-row">' +
+                    '<div class="form-group">' +
+                        '<label>Số lượng tối đa:</label>' +
+                        '<p>' + event.soLuongToiDa + '</p>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Đã đăng ký:</label>' +
+                        '<p>' + event.soLuongDaDangKy + '</p>' +
+                    '</div>' +
+                '</div>';
+                
+                // Thêm nút hành động cho modal sự kiện
+                if (event.trangThai === 'SapDienRa') {
+                    html += '<div class="form-group" style="margin-top: 20px;">' +
+                        '<button class="btn btn-success btn-approve-event" data-event-id="' + event.suKienId + '" style="margin-right: 10px;">' +
+                            '<i class="fas fa-check"></i> Phê duyệt' +
+                        '</button>' +
+                        '<button class="btn btn-danger btn-reject-event" data-event-id="' + event.suKienId + '">' +
+                            '<i class="fas fa-times"></i> Từ chối' +
+                        '</button>' +
+                    '</div>';
+                } else {
+                    html += '<div class="form-group" style="margin-top: 20px;">' +
+                        '<button class="btn btn-primary">' +
+                            '<i class="fas fa-edit"></i> Chỉnh sửa' +
+                        '</button>' +
+                        '<button class="btn btn-danger btn-delete-event" data-event-id="' + event.suKienId + '" style="margin-left: 10px;">' +
+                            '<i class="fas fa-trash"></i> Xóa sự kiện' +
+                        '</button>' +
+                    '</div>';
+                }
+                
+                $('#event-modal-content').html(html);
                 $('#event-modal').show();
             }).fail(function() {
                 showError('Lỗi tải thông tin sự kiện');
             });
         }
 
+        // Thêm event delegation cho các nút trong modal
+        $(document).on('click', '.btn-approve-event', function() {
+            const eventId = $(this).data('event-id');
+            $('#event-modal').hide();
+            approveEvent(eventId);
+        });
+
+        $(document).on('click', '.btn-reject-event', function() {
+            const eventId = $(this).data('event-id');
+            $('#event-modal').hide();
+            rejectEvent(eventId);
+        });
+
+        // Utility Functions - Thêm status class cho các trạng thái còn thiếu
+        function getEventStatusClass(status) {
+            const classes = {
+                'SapDienRa': 'pending',
+                'DangDienRa': 'active',
+                'DaKetThuc': 'completed',
+                'Huy': 'cancelled'
+            };
+            return classes[status] || 'pending';
+        }
+
+        function getEventStatusText(status) {
+            const texts = {
+                'SapDienRa': 'Sắp diễn ra',
+                'DangDienRa': 'Đang diễn ra',
+                'DaKetThuc': 'Đã kết thúc',
+                'Huy': 'Đã hủy'
+            };
+            return texts[status] || status;
+        }
+        
         function toggleUserStatus(userId, isActive) {
             const action = isActive ? 'lock' : 'unlock';
             const confirmMessage = isActive ? 
@@ -1741,6 +1881,38 @@
             // Switch to events tab and load all events
             $('.menu-link[data-target="events"]').click();
         }
+
+        function loadAnalytics() {
+            $.get('/admin/api/analytics', function(data) {
+                $('#stat-total-users').text(data.totalUsers);
+                $('#stat-active-events').text(data.activeEvents);
+                $('#stat-pending-events').text(data.pendingEvents);
+                $('#stat-avg-participation').text(data.avgParticipation + '%');
+
+                // Phần mới: Render charts từ base64
+                renderChart('eventsByStatusChart', data.eventsByStatusChart);
+                renderChart('registrationsByEventChart', data.registrationsByEventChart);
+                renderChart('registrationsOverTimeChart', data.registrationsOverTimeChart);
+            }).fail(function() {
+                showError('Lỗi tải dữ liệu thống kê');
+            });
+        }
+
+        // Function mới: Render chart với fallback
+        function renderChart(chartId, base64Data) {
+            const imgElem = $('#' + chartId);
+            const placeholderElem = $('#' + chartId + 'Placeholder');
+            if (base64Data && base64Data.length > 0) {
+                imgElem.attr('src', 'data:image/png;base64,' + base64Data);
+                imgElem.show();
+                placeholderElem.hide();
+            } else {
+                imgElem.hide();
+                placeholderElem.text('Không thể tải biểu đồ (lỗi generation)').show();
+            }
+        }
+
+    
     </script>
 </body>
 </html>

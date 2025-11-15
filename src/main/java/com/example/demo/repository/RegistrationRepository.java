@@ -186,4 +186,11 @@ public class RegistrationRepository {
         String sql = "SELECT COUNT(*) FROM su_kien WHERE nguoi_to_chuc_id = ? AND so_luong_da_dang_ky < so_luong_toi_da * 0.5";
         return jdbcTemplate.queryForObject(sql, Integer.class, organizerId);
     }
+
+    // Thêm phương thức mới: Lấy tất cả đăng ký (toàn hệ thống)
+    public List<Registration> findAll() {
+        String sql = "SELECT * FROM dang_ky_su_kien";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Registration.class));
+    }
 }
+ 

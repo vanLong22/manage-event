@@ -1,3 +1,4 @@
+
 package com.example.demo.service;
 
 import com.example.demo.model.ActivityHistory;
@@ -103,4 +104,10 @@ public class RegistrationService {
         stats.put("attentionEvents", registrationRepository.countAttentionEvents(organizerId)); // Ví dụ: low registration
         return stats;
     }
+
+    // Thêm phương thức mới: Lấy tất cả đăng ký (toàn hệ thống)
+    public List<Registration> getAllRegistrations() {
+        return registrationRepository.findAll();
+    }
 }
+ 

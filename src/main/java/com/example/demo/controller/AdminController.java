@@ -1,15 +1,22 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Event;
+import com.example.demo.model.Registration;
 import com.example.demo.model.User;
 import com.example.demo.service.EventService;
+import com.example.demo.service.RegistrationService;
 import com.example.demo.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +31,9 @@ public class AdminController {
 
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private RegistrationService registrationService;
 
     @GetMapping("/admin")
     public String showAdminDashboard(Model model) {
@@ -43,8 +53,8 @@ public class AdminController {
         // Gửi dữ liệu sang view
         model.addAttribute("activeEvents", activeEvents);
         model.addAttribute("pendingEvents", pendingEvents);
-        model.addAttribute("violationEvents", 0); // Dữ liệu tạm
-        model.addAttribute("notificationCount", 5); // Dữ liệu tạm
+        model.addAttribute("violationEvents", 0);
+        model.addAttribute("notificationCount", 5);
 
         // Lấy 3 sự kiện gần nhất
         List<Event> recentEvents = allEvents.stream()
@@ -77,9 +87,28 @@ public class AdminController {
         data.put("violationEvents", 0);
         data.put("notificationCount", 5);
         
-        // Recent events (last 3)
-        List<Event> recentEvents = allEvents.stream()
+        // Recent events (last 3) với thông tin người tổ chức
+        List<Map<String, Object>> recentEvents = allEvents.stream()
             .limit(3)
+            .map(event -> {
+                Map<String, Object> eventData = new HashMap<>();
+                eventData.put("suKienId", event.getSuKienId());
+                eventData.put("tenSuKien", event.getTenSuKien());
+                eventData.put("moTa", event.getMoTa());
+                eventData.put("thoiGianBatDau", event.getThoiGianBatDau());
+                eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
+                eventData.put("diaDiem", event.getDiaDiem());
+                eventData.put("loaiSuKien", event.getLoaiSuKien());
+                eventData.put("trangThai", event.getTrangThai());
+                eventData.put("soLuongToiDa", event.getSoLuongToiDa());
+                eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
+                
+                // Lấy thông tin người tổ chức
+                User organizer = userService.findById(event.getNguoiToChucId());
+                eventData.put("organizerName", organizer != null ? organizer.getHoTen() : "N/A");
+                
+                return eventData;
+            })
             .collect(Collectors.toList());
         data.put("recentEvents", recentEvents);
         
@@ -88,7 +117,8 @@ public class AdminController {
 
     // Get users with filtering
     @GetMapping("/api/users")
-    public ResponseEntity<List<User>> getUsers(
+    @ResponseBody
+    public List<Map<String, Object>> getUsers(
             @RequestParam(required = false) String role,
             @RequestParam(required = false) String status) {
         
@@ -98,43 +128,46 @@ public class AdminController {
         if (role != null && !role.isEmpty()) {
             allUsers = allUsers.stream()
                 .filter(user -> role.equals(user.getVaiTro()))
-                .toList();
+                .collect(Collectors.toList());
         }
         
-        // Note: User model doesn't have status field, so we'll return all
-        // You might need to add status field to User model
-        
-        return ResponseEntity.ok(allUsers);
+        // Map users to include status (giả sử status được lưu trong User)
+        return allUsers.stream().map(user -> {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("nguoiDungId", user.getNguoiDungId());
+            userData.put("hoTen", user.getHoTen());
+            userData.put("email", user.getEmail());
+            userData.put("soDienThoai", user.getSoDienThoai());
+            userData.put("vaiTro", user.getVaiTro());
+            userData.put("ngayTao", user.getNgayTao());
+            userData.put("diaChi", user.getDiaChi());
+            return userData;
+        }).collect(Collectors.toList());
     }
 
     // Get user by ID
     @GetMapping("/api/users/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Long id) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getUser(@PathVariable Long id) {
         User user = userService.findById(id);
         if (user != null) {
-            return ResponseEntity.ok(user);
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("nguoiDungId", user.getNguoiDungId());
+            userData.put("hoTen", user.getHoTen());
+            userData.put("email", user.getEmail());
+            userData.put("soDienThoai", user.getSoDienThoai());
+            userData.put("vaiTro", user.getVaiTro());
+            userData.put("ngayTao", user.getNgayTao());
+            userData.put("diaChi", user.getDiaChi());
+            return ResponseEntity.ok(userData);
         }
         return ResponseEntity.notFound().build();
     }
 
-    // Toggle user status
-    @PostMapping("/api/users/{id}/status")
-    public ResponseEntity<Map<String, Object>> toggleUserStatus(
-            @PathVariable Long id,
-            @RequestParam String action) {
-        
-        Map<String, Object> response = new HashMap<>();
-        // Note: User model doesn't have status field
-        // You'll need to implement this functionality
-        
-        response.put("success", true);
-        response.put("message", "Cập nhật trạng thái thành công");
-        return ResponseEntity.ok(response);
-    }
-
     // Get events with filtering
     @GetMapping("/api/events")
-    public ResponseEntity<List<Event>> getEvents(
+    @ResponseBody
+    public List<Map<String, Object>> getEvents(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String type) {
         
@@ -144,50 +177,100 @@ public class AdminController {
         if (status != null && !status.isEmpty()) {
             allEvents = allEvents.stream()
                 .filter(event -> status.equals(event.getTrangThai()))
-                .toList();
+                .collect(Collectors.toList());
         }
         
         // Filter by type
         if (type != null && !type.isEmpty()) {
             allEvents = allEvents.stream()
                 .filter(event -> type.equals(event.getLoaiSuKien()))
-                .toList();
+                .collect(Collectors.toList());
         }
         
-        // Add organizer names (you might need to fetch this from user service)
-        allEvents.forEach(event -> {
+        // Map events to include organizer name
+        return allEvents.stream().map(event -> {
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("suKienId", event.getSuKienId());
+            eventData.put("tenSuKien", event.getTenSuKien());
+            eventData.put("moTa", event.getMoTa());
+            eventData.put("thoiGianBatDau", event.getThoiGianBatDau());
+            eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
+            eventData.put("diaDiem", event.getDiaDiem());
+            eventData.put("loaiSuKien", event.getLoaiSuKien());
+            eventData.put("trangThai", event.getTrangThai());
+            eventData.put("soLuongToiDa", event.getSoLuongToiDa());
+            eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
+            eventData.put("nguoiToChucId", event.getNguoiToChucId());
+            
+            // Lấy thông tin người tổ chức
             User organizer = userService.findById(event.getNguoiToChucId());
-            if (organizer != null) {
-                // We'll add organizer name as a transient field or handle in frontend
-            }
-        });
-        
-        return ResponseEntity.ok(allEvents);
+            eventData.put("organizerName", organizer != null ? organizer.getHoTen() : "N/A");
+            
+            return eventData;
+        }).collect(Collectors.toList());
     }
 
     // Get pending events
     @GetMapping("/api/events/pending")
-    public ResponseEntity<List<Event>> getPendingEvents() {
+    @ResponseBody
+    public List<Map<String, Object>> getPendingEvents() {
         List<Event> allEvents = eventService.getAllEvents();
         List<Event> pendingEvents = allEvents.stream()
             .filter(event -> "SapDienRa".equals(event.getTrangThai()))
-            .toList();
+            .collect(Collectors.toList());
         
-        return ResponseEntity.ok(pendingEvents);
+        return pendingEvents.stream().map(event -> {
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("suKienId", event.getSuKienId());
+            eventData.put("tenSuKien", event.getTenSuKien());
+            eventData.put("moTa", event.getMoTa());
+            eventData.put("thoiGianBatDau", event.getThoiGianBatDau());
+            eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
+            eventData.put("diaDiem", event.getDiaDiem());
+            eventData.put("loaiSuKien", event.getLoaiSuKien());
+            eventData.put("trangThai", event.getTrangThai());
+            eventData.put("soLuongToiDa", event.getSoLuongToiDa());
+            eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
+            eventData.put("nguoiToChucId", event.getNguoiToChucId());
+            
+            User organizer = userService.findById(event.getNguoiToChucId());
+            eventData.put("organizerName", organizer != null ? organizer.getHoTen() : "N/A");
+            
+            return eventData;
+        }).collect(Collectors.toList());
     }
 
     // Get event by ID
     @GetMapping("/api/events/{id}")
-    public ResponseEntity<Event> getEvent(@PathVariable Long id) {
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getEvent(@PathVariable Long id) {
         Event event = eventService.getEventById(id);
         if (event != null) {
-            return ResponseEntity.ok(event);
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("suKienId", event.getSuKienId());
+            eventData.put("tenSuKien", event.getTenSuKien());
+            eventData.put("moTa", event.getMoTa());
+            eventData.put("thoiGianBatDau", event.getThoiGianBatDau());
+            eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
+            eventData.put("diaDiem", event.getDiaDiem());
+            eventData.put("loaiSuKien", event.getLoaiSuKien());
+            eventData.put("trangThai", event.getTrangThai());
+            eventData.put("soLuongToiDa", event.getSoLuongToiDa());
+            eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
+            eventData.put("nguoiToChucId", event.getNguoiToChucId());
+            
+            // Lấy thông tin người tổ chức
+            User organizer = userService.findById(event.getNguoiToChucId());
+            eventData.put("organizerName", organizer != null ? organizer.getHoTen() : "N/A");
+            
+            return ResponseEntity.ok(eventData);
         }
         return ResponseEntity.notFound().build();
     }
 
-
-
+    // Các phương thức còn lại giữ nguyên...
+    // ... (approveEvent, rejectEvent, deleteEvent, getAnalytics, etc.)
+    
     // API Approve event
     @PostMapping("/api/events/{id}/approve")
     @ResponseBody
@@ -262,9 +345,81 @@ public class AdminController {
         data.put("pendingEvents", allEvents.stream()
             .filter(e -> "SapDienRa".equals(e.getTrangThai()))
             .count());
-        data.put("avgParticipation", 85); // Placeholder - calculate real average
+        data.put("avgParticipation", 85); // Placeholder - calculate real average (tỷ lệ tham gia trung bình)
         
+        // Lấy dữ liệu cho charts
+        List<Event> events = eventService.getAllEvents(); // Dữ liệu sự kiện
+        List<Registration> registrations = registrationService.getAllRegistrations(); // Dữ liệu đăng ký (giả định service tồn tại)
+        List<Event> popularEvents = eventService.getPopularEvents(5); // Giả định method get popular events (top 5 by soLuongDaDangKy)
+
+        // Generate charts và thêm vào data
+        data.put("eventsByStatusChart", generateChart("events_by_status", events));
+        data.put("registrationsByEventChart", generateChart("registrations_by_event", popularEvents));
+        data.put("registrationsOverTimeChart", generateChart("registrations_over_time", registrations));
+
         return data;
+    }
+
+    // Method mới: Generate chart base64 (copy và điều chỉnh từ mã cũ)
+    private String generateChart(String chartType, List<?> data) {
+        try {
+            // Đường dẫn relative đến script Python (dễ deploy hơn absolute path)
+            String scriptPath = "src/main/resources/scripts/chart.py"; // Thay nếu khác
+            ProcessBuilder pb = new ProcessBuilder("python", scriptPath, chartType);
+            Process p = pb.start();
+
+            // Gửi JSON data qua stdin
+            try (OutputStream os = p.getOutputStream()) {
+                ObjectMapper mapper = new ObjectMapper();
+                os.write(mapper.writeValueAsBytes(data));
+                os.flush();
+            }
+
+            // Đọc stdout (base64)
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (InputStream is = p.getInputStream()) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    baos.write(buffer, 0, bytesRead);
+                }
+            }
+
+            // Đọc stderr cho debug
+            ByteArrayOutputStream errorBaos = new ByteArrayOutputStream();
+            try (InputStream errorIs = p.getErrorStream()) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = errorIs.read(buffer)) != -1) {
+                    errorBaos.write(buffer, 0, bytesRead);
+                }
+            }
+            String errorOutput = errorBaos.toString("UTF-8").trim();
+            if (!errorOutput.isEmpty()) {
+                System.out.println("Python stderr: " + errorOutput);
+            }
+
+            int exitCode = p.waitFor();
+            String result = baos.toString("UTF-8").trim();
+
+            // Debug log
+            System.out.println("=== CHART DEBUG ===");
+            System.out.println("Chart type: " + chartType);
+            System.out.println("Exit code: " + exitCode);
+            System.out.println("Output length: " + result.length() + " chars");
+            System.out.println("===================");
+
+            if (exitCode != 0 || result.isEmpty() || result.length() < 5000) {
+                System.err.println("Python failed or base64 too short for chart: " + chartType);
+                return null; // Fallback: null nếu fail
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     // API Save suggestion configuration
@@ -307,4 +462,7 @@ public class AdminController {
     public void downloadReport() {
         // Implement report download logic
     }
+
+
+
 }

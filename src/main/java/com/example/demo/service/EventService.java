@@ -1,3 +1,4 @@
+
 package com.example.demo.service;
 
 import com.example.demo.model.Event;
@@ -84,6 +85,11 @@ public class EventService {
     // Thêm mới: Popular events (dựa trên số đăng ký)
     public List<Event> getPopularEvents(Long organizerId) {
         return eventRepository.findPopularByOrganizer(organizerId);
+    }
+
+    // Thêm phương thức mới: Popular events toàn hệ thống (top N by registrations)
+    public List<Event> getPopularEvents(int limit) {
+        return eventRepository.findPopularEvents(limit);
     }
 
     // Thêm mới: Update event

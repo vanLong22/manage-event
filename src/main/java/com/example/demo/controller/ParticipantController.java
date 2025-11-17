@@ -391,4 +391,128 @@ public class ParticipantController {
 
         return ResponseEntity.ok(events);
     }
+
+    // API: Đổi mật khẩu
+    @PostMapping("/api/change-password")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody Map<String, String> request, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
+
+        try {
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+            String confirmPassword = request.get("confirmPassword");
+
+            System.out.println("Thông tin nhận được từ fontend: " + currentPassword); // Debug
+            System.out.println("Thông tin nhận được từ fontend: " + newPassword);
+            System.out.println("Thông tin nhận được từ fontend: " + confirmPassword);
+
+            // Validation
+            if (currentPassword == null || currentPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Vui lòng nhập mật khẩu hiện tại"));
+            }
+
+            if (newPassword == null || newPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Vui lòng nhập mật khẩu mới"));
+            }
+
+            if (newPassword.length() < 6) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mật khẩu mới phải có ít nhất 6 ký tự"));
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mật khẩu xác nhận không khớp"));
+            }
+
+            // Kiểm tra mật khẩu hiện tại
+            if (!userService.verifyCurrentPassword(userId, currentPassword)) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mật khẩu hiện tại không đúng"));
+            }
+
+            // Thực hiện đổi mật khẩu
+            boolean success = userService.changePassword(userId, currentPassword, newPassword);
+            
+            if (success) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Đổi mật khẩu thành công!"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Đổi mật khẩu thất bại"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi hệ thống: " + e.getMessage()));
+        }
+    }
+
+    // API: Quên mật khẩu (cho chức năng mở rộng)
+    @PostMapping("/api/forgot-password")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String username = request.get("username");
+
+            if ((email == null || email.trim().isEmpty()) && (username == null || username.trim().isEmpty())) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Vui lòng nhập email hoặc tên đăng nhập"));
+            }
+
+            // Tìm user theo email hoặc username
+            User user = null;
+            if (email != null && !email.trim().isEmpty()) {
+                List<User> users = userService.findByEmail(email);
+                if (!users.isEmpty()) {
+                    user = users.get(0);
+                }
+            } else {
+                user = userService.findByUsername(username);
+            }
+
+            if (user == null) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Không tìm thấy tài khoản với thông tin đã nhập"));
+            }
+
+            // TODO: Trong thực tế, gửi email reset mật khẩu
+            // Ở đây chúng ta chỉ trả về thông báo thành công
+            return ResponseEntity.ok(Map.of("success", true, "message", "Hướng dẫn reset mật khẩu đã được gửi đến email của bạn"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi hệ thống"));
+        }
+    }
+
+    // API: Reset mật khẩu (cho admin hoặc qua email xác thực)
+    @PostMapping("/api/reset-password")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> request, HttpSession session) {
+        try {
+            String token = request.get("token");
+            String newPassword = request.get("newPassword");
+            String confirmPassword = request.get("confirmPassword");
+
+            // Validation
+            if (newPassword == null || newPassword.length() < 6) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mật khẩu mới phải có ít nhất 6 ký tự"));
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mật khẩu xác nhận không khớp"));
+            }
+
+            // TODO: Xác thực token và lấy userId
+            Long userId = (Long) session.getAttribute("userId");
+
+            userService.resetPassword(userId, newPassword);
+            
+            return ResponseEntity.ok(Map.of("success", true, "message", "Reset mật khẩu thành công"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi hệ thống"));
+        }
+    }
+
 }

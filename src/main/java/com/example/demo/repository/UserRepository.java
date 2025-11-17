@@ -73,4 +73,32 @@ public class UserRepository {
         String sql = "UPDATE nguoi_dung SET ho_ten = ?, email = ?, so_dien_thoai = ?, dia_chi = ?, gioi_tinh = ?, anh_dai_dien = ? WHERE nguoi_dung_id = ?";
         jdbcTemplate.update(sql, user.getHoTen(), user.getEmail(), user.getSoDienThoai(), user.getDiaChi(), user.getGioiTinh(), user.getAnhDaiDien(), user.getNguoiDungId());
     }
+
+    public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
+        try {
+            // Kiểm tra mật khẩu hiện tại
+            String checkSql = "SELECT mat_khau FROM nguoi_dung WHERE nguoi_dung_id = ?";
+            String currentHashedPassword = jdbcTemplate.queryForObject(checkSql, String.class, userId);
+            
+            // So sánh mật khẩu hiện tại (trong thực tế nên dùng BCrypt)
+            if (!currentHashedPassword.equals(currentPassword)) {
+                return false;
+            }
+            
+            // Cập nhật mật khẩu mới
+            String updateSql = "UPDATE nguoi_dung SET mat_khau = ? WHERE nguoi_dung_id = ?";
+            int rowsAffected = jdbcTemplate.update(updateSql, newPassword, userId);
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void updatePasswordDirect(Long userId, String newPassword) {
+        String sql = "UPDATE nguoi_dung SET mat_khau = ? WHERE nguoi_dung_id = ?";
+        jdbcTemplate.update(sql, newPassword, userId);
+    }
+
+    
 }

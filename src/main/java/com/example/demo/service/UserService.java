@@ -105,4 +105,22 @@ public class UserService {
             return null;
         }
     }
+
+    public boolean changePassword(Long userId, String currentPassword, String newPassword) {
+        return userRepository.updatePassword(userId, currentPassword, newPassword);
+    }
+
+    public void resetPassword(Long userId, String newPassword) {
+        userRepository.updatePasswordDirect(userId, newPassword);
+    }
+
+    public boolean verifyCurrentPassword(Long userId, String currentPassword) {
+        try {
+            String sql = "SELECT mat_khau FROM nguoi_dung WHERE nguoi_dung_id = ?";
+            String storedPassword = jdbcTemplate.queryForObject(sql, String.class, userId);
+            return storedPassword.equals(currentPassword);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

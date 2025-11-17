@@ -1924,6 +1924,8 @@
                                     <td><c:out value="${history.loaiHoatDong}"/></td>
                                     <td><c:out value="${history.chiTiet}"/></td>
                                     <td>
+                                        <fmt:formatDate value="${history.thoiGian}" pattern="dd/MM/yyyy HH:mm"/>
+                                    <td>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -2081,8 +2083,134 @@
         </div>
     </div>
 
+    <!-- Change Password Modal -->
+    <div class="modal" id="change-password-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Đổi mật khẩu</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="change-password-form" method ="POST" action="javascript:void(0);">
+                    <div class="form-group">
+                        <label for="change-current-password">Mật khẩu hiện tại *</label>
+                        <input type="password" id="change-current-password" name="currentPassword" placeholder="Nhập mật khẩu hiện tại" required>
+                        <i class="fas fa-eye input-icon toggle-password" data-target="change-current-password"></i>
+                        <div class="error-message" id="current-password-error-modal"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="change-new-password">Mật khẩu mới *</label>
+                        <input type="password" id="change-new-password" name="newPassword" placeholder="Nhập mật khẩu mới" required>
+                        <i class="fas fa-eye input-icon toggle-password" data-target="change-new-password"></i>
+                        <div class="password-strength" id="change-password-strength">
+                            <div class="password-strength-bar"></div>
+                        </div>
+                        <div class="password-requirements">
+                            <div class="requirement unmet" id="change-length-req">
+                                <i class="fas fa-circle"></i>
+                                <span>Ít nhất 6 ký tự</span>
+                            </div>
+                        </div>
+                        <div class="error-message" id="new-password-error-modal"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="change-confirm-password">Xác nhận mật khẩu mới *</label>
+                        <input type="password" id="change-confirm-password" name="confirmPassword" placeholder="Nhập lại mật khẩu mới" required>
+                        <i class="fas fa-eye input-icon toggle-password" data-target="change-confirm-password"></i>
+                        <div class="error-message" id="confirm-password-error-modal"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary" id="submit-change-password" style="width: 100%;">
+                            <i class="fas fa-key"></i> Đổi mật khẩu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal" id="forgot-password-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Quên mật khẩu</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--gray);">
+                    Vui lòng nhập email hoặc tên đăng nhập của bạn. Chúng tôi sẽ gửi hướng dẫn reset mật khẩu qua email.
+                </p>
+                <form id="forgot-password-form">
+                    <div class="form-group">
+                        <label for="forgot-email">Email hoặc Tên đăng nhập *</label>
+                        <input type="text" id="forgot-email" name="email" placeholder="Nhập email hoặc tên đăng nhập" required>
+                        <div class="error-message" id="forgot-email-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary" id="submit-forgot-password" style="width: 100%;">
+                            <i class="fas fa-paper-plane"></i> Gửi yêu cầu
+                        </button>
+                    </div>
+                </form>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="#" id="back-to-login-from-forgot" style="color: var(--primary); text-decoration: none;">
+                        <i class="fas fa-arrow-left"></i> Quay lại đăng nhập
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     $(document).ready(function() {
+        // Thêm toast container vào body nếu chưa có
+        if ($('#toast-container').length === 0) {
+            $('body').append('<div class="toast-container" id="toast-container"></div>');
+        }
+
+        // Hàm hiển thị thông báo toast
+        function showToast(message, isSuccess = false) {
+            const toast = $('<div class="toast"></div>')
+                .text(message)
+                .css({
+                    'background': isSuccess ? '#06d6a0' : '#dc3545',
+                    'color': '#fff',
+                    'padding': '12px 20px',
+                    'border-radius': '5px',
+                    'position': 'fixed',
+                    'top': '20px',
+                    'right': '20px',
+                    'z-index': '10000',
+                    'transition': 'all 0.5s ease',
+                    'opacity': '0',
+                    'transform': 'translateY(-20px)',
+                    'max-width': '300px',
+                    'word-wrap': 'break-word'
+                });
+
+            $('#toast-container').append(toast);
+            
+            setTimeout(() => {
+                toast.css({
+                    'opacity': '1',
+                    'transform': 'translateY(0)'
+                });
+            }, 100);
+
+            setTimeout(() => {
+                toast.css({
+                    'opacity': '0',
+                    'transform': 'translateY(-20px)'
+                });
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
         // Navigation functionality
         $('.menu-link').click(function(e) {
             e.preventDefault();
@@ -2218,7 +2346,7 @@
             $.get('/participant/api/events/' + eventId)
                 .done(function(event) {
                     if (!event) {
-                        alert('Không tìm thấy thông tin sự kiện');
+                        showToast('Không tìm thấy thông tin sự kiện', false);
                         return;
                     }
 
@@ -2275,10 +2403,9 @@
                 })
                 .fail(function(xhr, status, error) {
                     console.error('Error loading event detail:', error);
-                    alert('Không tải được thông tin sự kiện: ' + error);
+                    showToast('Không tải được thông tin sự kiện: ' + error, false);
                 });
         }    
-    
 
         // Tham gia sự kiện từ modal
         $(document).on('click', '.btn-join-event-from-modal', function() {
@@ -2301,7 +2428,7 @@
             $.get('/participant/api/events/' + eventId)
                 .done(function(event) {
                     if (!event) {
-                        alert('Không tìm thấy thông tin sự kiện');
+                        showToast('Không tìm thấy thông tin sự kiện', false);
                         return;
                     }
 
@@ -2327,7 +2454,7 @@
                     $('#registration-modal').css('display', 'flex');
                 })
                 .fail(function() {
-                    alert('Không tải được thông tin sự kiện');
+                    showToast('Không tải được thông tin sự kiện', false);
                 });
         }
 
@@ -2352,16 +2479,16 @@
                 data: JSON.stringify(payload),
                 success: function(res) {
                     if (res.success) {
-                        showNotification(res.message, 'success');
+                        showToast(res.message, true);
                         $('#registration-modal').css('display', 'none');
                         // Làm mới danh sách sự kiện của tôi
                         loadMyEvents();
                     } else {
-                        showNotification(res.message, 'error');
+                        showToast(res.message, false);
                     }
                 },
                 error: function(xhr) {
-                    showNotification('Đăng ký thất bại: ' + (xhr.responseJSON?.message || 'Lỗi hệ thống'), 'error');
+                    showToast('Đăng ký thất bại: ' + (xhr.responseJSON?.message || 'Lỗi hệ thống'), false);
                 }
             });
         });
@@ -2380,14 +2507,14 @@
                     data: JSON.stringify({ dangKyId: dangKyId }),
                     success: function(res) {
                         if (res.success) {
-                            showNotification(res.message, 'success');
+                            showToast(res.message, true);
                             loadMyEvents();
                         } else {
-                            showNotification(res.message, 'error');
+                            showToast(res.message, false);
                         }
                     },
                     error: function() {
-                        showNotification('Hủy đăng ký thất bại', 'error');
+                        showToast('Hủy đăng ký thất bại', false);
                     }
                 });
             }
@@ -2405,7 +2532,7 @@
             $.get('/participant/api/suggestions/' + suggestionId)
                 .done(function(suggestion) {
                     if (!suggestion) {
-                        alert('Không tìm thấy thông tin đề xuất');
+                        showToast('Không tìm thấy thông tin đề xuất', false);
                         return;
                     }
 
@@ -2479,7 +2606,7 @@
                 })
                 .fail(function(xhr, status, error) {
                     console.error('Error loading suggestion detail:', error);
-                    alert('Không tải được thông tin đề xuất: ' + error);
+                    showToast('Không tải được thông tin đề xuất: ' + error, false);
                 });
         }
 
@@ -2495,7 +2622,7 @@
                     type: 'DELETE',
                     success: function(response) {
                         if (response.success) {
-                            showNotification('Xóa đề xuất thành công!', 'success');
+                            showToast('Xóa đề xuất thành công!', true);
                             // Xóa hàng khỏi bảng
                             $('tr[data-suggestion-id="' + suggestionId + '"]').remove();
                             
@@ -2510,7 +2637,7 @@
                         }
                     },
                     error: function(xhr) {
-                        showNotification('Xóa đề xuất thất bại!', 'error');
+                        showToast('Xóa đề xuất thất bại!', false);
                     }
                 });
             }
@@ -2555,14 +2682,14 @@
                 data: JSON.stringify(suggestionData),
                 success: function(response) {
                     console.log('== DEBUG: Response data ==', response);
-                    showNotification('Gửi đề xuất thành công!', 'success');
+                    showToast('Gửi đề xuất thành công!', true);
                     $('#suggestion-form')[0].reset();
                     // Tải lại danh sách đề xuất
                     loadSuggestions();
                 },
                 error: function(xhr, status, error) {
                     console.error('== DEBUG: Error ==', error);
-                    showNotification('Có lỗi xảy ra khi gửi đề xuất! ' + (xhr.responseJSON?.message || error), 'error');
+                    showToast('Có lỗi xảy ra khi gửi đề xuất! ' + (xhr.responseJSON?.message || error), false);
                 },
                 complete: function() {
                     submitBtn.prop('disabled', false);
@@ -2582,43 +2709,43 @@
             const contact = $('#suggestion-contact').val().trim();
             
             if (!title) {
-                showNotification('Vui lòng nhập tiêu đề sự kiện!', 'error');
+                showToast('Vui lòng nhập tiêu đề sự kiện!', false);
                 $('#suggestion-title').focus();
                 return false;
             }
             
             if (!description) {
-                showNotification('Vui lòng nhập mô tả nhu cầu!', 'error');
+                showToast('Vui lòng nhập mô tả nhu cầu!', false);
                 $('#suggestion-description').focus();
                 return false;
             }
             
             if (!type) {
-                showNotification('Vui lòng chọn loại sự kiện!', 'error');
+                showToast('Vui lòng chọn loại sự kiện!', false);
                 $('#suggestion-type').focus();
                 return false;
             }
             
             if (!location) {
-                showNotification('Vui lòng nhập địa điểm!', 'error');
+                showToast('Vui lòng nhập địa điểm!', false);
                 $('#suggestion-location').focus();
                 return false;
             }
             
             if (!time) {
-                showNotification('Vui lòng chọn thời gian dự kiến!', 'error');
+                showToast('Vui lòng chọn thời gian dự kiến!', false);
                 $('#suggestion-time').focus();
                 return false;
             }
             
             if (!guests || guests < 1) {
-                showNotification('Vui lòng nhập số lượng khách hợp lệ!', 'error');
+                showToast('Vui lòng nhập số lượng khách hợp lệ!', false);
                 $('#suggestion-guests').focus();
                 return false;
             }
             
             if (!contact) {
-                showNotification('Vui lòng nhập thông tin liên hệ!', 'error');
+                showToast('Vui lòng nhập thông tin liên hệ!', false);
                 $('#suggestion-contact').focus();
                 return false;
             }
@@ -2627,7 +2754,7 @@
             const selectedTime = new Date(time);
             const now = new Date();
             if (selectedTime < now) {
-                showNotification('Thời gian dự kiến không được trong quá khứ!', 'error');
+                showToast('Thời gian dự kiến không được trong quá khứ!', false);
                 $('#suggestion-time').focus();
                 return false;
             }
@@ -2638,7 +2765,7 @@
         // Reset form đề xuất
         $('#reset-suggestion').click(function() {
             $('#suggestion-form')[0].reset();
-            showNotification('Đã đặt lại form!', 'info');
+            showToast('Đã đặt lại form!', true);
         });
 
         // Xử lý thông báo
@@ -2657,7 +2784,7 @@
             $.get('/participant/api/notifications/' + notificationId)
                 .done(function(notification) {
                     if (!notification) {
-                        alert('Không tìm thấy thông tin thông báo');
+                        showToast('Không tìm thấy thông tin thông báo', false);
                         return;
                     }
 
@@ -2711,7 +2838,7 @@
                 })
                 .fail(function(xhr, status, error) {
                     console.error('Error loading notification detail:', error);
-                    alert('Không tải được thông tin thông báo: ' + error);
+                    showToast('Không tải được thông tin thông báo: ' + error, false);
                 });
         }
 
@@ -2740,7 +2867,7 @@
             $.post('/participant/api/notifications/' + notificationId + '/action', { action: action })
                 .done(function(response) {
                     if (response.success) {
-                        showNotification('Đã ' + (action == 'accept' ? 'chấp nhận' : 'từ chối') + ' thông báo!', 'success');
+                        showToast('Đã ' + (action == 'accept' ? 'chấp nhận' : 'từ chối') + ' thông báo!', true);
                         $('#notification-detail-modal').css('display', 'none');
                         
                         // Xóa thông báo khỏi danh sách
@@ -2759,7 +2886,7 @@
                     }
                 })
                 .fail(function() {
-                    showNotification('Xử lý thông báo thất bại!', 'error');
+                    showToast('Xử lý thông báo thất bại!', false);
                 });
         }
 
@@ -2799,7 +2926,7 @@
                         }
                     },
                     error: function() {
-                        showNotification('Xóa thông báo thất bại!', 'error');
+                        showToast('Xóa thông báo thất bại!', false);
                     }
                 });
             }
@@ -2822,10 +2949,10 @@
                         $('#notification-count').text(currentCount - 1);
                     }
                     
-                    showNotification('Đã đánh dấu đã đọc!', 'success');
+                    showToast('Đã đánh dấu đã đọc!', true);
                 })
                 .fail(function() {
-                    showNotification('Đánh dấu đã đọc thất bại!', 'error');
+                    showToast('Đánh dấu đã đọc thất bại!', false);
                 });
         });
 
@@ -2884,76 +3011,12 @@
                     $('.notification-item').removeClass('notification-unread');
                     $('.btn-mark-read').remove();
                     $('#notification-count').text('0');
-                    showNotification('Đã đánh dấu tất cả thông báo đã đọc!', 'success');
+                    showToast('Đã đánh dấu tất cả thông báo đã đọc!', true);
                 })
                 .fail(function() {
-                    showNotification('Đánh dấu đã đọc thất bại!', 'error');
+                    showToast('Đánh dấu đã đọc thất bại!', false);
                 });
         });
-
-        // Các hàm tiện ích
-        function showNotification(message, type) {
-            // Tạo và hiển thị thông báo
-            const notification = document.createElement('div');
-            notification.className = `notification-toast ${type}`;
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 8px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                min-width: 300px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                animation: slideInRight 0.3s ease;
-            `;
-            
-            if (type == 'success') {
-                notification.style.backgroundColor = '#28a745';
-            } else if (type == 'error') {
-                notification.style.backgroundColor = '#dc3545';
-            } else if (type == 'warning') {
-                notification.style.backgroundColor = '#ffc107';
-                notification.style.color = '#212529';
-            } else {
-                notification.style.backgroundColor = '#17a2b8';
-            }
-            
-            notification.innerHTML = `
-                <i class="fas fa-${type == 'success' ? 'check' : type == 'error' ? 'exclamation-triangle' : type == 'warning' ? 'exclamation-circle' : 'info'}-circle"></i>
-                <span>${message}</span>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOutRight 0.3s ease';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Thêm CSS animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOutRight {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
 
         // Các hàm load dữ liệu
         function loadMyEvents() {
@@ -3038,7 +3101,6 @@
             });
         });
 
-
         // Hàm lọc sự kiện nâng cao
         function applyEventFilters() {
             const filters = {
@@ -3069,7 +3131,7 @@
                         displayFilteredEvents(response.data);
                         updateFilterResultsInfo(response.data.length);
                     } else {
-                        showNotification('Lỗi khi lọc sự kiện: ' + response.message, 'error');
+                        showToast('Lỗi khi lọc sự kiện: ' + response.message, false);
                         $('#all-events-grid').html(
                             '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
                             '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>' +
@@ -3081,7 +3143,7 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('Filter error:', error);
-                    showNotification('Lỗi kết nối khi lọc sự kiện', 'error');
+                    showToast('Lỗi kết nối khi lọc sự kiện', false);
                     $('#all-events-grid').html(
                         '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
                         '<i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>' +
@@ -3186,7 +3248,7 @@
                     displayFilteredEvents(events);
                 })
                 .fail(function() {
-                    showNotification('Lỗi tải danh sách sự kiện', 'error');
+                    showToast('Lỗi tải danh sách sự kiện', false);
                 });
         }
 
@@ -3256,6 +3318,14 @@
         .btn-clear-filters:hover {
             text-decoration: underline;
         }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            pointer-events: none;
+        }
         </style>
         `;
 
@@ -3283,7 +3353,285 @@
 
         // Khởi tạo
         console.log('Participant dashboard initialized');
-    });
+        
+
+        // Mở modal đổi mật khẩu
+        $('#change-password').click(function(e) {
+            e.preventDefault();
+            $('#change-password-modal').css('display', 'flex');
+            resetChangePasswordForm();
+        });
+
+        // Mở modal quên mật khẩu
+        $('a[href="#"]').filter(function() {
+            return $(this).text().includes('Quên mật khẩu');
+        }).click(function(e) {
+            e.preventDefault();
+            $('#forgot-password-modal').css('display', 'flex');
+        });
+
+        // Quay lại từ quên mật khẩu
+        $('#back-to-login-from-forgot').click(function(e) {
+            e.preventDefault();
+            $('#forgot-password-modal').css('display', 'none');
+        });
+
+        // Xử lý form đổi mật khẩu
+        $('#change-password-form').submit(function(e) {
+            e.preventDefault();
+            
+            if (!validateChangePasswordForm()) {
+                return;
+            }
+
+            const submitBtn = $('#submit-change-password');
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+
+            const formData = {
+                currentPassword: $('#change-current-password').val(),
+                newPassword: $('#change-new-password').val(),
+                confirmPassword: $('#change-confirm-password').val()
+            };
+
+            $.ajax({
+                url: '/participant/api/change-password',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-key"></i> Đổi mật khẩu');
+                    
+                    if (response.success) {
+                        showToast(response.message, true);
+                        $('#change-password-modal').css('display', 'none');
+                        resetChangePasswordForm();
+                    } else {
+                        showToast(response.message, false);
+                        
+                        // Hiển thị lỗi cụ thể
+                        if (response.message.includes('Mật khẩu hiện tại')) {
+                            $('#change-current-password').parent().addClass('error');
+                            $('#current-password-error-modal').text(response.message).show();
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-key"></i> Đổi mật khẩu');
+                    const errorMsg = xhr.responseJSON?.message || 'Lỗi kết nối đến server';
+                    showToast('Đổi mật khẩu thất bại: ' + errorMsg, false);
+                }
+            });
+        });
+
+        // Xử lý form quên mật khẩu
+        $('#forgot-password-form').submit(function(e) {
+            e.preventDefault();
+            
+            const email = $('#forgot-email').val().trim();
+            if (!email) {
+                showToast('Vui lòng nhập email hoặc tên đăng nhập', false);
+                return;
+            }
+
+            const submitBtn = $('#submit-forgot-password');
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang gửi...');
+
+            $.ajax({
+                url: '/participant/api/forgot-password',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ email: email }),
+                success: function(response) {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Gửi yêu cầu');
+                    
+                    if (response.success) {
+                        showToast(response.message, true);
+                        $('#forgot-password-modal').css('display', 'none');
+                        $('#forgot-email').val('');
+                    } else {
+                        showToast(response.message, false);
+                    }
+                },
+                error: function(xhr) {
+                    submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Gửi yêu cầu');
+                    showToast('Gửi yêu cầu thất bại', false);
+                }
+            });
+        });
+
+        // Validate form đổi mật khẩu
+        function validateChangePasswordForm() {
+            let isValid = true;
+            resetChangePasswordErrors();
+
+            const currentPassword = $('#change-current-password').val();
+            const newPassword = $('#change-new-password').val();
+            const confirmPassword = $('#change-confirm-password').val();
+
+            if (!currentPassword) {
+                $('#change-current-password').parent().addClass('error');
+                $('#current-password-error-modal').text('Vui lòng nhập mật khẩu hiện tại').show();
+                isValid = false;
+            }
+
+            if (!newPassword || newPassword.length < 6) {
+                $('#change-new-password').parent().addClass('error');
+                $('#new-password-error-modal').text('Mật khẩu mới phải có ít nhất 6 ký tự').show();
+                isValid = false;
+            }
+
+            if (!confirmPassword || newPassword !== confirmPassword) {
+                $('#change-confirm-password').parent().addClass('error');
+                $('#confirm-password-error-modal').text('Mật khẩu xác nhận không khớp').show();
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Reset form đổi mật khẩu
+        function resetChangePasswordForm() {
+            $('#change-password-form')[0].reset();
+            resetChangePasswordErrors();
+            resetChangePasswordStrength();
+        }
+
+        // Reset lỗi form đổi mật khẩu
+        function resetChangePasswordErrors() {
+            $('#change-password-form .form-group').removeClass('error');
+            $('#change-password-form .error-message').hide();
+        }
+
+        // Reset hiển thị độ mạnh mật khẩu
+        function resetChangePasswordStrength() {
+            $('#change-password-strength').removeClass('weak medium strong');
+            $('#change-password-form .requirement').removeClass('met').addClass('unmet');
+            $('#change-password-form .requirement i').removeClass('fa-check-circle').addClass('fa-circle');
+        }
+
+        // Kiểm tra độ mạnh mật khẩu mới
+        $('#change-new-password').on('input', function() {
+            const password = $(this).val();
+            checkChangePasswordStrength(password);
+        });
+
+        function checkChangePasswordStrength(password) {
+            const strengthBar = $('#change-password-strength');
+            const requirements = {
+                length: password.length >= 6
+            };
+            
+            // Cập nhật hiển thị yêu cầu
+            updateChangePasswordRequirements(requirements);
+            
+            // Cập nhật thanh độ mạnh
+            strengthBar.removeClass('weak medium strong');
+            if (password.length === 0) {
+                // Ẩn thanh khi không có mật khẩu
+                strengthBar.css('opacity', '0');
+            } else {
+                strengthBar.css('opacity', '1');
+                if (password.length < 6) {
+                    strengthBar.addClass('weak');
+                } else if (password.length < 8) {
+                    strengthBar.addClass('medium');
+                } else {
+                    strengthBar.addClass('strong');
+                }
+            }
+        }
+
+        function updateChangePasswordRequirements(requirements) {
+            $('#change-length-req').toggleClass('met unmet', requirements.length);
+            
+            // Cập nhật icon
+            $('#change-password-form .requirement.met i').removeClass('fa-circle').addClass('fa-check-circle');
+            $('#change-password-form .requirement.unmet i').removeClass('fa-check-circle').addClass('fa-circle');
+        }
+
+        // Xác thực mật khẩu xác nhận real-time
+        $('#change-confirm-password').on('input', function() {
+            const newPassword = $('#change-new-password').val();
+            const confirmPassword = $(this).val();
+            
+            if (confirmPassword && newPassword !== confirmPassword) {
+                $(this).parent().addClass('error');
+                $('#confirm-password-error-modal').text('Mật khẩu xác nhận không khớp').show();
+            } else {
+                $(this).parent().removeClass('error');
+                $('#confirm-password-error-modal').hide();
+            }
+        });
+
+        // Thêm CSS cho modal đổi mật khẩu
+        const changePasswordStyles = `
+        <style>
+        .change-password-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            border-radius: 2px;
+            background: #eee;
+            overflow: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength.weak .password-strength-bar {
+            background: var(--danger);
+            width: 33%;
+        }
+
+        .password-strength.medium .password-strength-bar {
+            background: var(--warning);
+            width: 66%;
+        }
+
+        .password-strength.strong .password-strength-bar {
+            background: var(--success);
+            width: 100%;
+        }
+
+        .password-requirements {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .requirement i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .requirement.met {
+            color: var(--success);
+        }
+
+        .requirement.unmet {
+            color: var(--gray);
+        }
+        </style>
+        `;
+
+        $(changePasswordStyles).appendTo('head');
+    });    
     </script>
 </body>
 </html>

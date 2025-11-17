@@ -534,59 +534,12 @@
             }
         }
 
-        /* CSS cho thông báo toast */
         .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
             pointer-events: none;
-        }
-
-        .toast {
-            background: white;
-            color: #333;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-left: 4px solid #dc3545;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-            max-width: 300px;
-            pointer-events: auto;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .toast.success {
-            border-left-color: #06d6a0;
-        }
-
-        .toast.error {
-            border-left-color: #dc3545;
-        }
-
-        .toast .toast-close {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            float: right;
-            margin-left: 10px;
-            color: inherit;
-            opacity: 0.7;
-        }
-
-        .toast .toast-close:hover {
-            opacity: 1;
         }
     </style>
 </head>
@@ -798,245 +751,292 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-    $(document).ready(function() {
-        // Xử lý chuyển đổi giữa form đăng nhập và đăng ký
-        $('#show-register').click(function() {
-            $('#login-form').removeClass('active').addClass('hidden');
-            $('#register-form').addClass('active');
-            $('.mobile-welcome').hide();
-        });
-
-        $('#show-login, #back-to-login').click(function() {
-            $('#register-form').removeClass('active');
-            $('#login-form').removeClass('hidden').addClass('active');
-            $('.mobile-welcome').show();
-        });
-
-        // Xử lý form đăng nhập bằng AJAX
-        $('#loginForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            // Reset lỗi trước khi validate
-            resetErrors();
-            
-            if (!validateLoginForm()) {
-                return;
+        $(document).ready(function() {
+            // Thêm toast container vào body nếu chưa có
+            if ($('#toast-container').length === 0) {
+                $('body').append('<div class="toast-container" id="toast-container"></div>');
             }
 
-            const username = $('#username').val().trim();
-            const password = $('#password').val();
+            // Hàm hiển thị thông báo toast
+            function showToast(message, isSuccess = false) {
+                const toast = $('<div class="toast"></div>')
+                    .text(message)
+                    .css({
+                        'background': isSuccess ? '#06d6a0' : '#dc3545',
+                        'color': '#fff',
+                        'padding': '12px 20px',
+                        'border-radius': '5px',
+                        'position': 'fixed',
+                        'top': '20px',
+                        'right': '20px',
+                        'z-index': '10000',
+                        'transition': 'all 0.5s ease',
+                        'opacity': '0',
+                        'transform': 'translateY(-20px)',
+                        'max-width': '300px',
+                        'word-wrap': 'break-word'
+                    });
 
-            // Hiển thị trạng thái loading
-            $('#login-btn').addClass('loading');
+                $('#toast-container').append(toast);
+                
+                setTimeout(() => {
+                    toast.css({
+                        'opacity': '1',
+                        'transform': 'translateY(0)'
+                    });
+                }, 100);
 
-            $.ajax({
-                url: '${pageContext.request.contextPath}/api/login',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    username: username,
-                    password: password
-                }),
-                success: function(response) {
-                    $('#login-btn').removeClass('loading');
-                    
-                    if (response.success) {
-                        showToast(response.message || 'Đăng nhập thành công!', true);
-                        setTimeout(() => {
-                            window.location.href = response.redirect;
-                        }, 1000);
-                    } else {
-                        showToast(response.message || 'Đăng nhập thất bại!', false);
+                setTimeout(() => {
+                    toast.css({
+                        'opacity': '0',
+                        'transform': 'translateY(-20px)'
+                    });
+                    setTimeout(() => toast.remove(), 500);
+                }, 3000);
+            }
+
+            // Xử lý chuyển đổi giữa form đăng nhập và đăng ký
+            $('#show-register').click(function() {
+                $('#login-form').removeClass('active').addClass('hidden');
+                $('#register-form').addClass('active');
+                $('.mobile-welcome').hide();
+            });
+
+            $('#show-login, #back-to-login').click(function() {
+                $('#register-form').removeClass('active');
+                $('#login-form').removeClass('hidden').addClass('active');
+                $('.mobile-welcome').show();
+            });
+
+            // Xử lý form đăng nhập bằng AJAX
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Reset lỗi trước khi validate
+                resetErrors();
+                
+                if (!validateLoginForm()) {
+                    showToast('Vui lòng điền đầy đủ thông tin đăng nhập', false);
+                    return;
+                }
+
+                const username = $('#username').val().trim();
+                const password = $('#password').val();
+
+                // Hiển thị trạng thái loading
+                $('#login-btn').addClass('loading');
+
+                $.ajax({
+                    url: '${pageContext.request.contextPath}/api/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        username: username,
+                        password: password
+                    }),
+                    success: function(response) {
+                        $('#login-btn').removeClass('loading');
+                        
+                        if (response.success) {
+                            showToast(response.message || 'Đăng nhập thành công!', true);
+                            setTimeout(() => {
+                                window.location.href = response.redirect;
+                            }, 1000);
+                        } else {
+                            showToast(response.message || 'Đăng nhập thất bại!', false);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#login-btn').removeClass('loading');
+                        let msg = 'Lỗi kết nối đến server!';
+                        try {
+                            const err = xhr.responseJSON;
+                            if (err && err.message) msg = err.message;
+                        } catch (e) {}
+                        showToast(msg, false);
                     }
-                },
-                error: function(xhr) {
-                    $('#login-btn').removeClass('loading');
-                    let msg = 'Lỗi kết nối đến server!';
-                    try {
-                        const err = xhr.responseJSON;
-                        if (err && err.message) msg = err.message;
-                    } catch (e) {}
-                    showToast(msg, false);
+                });
+            });
+
+            // Xử lý chọn vai trò trong form đăng ký
+            $('.role-option').click(function() {
+                $('.role-option').removeClass('selected');
+                $(this).addClass('selected');
+                var role = $(this).data('role');
+                $('#vaiTro').val(role);
+            });
+
+            // Xử lý form đăng ký bằng AJAX
+            $('#registerForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Reset lỗi trước khi validate
+                resetErrors();
+                
+                if (!validateRegisterForm()) {
+                    return;
                 }
+                
+                const formData = $(this).serialize();
+                
+                // Hiển thị trạng thái loading
+                $('#register-btn').addClass('loading');
+
+                $.ajax({
+                    url: '${pageContext.request.contextPath}/register-process',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        $('#register-btn').removeClass('loading');
+                        showToast('Đăng ký thành công! Vui lòng đăng nhập.', true);
+                        setTimeout(() => {
+                            window.location.href = '${pageContext.request.contextPath}/login';
+                        }, 1500);
+                    },
+                    error: function(xhr) {
+                        $('#register-btn').removeClass('loading');
+                        let errorMsg = 'Có lỗi xảy ra khi đăng ký!';
+                        try {
+                            const errorResponse = xhr.responseJSON;
+                            if (errorResponse && errorResponse.message) {
+                                errorMsg = errorResponse.message;
+                            }
+                        } catch (e) {}
+                        showToast(errorMsg, false);
+                    }
+                });
             });
-        });
 
-        // Xử lý chọn vai trò trong form đăng ký
-        $('.role-option').click(function() {
-            $('.role-option').removeClass('selected');
-            $(this).addClass('selected');
-            var role = $(this).data('role');
-            $('#vaiTro').val(role);
-        });
-
-        // Xử lý form đăng ký bằng AJAX
-        $('#registerForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            // Reset lỗi trước khi validate
-            resetErrors();
-            
-            if (!validateRegisterForm()) {
-                return;
-            }
-            
-            const formData = $(this).serialize();
-            
-            // Hiển thị trạng thái loading
-            $('#register-btn').addClass('loading');
-
-            $.ajax({
-                url: '${pageContext.request.contextPath}/register-process',
-                type: 'POST',
-                data: formData,
-                success: function(response) {
-                    $('#register-btn').removeClass('loading');
-                    // Giả sử response trả về là HTML hoặc redirect
-                    // Trong thực tế, bạn nên trả về JSON để xử lý tốt hơn
-                    window.location.href = '${pageContext.request.contextPath}/login?message=Đăng ký thành công!';
-                },
-                error: function(xhr) {
-                    $('#register-btn').removeClass('loading');
-                    showToast('Có lỗi xảy ra khi đăng ký!', false);
+            // Hàm validate form đăng nhập
+            function validateLoginForm() {
+                let isValid = true;
+                
+                const username = $('#username').val().trim();
+                const password = $('#password').val();
+                
+                if (!username) {
+                    $('#username').parent().addClass('error');
+                    isValid = false;
                 }
-            });
-        });
-
-        // Hàm validate form đăng nhập
-        function validateLoginForm() {
-            let isValid = true;
-            
-            const username = $('#username').val().trim();
-            const password = $('#password').val();
-            
-            if (!username) {
-                $('#username').parent().addClass('error');
-                isValid = false;
+                
+                if (!password) {
+                    $('#password').parent().addClass('error');
+                    isValid = false;
+                }
+                
+                return isValid;
             }
             
-            if (!password) {
-                $('#password').parent().addClass('error');
-                isValid = false;
-            }
-            
-            return isValid;
-        }
-        
-        // Hàm validate form đăng ký
-        function validateRegisterForm() {
-            let isValid = true;
-            
-            // Họ tên
-            if (!$('#hoTen').val().trim()) {
-                $('#hoTen').parent().addClass('error');
-                isValid = false;
-            }
-            
-            // Tên đăng nhập
-            if (!$('#tenDangNhap').val().trim()) {
-                $('#tenDangNhap').parent().addClass('error');
-                isValid = false;
-            }
-            
-            // Email
-            const email = $('#email').val().trim();
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!email || !emailRegex.test(email)) {
-                $('#email').parent().addClass('error');
-                isValid = false;
-            }
-            
-            // Mật khẩu
-            const password = $('#matKhau').val();
-            if (!password || password.length < 6) {
-                $('#matKhau').parent().addClass('error');
-                isValid = false;
-            }
-            
-            // Xác nhận mật khẩu
-            const confirmPassword = $('#confirmPassword').val();
-            if (password !== confirmPassword) {
-                $('#confirmPassword').parent().addClass('error');
-                isValid = false;
-            }
-            
-            // Điều khoản
-            if (!$('#terms').is(':checked')) {
-                $('#terms').parent().parent().addClass('error');
-                isValid = false;
-            }
-            
-            return isValid;
-        }
-        
-        // Reset tất cả lỗi
-        function resetErrors() {
-            $('.form-group').removeClass('error');
-        }
-
-        // Hàm hiển thị thông báo
-        function showToast(message, isSuccess = false) {
-            const toastContainer = $('#toast-container');
-            
-            // Tạo toast element
-            const toast = $('<div class="toast"></div>')
-                .addClass(isSuccess ? 'success' : 'error')
-                .html(`
-                    <span>${message}</span>
-                    <button type="button" class="toast-close">&times;</button>
-                `);
-            
-            // Thêm toast vào container
-            toastContainer.append(toast);
-            
-            // Hiển thị toast với hiệu ứng
-            setTimeout(() => {
-                toast.addClass('show');
-            }, 100);
-            
-            // Xử lý đóng toast khi click nút close
-            toast.find('.toast-close').click(function() {
-                hideToast(toast);
-            });
-            
-            // Tự động ẩn sau 5 giây
-            setTimeout(() => {
-                hideToast(toast);
-            }, 5000);
-        }
-
-        // Hàm ẩn toast
-        function hideToast(toast) {
-            toast.removeClass('show');
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }
-        
-        // Xử lý real-time validation cho các trường
-        $('input').on('blur', function() {
-            const $input = $(this);
-            const $formGroup = $input.parent();
-            
-            // Xóa trạng thái lỗi trước đó
-            $formGroup.removeClass('error');
-            
-            // Kiểm tra và thêm lỗi nếu cần
-            if ($input.attr('type') == 'email' && $input.val()) {
+            // Hàm validate form đăng ký
+            function validateRegisterForm() {
+                let isValid = true;
+                let errorMessages = [];
+                
+                // Họ tên
+                if (!$('#hoTen').val().trim()) {
+                    $('#hoTen').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Vui lòng nhập họ tên');
+                }
+                
+                // Tên đăng nhập
+                if (!$('#tenDangNhap').val().trim()) {
+                    $('#tenDangNhap').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Vui lòng nhập tên đăng nhập');
+                }
+                
+                // Email
+                const email = $('#email').val().trim();
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test($input.val())) {
-                    $formGroup.addClass('error');
+                if (!email) {
+                    $('#email').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Vui lòng nhập email');
+                } else if (!emailRegex.test(email)) {
+                    $('#email').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Vui lòng nhập email hợp lệ');
                 }
+                
+                // Mật khẩu
+                const password = $('#matKhau').val();
+                if (!password) {
+                    $('#matKhau').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Vui lòng nhập mật khẩu');
+                } else if (password.length < 6) {
+                    $('#matKhau').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Mật khẩu phải có ít nhất 6 ký tự');
+                }
+                
+                // Xác nhận mật khẩu
+                const confirmPassword = $('#confirmPassword').val();
+                if (!confirmPassword) {
+                    $('#confirmPassword').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Vui lòng xác nhận mật khẩu');
+                } else if (password !== confirmPassword) {
+                    $('#confirmPassword').parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Mật khẩu xác nhận không khớp');
+                }
+                
+                // Điều khoản
+                if (!$('#terms').is(':checked')) {
+                    $('#terms').parent().parent().addClass('error');
+                    isValid = false;
+                    errorMessages.push('Bạn cần đồng ý với điều khoản dịch vụ');
+                }
+                
+                // Hiển thị thông báo lỗi đầu tiên
+                if (errorMessages.length > 0) {
+                    showToast(errorMessages[0], false);
+                }
+                
+                return isValid;
             }
             
-            if ($input.attr('id') == 'confirmPassword' && $input.val()) {
-                const password = $('#matKhau').val();
-                if ($input.val() !== password) {
-                    $formGroup.addClass('error');
-                }
+            // Reset tất cả lỗi
+            function resetErrors() {
+                $('.form-group').removeClass('error');
             }
+
+            // Xử lý real-time validation cho các trường
+            $('input').on('blur', function() {
+                const $input = $(this);
+                const $formGroup = $input.parent();
+                
+                // Xóa trạng thái lỗi trước đó
+                $formGroup.removeClass('error');
+                
+                // Kiểm tra và thêm lỗi nếu cần
+                if ($input.attr('type') == 'email' && $input.val()) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test($input.val())) {
+                        $formGroup.addClass('error');
+                        showToast('Email không hợp lệ', false);
+                    }
+                }
+                
+                if ($input.attr('id') == 'confirmPassword' && $input.val()) {
+                    const password = $('#matKhau').val();
+                    if ($input.val() !== password) {
+                        $formGroup.addClass('error');
+                        showToast('Mật khẩu xác nhận không khớp', false);
+                    }
+                }
+            });
+
+            // Xử lý số điện thoại
+            $('#soDienThoai').on('blur', function() {
+                const phone = $(this).val().trim();
+                if (phone && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(phone)) {
+                    showToast('Số điện thoại không hợp lệ', false);
+                }
+            });
         });
-    });
     </script>
 </body>
 </html>

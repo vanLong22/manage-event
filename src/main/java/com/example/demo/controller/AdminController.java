@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +90,7 @@ public class AdminController {
         
         // Recent events (last 3) với thông tin người tổ chức
         List<Map<String, Object>> recentEvents = allEvents.stream()
-            .limit(3)
+            .limit(4)
             .map(event -> {
                 Map<String, Object> eventData = new HashMap<>();
                 eventData.put("suKienId", event.getSuKienId());
@@ -297,36 +298,112 @@ public class AdminController {
     public Map<String, Object> rejectEvent(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         
-        Event event = eventService.getEventById(id);
-        if (event != null) {
-            event.setTrangThai("Huy");
-            eventService.updateSuKien(event);
-            response.put("success", true);
-            response.put("message", "Đã từ chối sự kiện");
-        } else {
+        try {
+            System.out.println("=== REJECT EVENT DEBUG ===");
+            System.out.println("Event ID: " + id);
+            
+            Event event = eventService.getEventById(id);
+            System.out.println("Event found: " + (event != null));
+            
+            if (event != null) {
+                System.out.println("Current status: " + event.getTrangThai());
+                System.out.println("Event name: " + event.getTenSuKien());
+                
+                event.setTrangThai("Huy");
+                System.out.println("New status: " + event.getTrangThai());
+                
+                //update trạng thái sự kiện là từ chối
+                eventService.updateSuKien(event);
+                System.out.println("Update successful");
+                
+                response.put("success", true);
+                response.put("message", "Đã từ chối sự kiện");
+            } else {
+                System.out.println("Event not found");
+                response.put("success", false);
+                response.put("message", "Không tìm thấy sự kiện");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR in rejectEvent:");
+            e.printStackTrace();
             response.put("success", false);
-            response.put("message", "Không tìm thấy sự kiện");
+            response.put("message", "Lỗi server: " + e.getMessage());
         }
         
         return response;
     }
 
-    // API Delete event
+    // API xóa sự kiện 
     @DeleteMapping("/api/events/{id}")
     @ResponseBody
     public Map<String, Object> deleteEvent(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            eventService.deleteSuKien(id);
-            response.put("success", true);
-            response.put("message", "Đã xóa sự kiện");
+            Event eventToDelete = eventService.getEventById(id);
+            if (eventToDelete != null) {
+                eventService.deleteSuKien(id);
+                response.put("success", true);
+                response.put("message", "Đã xóa sự kiện thành công");
+                response.put("deletedEventId", id);
+                response.put("eventStatus", eventToDelete.getTrangThai());
+            } else {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy sự kiện");
+            }
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Lỗi khi xóa sự kiện: " + e.getMessage());
         }
         
         return response;
+    }
+
+    // API để lấy sự kiện thay thế khi xóa sự kiện gần đây
+    @GetMapping("/api/events/recent-replacement")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getRecentReplacementEvent() {
+        try {
+            List<Event> allEvents = eventService.getAllEvents();
+            
+            // Lọc các sự kiện có trạng thái phù hợp và sắp xếp theo thời gian mới nhất
+            List<Event> availableEvents = allEvents.stream()
+                .filter(event -> !"Huy".equals(event.getTrangThai())) // Loại bỏ sự kiện đã hủy
+                .sorted((e1, e2) -> e2.getThoiGianBatDau().compareTo(e1.getThoiGianBatDau())) // Sắp xếp mới nhất đầu tiên
+                .collect(Collectors.toList());
+            
+            // Bỏ qua 3 sự kiện đầu tiên (đã hiển thị) và lấy sự kiện tiếp theo
+            Event replacementEvent = null;
+            if (availableEvents.size() > 3) {
+                replacementEvent = availableEvents.get(3); // Sự kiện thứ 4
+            }
+            
+            if (replacementEvent != null) {
+                Map<String, Object> eventData = new HashMap<>();
+                eventData.put("suKienId", replacementEvent.getSuKienId());
+                eventData.put("tenSuKien", replacementEvent.getTenSuKien());
+                eventData.put("moTa", replacementEvent.getMoTa());
+                eventData.put("thoiGianBatDau", replacementEvent.getThoiGianBatDau());
+                eventData.put("thoiGianKetThuc", replacementEvent.getThoiGianKetThuc());
+                eventData.put("diaDiem", replacementEvent.getDiaDiem());
+                eventData.put("loaiSuKien", replacementEvent.getLoaiSuKien());
+                eventData.put("trangThai", replacementEvent.getTrangThai());
+                eventData.put("soLuongToiDa", replacementEvent.getSoLuongToiDa());
+                eventData.put("soLuongDaDangKy", replacementEvent.getSoLuongDaDangKy());
+                
+                User organizer = userService.findById(replacementEvent.getNguoiToChucId());
+                eventData.put("organizerName", organizer != null ? organizer.getHoTen() : "N/A");
+                
+                return ResponseEntity.ok(eventData);
+            }
+            
+            return ResponseEntity.ok(Collections.emptyMap());
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Collections.emptyMap());
+        }
     }
 
     // API Analytics data

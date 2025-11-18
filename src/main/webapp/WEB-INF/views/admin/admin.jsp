@@ -1330,7 +1330,6 @@
             const eventId = $(this).data('event-id');
             deleteEvent(eventId);
         });
-
      
         // Thêm sự kiện click cho card sự kiện
         $(document).on('click', '.event-card', function(e) {
@@ -1344,6 +1343,16 @@
                 }
             }
         });
+
+        // Thêm vào hàm setupEventListeners()
+        $(document).on('click', '.btn-view-event', function(e) {
+            e.stopPropagation(); // Ngăn sự kiện nổi bọt
+            const eventId = $(this).data('event-id');
+            if (eventId) {
+                viewEvent(eventId);
+            }
+        });
+
     }
 
     function updatePageTitle(section) {
@@ -1714,18 +1723,7 @@
                 '</div>' +
             '</div>';
             
-            // Thêm nút hành động cho modal sự kiện
-            if (event.trangThai === 'SapDienRa') {
-                html += '<div class="form-group" style="margin-top: 20px;">' +
-                    '<button class="btn btn-success btn-approve-event" data-event-id="' + event.suKienId + '" style="margin-right: 10px;">' +
-                        '<i class="fas fa-check"></i> Phê duyệt' +
-                    '</button>' +
-                    '<button class="btn btn-danger btn-reject-event" data-event-id="' + event.suKienId + '">' +
-                        '<i class="fas fa-times"></i> Từ chối' +
-                    '</button>' +
-                '</div>';
-            } else {
-                html += '<div class="form-group" style="margin-top: 20px;">' +
+            html += '<div class="form-group" style="margin-top: 20px;">' +
                     '<button class="btn btn-primary">' +
                         '<i class="fas fa-edit"></i> Chỉnh sửa' +
                     '</button>' +
@@ -1733,7 +1731,6 @@
                         '<i class="fas fa-trash"></i> Xóa sự kiện' +
                     '</button>' +
                 '</div>';
-            }
             
             $('#event-modal-content').html(html);
             $('#event-modal').show();
@@ -1826,10 +1823,18 @@
             $.ajax({
                 url: '/admin/api/events/' + eventId,
                 method: 'DELETE',
-                success: function() {
+                success: function(response) {
                     showToast('Đã xóa sự kiện thành công', true);
-                    loadEvents();
+                    
+                    // Đóng modal
                     $('#event-modal').hide();
+                    
+                    // Cập nhật UI ngay lập tức mà không cần reload toàn bộ trang
+                    updateUIAfterEventDeletion(eventId);
+                    
+                    // Reload dữ liệu để đảm bảo đồng bộ
+                    loadEvents();
+                    loadDashboardData();
                 },
                 error: function(xhr, status, error) {
                     console.error('Error deleting event:', error);
@@ -1837,6 +1842,104 @@
                 }
             });
         }
+    }
+
+    //Cập nhật UI ngay lập tức sau khi xóa sự kiện
+    function updateUIAfterEventDeletion(deletedEventId) {
+        console.log('Updating UI after deleting event:', deletedEventId);
+        
+        // 1. Xóa sự kiện khỏi danh sách sự kiện gần đây trong dashboard
+        const $recentEventsContainer = $('#recent-events');
+        const $deletedEventCard = $recentEventsContainer.find(`[data-event-id="${deletedEventId}"]`);
+        
+        if ($deletedEventCard.length > 0) {
+            console.log('Removing event from recent events:', deletedEventId);
+            $deletedEventCard.remove();
+            
+            // Gọi API để lấy sự kiện mới thay thế
+            $.get('/admin/api/events/recent-replacement', function(replacementEvent) {
+                if (replacementEvent && replacementEvent.suKienId) {
+                    console.log('Adding replacement event:', replacementEvent.suKienId);
+                    
+                    // Tạo card mới cho sự kiện thay thế
+                    const newEventCard = createEventCard(replacementEvent);
+                    $recentEventsContainer.append(newEventCard);
+                    
+                    // Hiển thị thông báo nếu không còn sự kiện nào
+                    checkAndShowEmptyState();
+                } else {
+                    console.log('No replacement event available');
+                    checkAndShowEmptyState();
+                }
+            }).fail(function(xhr, status, error) {
+                console.error('Error getting replacement event:', error);
+                checkAndShowEmptyState();
+            });
+        }
+        
+        // 2. Xóa sự kiện khỏi bảng quản lý sự kiện
+        $(`#events-tbody tr[data-event-id="${deletedEventId}"]`).remove();
+        
+        // 3. Xóa sự kiện khỏi danh sách chờ duyệt
+        $(`#pending-events-list [data-event-id="${deletedEventId}"]`).remove();
+        
+        // 4. Cập nhật counter trên dashboard
+        updateDashboardCounters();
+    }
+
+    // Hàm tạo card sự kiện
+    function createEventCard(event) {
+        const statusClass = getEventStatusClass(event.trangThai);
+        const statusText = getEventStatusText(event.trangThai);
+        const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
+        
+        return `
+            <div class="event-card" data-event-id="${event.suKienId}">
+                <div class="event-image">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="event-content">
+                    <h4 class="event-title">${event.tenSuKien}</h4>
+                    <div class="event-meta">
+                        <span><i class="far fa-calendar"></i> ${eventDate}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> ${event.diaDiem}</span>
+                    </div>
+                    <p>${event.moTa ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : 'Không có mô tả'}</p>
+                    <div class="event-footer">
+                        <span class="status ${statusClass}">${statusText}</span>
+                        <span><i class="fas fa-users"></i> ${event.soLuongDaDangKy} người</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Hàm kiểm tra và hiển thị trạng thái rỗng
+    function checkAndShowEmptyState() {
+        const $recentEventsContainer = $('#recent-events');
+        const $eventCards = $recentEventsContainer.find('.event-card');
+        
+        if ($eventCards.length === 0) {
+            $recentEventsContainer.html(`
+                <div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">
+                    <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <h3>Không có sự kiện gần đây</h3>
+                    <p>Hiện tại không có sự kiện nào để hiển thị.</p>
+                </div>
+            `);
+        }
+    }
+
+    // Hàm cập nhật counter trên dashboard
+    function updateDashboardCounters() {
+        // Giảm số lượng sự kiện đang hoạt động
+        const $activeEvents = $('#active-events');
+        const currentCount = parseInt($activeEvents.text()) || 0;
+        if (currentCount > 0) {
+            $activeEvents.text(currentCount - 1);
+        }
+        
+        // Có thể cần cập nhật các counter khác tùy thuộc vào trạng thái của sự kiện bị xóa
     }
 
     // Utility Functions

@@ -109,5 +109,18 @@ public class RegistrationService {
     public List<Registration> getAllRegistrations() {
         return registrationRepository.findAll();
     }
+
+    // Thêm vào RegistrationService
+    public Registration getRegistrationById(Long id) {
+        return registrationRepository.findById(id);
+    }
+
+    public List<Map<String, Object>> getRequestStatusDistribution() {
+        return registrationRepository.getRequestStatusDistribution();
+    }
+
+    public List<Map<String, Object>> getRegistrationsOverTime(String period) {
+        return registrationRepository.getRegistrationsOverTime(period);
+    }
 }
  

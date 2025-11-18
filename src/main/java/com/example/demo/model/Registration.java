@@ -20,6 +20,10 @@ public class Registration {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
+    private Event event;
+    public Event getEvent() { return event; }
+    public void setEvent(Event event) { this.event = event; }
+
     public Registration() {
     }
 

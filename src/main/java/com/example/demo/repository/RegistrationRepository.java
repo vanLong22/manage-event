@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class RegistrationRepository {
@@ -100,9 +101,13 @@ public class RegistrationRepository {
             SELECT dk.*, 
                 nd.ho_ten AS userHoTen,
                 nd.email AS userEmail, 
-                nd.so_dien_thoai AS userSoDienThoai
+                nd.gioi_tinh AS userGioiTinh,
+                nd.dia_chi AS userDiaChi,
+                nd.so_dien_thoai AS userSoDienThoai,
+                sk.ten_su_kien AS tenSuKien
             FROM dang_ky_su_kien dk
             JOIN nguoi_dung nd ON dk.nguoi_dung_id = nd.nguoi_dung_id
+            JOIN su_kien sk ON dk.su_kien_id = sk.su_kien_id
             WHERE dk.su_kien_id = ?
             """;
 
@@ -120,28 +125,34 @@ public class RegistrationRepository {
                 user.setHoTen(rs.getString("userHoTen"));
                 user.setEmail(rs.getString("userEmail"));
                 user.setSoDienThoai(rs.getString("userSoDienThoai"));
+                user.setGioiTinh(rs.getString("userGioiTinh"));
+                user.setDiaChi(rs.getString("userDiaChi"));
 
+                Event event = new Event();
+                event.setTenSuKien(rs.getString("tenSuKien"));
+
+                reg.setEvent(event);
                 reg.setUser(user);
 
-                // ✅ Print toàn bộ thông tin
+                // ✅ Print toàn bộ thông tin (cập nhật thêm tên sự kiện)
                 System.out.println("Đăng ký ID: " + reg.getDangKyId());
                 System.out.println("Người dùng ID: " + reg.getNguoiDungId());
                 System.out.println("Sự kiện ID: " + reg.getSuKienId());
+                System.out.println("Tên sự kiện: " + event.getTenSuKien());
                 System.out.println("Thời gian đăng ký: " + reg.getThoiGianDangKy());
                 System.out.println("Trạng thái: " + reg.getTrangThai());
 
                 System.out.println("Họ tên người dùng: " + user.getHoTen());
                 System.out.println("Email người dùng: " + user.getEmail());
                 System.out.println("Số điện thoại người dùng: " + user.getSoDienThoai());
+                System.out.println("Giới tính người dùng: " + user.getGioiTinh());
+                System.out.println("Địa chỉ người dùng: " + user.getDiaChi());
                 System.out.println("--------------------------------------------------");
-
 
                 return reg;
             }
         }, suKienId);
     }
-
-
 
     // Thêm mới: All for organizer (join with su_kien)
     public List<Registration> findAllForOrganizer(Long organizerId) {
@@ -191,6 +202,41 @@ public class RegistrationRepository {
     public List<Registration> findAll() {
         String sql = "SELECT * FROM dang_ky_su_kien";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Registration.class));
+    }
+
+    public Registration findById(Long id) {
+        String sql = "SELECT * FROM dang_ky_su_kien WHERE dang_ky_su_kien_id = ?";
+        List<Registration> results = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Registration.class), id);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    // Phương thức tạo biểu đồ: Tỷ lệ trạng thái yêu cầu đăng ký (Pie Chart)
+    public List<Map<String, Object>> getRequestStatusDistribution() {
+        String sql = "SELECT trang_thai, COUNT(dang_ky_su_kien_id) as count FROM dang_ky_su_kien GROUP BY trang_thai";
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    // Phương thức tạo biểu đồ: Số lượng đăng ký theo thời gian (Line Chart)
+    public List<Map<String, Object>> getRegistrationsOverTime(String period) {
+        String groupBy;
+        switch (period) {
+            case "week":
+                groupBy = "WEEK(thoi_gian_dang_ky)";
+                break;
+            case "month":
+                groupBy = "MONTH(thoi_gian_dang_ky)";
+                break;
+            case "quarter":
+                groupBy = "QUARTER(thoi_gian_dang_ky)";
+                break;
+            case "year":
+                groupBy = "YEAR(thoi_gian_dang_ky)";
+                break;
+            default:
+                groupBy = "DATE(thoi_gian_dang_ky)";
+        }
+        String sql = "SELECT DATE(thoi_gian_dang_ky) AS ngay, COUNT(dang_ky_su_kien_id) AS count FROM dang_ky_su_kien GROUP BY " + groupBy + " ORDER BY ngay";
+        return jdbcTemplate.queryForList(sql);
     }
 }
  

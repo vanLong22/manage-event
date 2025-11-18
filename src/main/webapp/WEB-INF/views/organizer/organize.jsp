@@ -565,6 +565,12 @@
             }
         }
 
+        /* Đảm bảo modal nhỏ hơn vẫn căn giữa */
+        .modal-content[style*="max-width: 500px"] {
+            max-width: 500px !important;
+            width: 90% !important;
+        }
+
         .form-text {
             display: block;
             margin-top: 5px;
@@ -588,6 +594,9 @@
             z-index: 2000;
             pointer-events: none;
         }
+
+
+        
     </style>
 </head>
 <body>
@@ -1022,16 +1031,24 @@
                 <!-- Trong <div id="analytics" class="content-section">, sau bảng popular events -->
                 <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
                     <div class="chart-card">
-                        <h4>Biểu Đồ Sự Kiện Theo Trạng Thái</h4>
-                        <img id="events-by-status-chart" style="width: 100%; height: auto;">
+                        <h4>Biểu Đồ Sự Kiện Theo Loại</h4>
+                        <img id="events-by-type-chart" style="width: 100%; height: auto;">
                     </div>
                     <div class="chart-card">
-                        <h4>Biểu Đồ Đăng Ký Theo Sự Kiện</h4>
-                        <img id="registrations-by-event-chart" style="width: 100%; height: auto;">
+                        <h4>Biểu Đồ Người Dùng Theo Vai Trò</h4>
+                        <img id="users-by-role-chart" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Tỷ Lệ Giới Tính</h4>
+                        <img id="gender-pie-chart" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Tỷ Lệ Trạng Thái Yêu Cầu</h4>
+                        <img id="request-status-pie-chart" style="width: 100%; height: auto;">
                     </div>
                     <div class="chart-card">
                         <h4>Biểu Đồ Đăng Ký Theo Thời Gian</h4>
-                        <img id="registrations-over-time-chart" style="width: 100%; height: auto;">
+                        <img id="registrations-line-chart" style="width: 100%; height: auto;">
                     </div>
                 </div>
             </div>
@@ -1234,11 +1251,23 @@
         </div>
     </div>
 
-    <script>
+   <script>
     $(document).ready(function() {
         // Thêm toast container vào body nếu chưa có
         if ($('#toast-container').length === 0) {
             $('body').append('<div class="toast-container" id="toast-container"></div>');
+        }
+
+        // Hàm hiển thị modal
+        function showModal(modalId) {
+            $('#' + modalId).css('display', 'flex');
+            $('body').css('overflow', 'hidden');
+        }
+
+        // Hàm ẩn modal
+        function hideModal(modalId) {
+            $('#' + modalId).hide();
+            $('body').css('overflow', 'auto');
         }
 
         // Hàm hiển thị thông báo toast
@@ -1711,7 +1740,7 @@
                         var hoTen = reg.user ? reg.user.hoTen : 'N/A';
                         var email = reg.user ? reg.user.email : 'N/A';
                         var soDienThoai = reg.user ? reg.user.soDienThoai : 'N/A';
-                        var tenSuKien = reg.suKien ? reg.suKien.tenSuKien : 'N/A';
+                        var tenSuKien = reg.event ? reg.event.tenSuKien : 'N/A';
                         
                         // 🟢 Dịch trạng thái sang tiếng Việt
                         var trangThaiGoc = reg.trangThai || 'Unknown';
@@ -1761,9 +1790,10 @@
         // Attach events for participants table
         $('#participants-table tbody').on('click', '.action-btn', function() {
             var target = $(this);
+            var suKienId = $('#filter-event-participants').val();
             var regId = target.data('reg-id');
             if (target.hasClass('view-participant-detail')) {
-                openParticipantDetailModal(regId);
+                openParticipantDetailModal(regId, suKienId);
             } else if (target.hasClass('send-notification')) {
                 openSendNotificationModal(regId);
             }
@@ -1776,6 +1806,28 @@
             window.location.href = '/organizer/api/participants/export' + param;
         });
 
+        function loadAnalytics(period) {
+            period = period || 'month';
+            $.get('/organizer/api/analytics/stats?period=' + period, function(data) {
+                // Các stats khác từ prompt
+                if (data.eventsByTypeChart) {
+                    $('#events-by-type-chart').attr('src', 'data:image/png;base64,' + data.eventsByTypeChart);
+                }
+                if (data.usersByRoleChart) {
+                    $('#users-by-role-chart').attr('src', 'data:image/png;base64,' + data.usersByRoleChart);
+                }
+                if (data.genderPieChart) {
+                    $('#gender-pie-chart').attr('src', 'data:image/png;base64,' + data.genderPieChart);
+                }
+                if (data.requestStatusPieChart) {
+                    $('#request-status-pie-chart').attr('src', 'data:image/png;base64,' + data.requestStatusPieChart);
+                }
+                if (data.registrationsLineChart) {
+                    $('#registrations-line-chart').attr('src', 'data:image/png;base64,' + data.registrationsLineChart);
+                }
+            });
+        }
+        /*
         // Load analytics
         function loadAnalytics(period) {
             period = period || 'month';
@@ -1818,6 +1870,7 @@
             });
         }
 
+        */
         // Report period change
         $('#report-period').on('change', function() {
             loadAnalytics(this.value);
@@ -1879,15 +1932,16 @@
             });
         });
 
-        // Modal functionality for event
-        var eventModal = $('#event-modal');
+        // Modal functionality
         $('.close-modal').on('click', function() {
-            $(this).closest('.modal').hide();
+            var modalId = $(this).closest('.modal').attr('id');
+            hideModal(modalId);
         });
 
         $(window).on('click', function(e) {
             if ($(e.target).hasClass('modal')) {
-                $(e.target).hide();
+                var modalId = $(e.target).attr('id');
+                hideModal(modalId);
             }
         });
 
@@ -1936,7 +1990,7 @@
                                 '</button>' +
                             '</div>';
                 $('#event-modal-body').html(html);
-                eventModal.show();
+                showModal('event-modal');
             }).fail(function(xhr, status, error) {
                 console.error('Error loading event details:', error);
                 showToast('Lỗi tải chi tiết sự kiện: ' + error, false);
@@ -1961,19 +2015,24 @@
         });
 
         // Open participant detail modal
-        function openParticipantDetailModal(regId) {
-            $.get('/organizer/api/registrations/' + regId, function(reg) {
-                var html = '<h4>' + reg.user.hoTen + '</h4>' +
-                            '<p>Email: ' + reg.user.email + '</p>' +
-                            '<p>Số điện thoại: ' + reg.user.soDienThoai + '</p>' +
-                            '<p>Địa chỉ: ' + reg.user.diaChi + '</p>' +
-                            '<p>Giới tính: ' + reg.user.gioiTinh + '</p>' +
-                            '<p>Sự kiện: ' + reg.suKien.tenSuKien + '</p>' +
-                            '<p>Thời gian đăng ký: ' + new Date(reg.thoiGianDangKy).toLocaleString() + '</p>' +
-                            '<p>Trạng thái: ' + reg.trangThai + '</p>' +
-                            '<p>Ghi chú: ' + (reg.ghiChu || 'Không có') + '</p>';
+        function openParticipantDetailModal(regId, suKienId) {
+            $.get('/organizer/api/registrations/' + regId, { suKienId: suKienId }, function(reg) {
+
+                var item = reg[0];
+
+                var html = '<h4>' + item.user.hoTen + '</h4>' +
+                            '<p>Email: ' + item.user.email + '</p>' +
+                            '<p>Số điện thoại: ' + item.user.soDienThoai + '</p>' +
+                            '<p>Địa chỉ: ' + item.user.diaChi + '</p>' +
+                            '<p>Giới tính: ' + item.user.gioiTinh + '</p>' +
+                            '<p>Sự kiện: ' + item.event.tenSuKien + '</p>' +
+                            '<p>Thời gian đăng ký: ' + new Date(item.thoiGianDangKy).toLocaleString() + '</p>' +
+                            '<p>Trạng thái: ' + item.trangThai + '</p>' +
+                            '<p>Ghi chú: ' + (item.ghiChu || 'Không có') + '</p>';
+
                 $('#participant-detail-body').html(html);
-                $('#participant-detail-modal').show();
+                showModal('participant-detail-modal');
+
             }).fail(function(xhr, status, error) {
                 console.error('Error loading participant details:', error);
                 showToast('Lỗi tải chi tiết người tham gia: ' + error, false);
@@ -1983,7 +2042,7 @@
         // Open send notification modal
         function openSendNotificationModal(regId) {
             $('#send-notification-form')[0].dataset.regId = regId;
-            $('#send-notification-modal').show();
+            showModal('send-notification-modal');
         }
 
         // Submit send notification
@@ -2004,7 +2063,7 @@
                 success: function(response) {
                     if (response.success) {
                         showToast('Thông báo đã gửi!', true);
-                        $('#send-notification-modal').hide();
+                        hideModal('send-notification-modal');
                         formElement.reset();
                     } else {
                         showToast(response.message || 'Lỗi gửi thông báo', false);
@@ -2022,7 +2081,7 @@
         // Mở modal đổi mật khẩu
         $('#change-password').click(function(e) {
             e.preventDefault();
-            $('#change-password-modal').css('display', 'flex');
+            showModal('change-password-modal');
             resetChangePasswordForm();
         });
 
@@ -2031,13 +2090,13 @@
             return $(this).text().includes('Quên mật khẩu');
         }).click(function(e) {
             e.preventDefault();
-            $('#forgot-password-modal').css('display', 'flex');
+            showModal('forgot-password-modal');
         });
 
         // Quay lại từ quên mật khẩu
         $('#back-to-login-from-forgot').click(function(e) {
             e.preventDefault();
-            $('#forgot-password-modal').css('display', 'none');
+            hideModal('forgot-password-modal');
         });
 
         // Xử lý form đổi mật khẩu
@@ -2067,7 +2126,7 @@
                     
                     if (response.success) {
                         showToast(response.message, true);
-                        $('#change-password-modal').css('display', 'none');
+                        hideModal('change-password-modal');
                         resetChangePasswordForm();
                     } else {
                         showToast(response.message, false);
@@ -2110,7 +2169,7 @@
                     
                     if (response.success) {
                         showToast(response.message, true);
-                        $('#forgot-password-modal').css('display', 'none');
+                        hideModal('forgot-password-modal');
                         $('#forgot-email').val('');
                     } else {
                         showToast(response.message, false);

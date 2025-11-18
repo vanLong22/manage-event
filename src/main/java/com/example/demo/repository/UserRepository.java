@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.model.User;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -100,5 +101,15 @@ public class UserRepository {
         jdbcTemplate.update(sql, newPassword, userId);
     }
 
-    
+    // Phương thức tạo biểu đồ: Số lượng người dùng theo vai trò (Bar Chart)
+    public List<Map<String, Object>> getUsersByRole() {
+        String sql = "SELECT vai_tro, COUNT(nguoi_dung_id) as count FROM nguoi_dung GROUP BY vai_tro";
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    // Phương thức tạo biểu đồ: Tỷ lệ giới tính người dùng (Pie Chart)
+    public List<Map<String, Object>> getGenderDistribution() {
+        String sql = "SELECT gioi_tinh, COUNT(nguoi_dung_id) as count FROM nguoi_dung GROUP BY gioi_tinh";
+        return jdbcTemplate.queryForList(sql);
+    }
 }

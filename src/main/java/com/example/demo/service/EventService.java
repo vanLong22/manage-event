@@ -190,4 +190,29 @@ public class EventService {
         String sql = "SELECT * FROM nguoi_dung";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class));
     }
+
+    public List<Event> getRecentEvents(int limit) {
+        // Lấy sự kiện mới nhất, loại trừ các sự kiện đã hủy
+        return eventRepository.findAll().stream()
+            .filter(event -> !"Huy".equals(event.getTrangThai()))
+            .sorted((e1, e2) -> e2.getThoiGianBatDau().compareTo(e1.getThoiGianBatDau()))
+            .limit(limit)
+            .collect(Collectors.toList());
+    }
+
+    public Event getNextAvailableEvent(int currentCount) {
+        List<Event> allEvents = eventRepository.findAll().stream()
+            .filter(event -> !"Huy".equals(event.getTrangThai()))
+            .sorted((e1, e2) -> e2.getThoiGianBatDau().compareTo(e1.getThoiGianBatDau()))
+            .collect(Collectors.toList());
+        
+        if (allEvents.size() > currentCount) {
+            return allEvents.get(currentCount);
+        }
+        return null;
+    }
+
+    public List<Map<String, Object>> getEventsByType(Long organizerId) {
+        return eventRepository.getEventsByType(organizerId);
+    }
 }

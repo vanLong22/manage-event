@@ -239,4 +239,16 @@ public class EventRepository {
                 suKien.getAnhBia(), suKien.getThoiGianBatDau(), suKien.getThoiGianKetThuc(), 
                 suKien.getLoaiSuKien(), suKien.getTrangThai(), suKien.getSoLuongToiDa(), suKien.getSuKienId());
     }
+
+    // Phương thức tạo biểu đồ: Số lượng sự kiện theo loại (Bar Chart)
+    public List<Map<String, Object>> getEventsByType(Long organizerId) {
+        String sql = """
+            SELECT l.ten_loai, COUNT(s.su_kien_id) as count 
+            FROM su_kien s 
+            JOIN loai_su_kien l ON s.loai_su_kien_id = l.loai_su_kien_id 
+            WHERE s.nguoi_to_chuc_id = ? 
+            GROUP BY l.ten_loai
+            """;
+        return jdbcTemplate.queryForList(sql, organizerId);
+    }
 }

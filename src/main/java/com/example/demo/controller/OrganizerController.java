@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,15 +21,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import java.io.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-//import com.opencsv.CSVWriter; // Cần add dependency OpenCSV nếu dùng, hoặc dùng simple string builder
 
 @Controller
 @RequestMapping("/organizer")
@@ -58,38 +53,22 @@ public class OrganizerController {
         if (userId == null) {
             return "redirect:/login";
         }
-
         User user = userService.findById(userId);
-        if (user == null || !"ToChuc".equals(user.getVaiTro())) { // Kiểm tra vai trò
+        if (user == null || !"ToChuc".equals(user.getVaiTro())) {
             session.invalidate();
             return "redirect:/login";
         }
         model.addAttribute("user", user);
-
-        // Thống kê
         Map<String, Object> stats = registrationService.getAnalyticsStats(userId);
         model.addAttribute("stats", stats);
-
-        // Upcoming events
         List<Event> upcomingEvents = eventService.getUpcomingEvents(userId);
         model.addAttribute("upcomingEvents", upcomingEvents);
-
-        // Popular events
         List<Event> popularEvents = eventService.getPopularEvents(userId);
         model.addAttribute("popularEvents", popularEvents);
-
-        // Event types for create form
         List<LoaiSuKien> eventTypes = loaiSuKienService.findAll();
         model.addAttribute("eventTypes", eventTypes);
-
-        // All events
         List<Event> allEvents = eventService.getSuKienByOrganizer(userId);
         model.addAttribute("allEvents", allEvents);
-
-        // All registrations
-        List<Registration> allRegistrations = registrationService.getAllRegistrationsForOrganizer(userId);
-        model.addAttribute("allRegistrations", allRegistrations);
-
         return "organizer/organize";
     }
 
@@ -235,6 +214,24 @@ public class OrganizerController {
     // API registrations
     @GetMapping("/api/registrations")
     public ResponseEntity<List<Registration>> getRegistrations(
+            @RequestParam(required = false) Long suKienId,
+            HttpSession session) {
+        System.out.println("sukienID là  : " +suKienId);
+        Long organizerId = (Long) session.getAttribute("userId");
+        System.out.println("organizerId là  : " +organizerId);
+
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (suKienId != null) {
+            return ResponseEntity.ok(registrationService.getRegistrationsByEvent(suKienId));
+        } else {
+            return ResponseEntity.ok(registrationService.getAllRegistrationsForOrganizer(organizerId));
+        }
+    }
+
+    @GetMapping("/api/registrations/{id}")
+    public ResponseEntity<List<Registration>> getRegistrationsDetail(
             @RequestParam(required = false) Long suKienId,
             HttpSession session) {
         System.out.println("sukienID là  : " +suKienId);
@@ -407,88 +404,68 @@ public class OrganizerController {
     }
     */
 
-    // API analytics stats (sửa để thêm charts)
     @GetMapping("/api/analytics/stats")
     public ResponseEntity<Map<String, Object>> getStats(@RequestParam(defaultValue = "month") String period, HttpSession session) {
         Long organizerId = (Long) session.getAttribute("userId");
         if (organizerId == null) {
             return ResponseEntity.status(401).build();
         }
-        Map<String, Object> stats = registrationService.getAnalyticsStats(organizerId);  // Giữ nguyên
+        Map<String, Object> stats = registrationService.getAnalyticsStats(organizerId);
 
-        // Lấy dữ liệu cho charts (tùy chỉnh theo service của bạn)
-        List<Event> events = eventService.getSuKienByOrganizer(organizerId);  // Dữ liệu sự kiện
-        List<Registration> registrations = registrationService.getAllRegistrationsForOrganizer(organizerId);  // Dữ liệu đăng ký
+        // Thêm biểu đồ
+        List<Map<String, Object>> eventsByTypeData = eventService.getEventsByType(organizerId);
+        stats.put("eventsByTypeChart", generateChart("events_by_type", eventsByTypeData));
 
-        // Thêm charts vào stats
-        stats.put("eventsByStatusChart", generateChart("events_by_status", events));
-        stats.put("registrationsByEventChart", generateChart("registrations_by_event", eventService.getPopularEvents(organizerId)));  // Popular events
-        stats.put("registrationsOverTimeChart", generateChart("registrations_over_time", registrations));
+        List<Map<String, Object>> usersByRoleData = userService.getUsersByRole();
+        stats.put("usersByRoleChart", generateChart("users_by_role", usersByRoleData));
+
+        List<Map<String, Object>> genderData = userService.getGenderDistribution();
+        stats.put("genderPieChart", generateChart("gender_pie", genderData));
+
+        List<Map<String, Object>> requestStatusData = registrationService.getRequestStatusDistribution();
+        stats.put("requestStatusPieChart", generateChart("request_status_pie", requestStatusData));
+
+        List<Map<String, Object>> registrationsLineData = registrationService.getRegistrationsOverTime(period);
+        stats.put("registrationsLineChart", generateChart("registrations_line", registrationsLineData));
 
         return ResponseEntity.ok(stats);
     }
 
-    private String generateChart(String chartType, List<?> data) {
+    private String generateChart(String chartType, List<Map<String, Object>> data) {
         try {
-            ProcessBuilder pb = new ProcessBuilder("python", "D:\\2022-2026\\HOC KI 7\\XD HTTT\\quanLySuKien\\demo\\src\\main\\resources\\scripts\\chart.py", chartType);
-            // Remove redirectErrorStream(true) to keep stdout and stderr separate
+            ProcessBuilder pb = new ProcessBuilder("python", "D:/2022-2026/HOC KI 7/XD HTTT/quanLySuKien/demo/src/main/resources/scripts/chart.py", chartType);  // Thay path thực
+            pb.redirectErrorStream(true);
             Process p = pb.start();
 
-            // Send JSON to stdin
             try (OutputStream os = p.getOutputStream()) {
                 ObjectMapper mapper = new ObjectMapper();
                 os.write(mapper.writeValueAsBytes(data));
                 os.flush();
             }
 
-            // Read stdout (base64) using ByteArrayOutputStream
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (InputStream is = p.getInputStream()) {
-                byte[] buffer = new byte[8192];
+                byte[] buffer = new byte[16384];
                 int bytesRead;
                 while ((bytesRead = is.read(buffer)) != -1) {
                     baos.write(buffer, 0, bytesRead);
                 }
             }
 
-            // Optionally read stderr for logging/debugging
-            ByteArrayOutputStream errorBaos = new ByteArrayOutputStream();
-            try (InputStream errorIs = p.getErrorStream()) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = errorIs.read(buffer)) != -1) {
-                    errorBaos.write(buffer, 0, bytesRead);
-                }
-            }
-            String errorOutput = errorBaos.toString("UTF-8").trim();
-            if (!errorOutput.isEmpty()) {
-                System.out.println("Python stderr: " + errorOutput);
-            }
-
             int exitCode = p.waitFor();
-            String result = baos.toString("UTF-8").trim();
+            String base64 = baos.toString("UTF-8").trim();
 
-            // Log details (now stderr is separate, so result is clean base64)
-            System.out.println("=== CHART DEBUG ===");
-            System.out.println("Exit code: " + exitCode);
-            System.out.println("Output length: " + result.length() + " chars");
-            System.out.println("First 50: " + result.substring(0, Math.min(50, result.length())));
-            System.out.println("Last 50: " + result.substring(Math.max(0, result.length() - 50)));
-            System.out.println("===================");
-
-            if (exitCode != 0 || result.isEmpty() || result.length() < 5000) {
-                System.err.println("Python failed or base64 too short");
+            if (exitCode != 0 || base64.length() < 10000) {
+                System.err.println("Python error: " + base64);
                 return null;
             }
 
-            return result;
-
+            return base64;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
-
 
     // API: Đổi mật khẩu
     @PostMapping("/api/change-password")

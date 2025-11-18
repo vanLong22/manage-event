@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserService {
@@ -122,5 +123,13 @@ public class UserService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public List<Map<String, Object>> getUsersByRole(){
+        return userRepository.getUsersByRole();
+    } 
+
+    public List<Map<String, Object>> getGenderDistribution(){
+        return userRepository.getGenderDistribution();
     }
 }

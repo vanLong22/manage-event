@@ -17,6 +17,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+import org.springframework.core.ParameterizedTypeReference;
+
+
 @Controller
 @RequestMapping("/participant")
 public class ParticipantController {
@@ -35,6 +40,10 @@ public class ParticipantController {
     private ActivityHistoryService historyService;
     @Autowired
     private LoaiSuKienService loaiSuKienService;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String PYTHON_API_URL = "http://127.0.0.1:5000/suggest"; // Thay bằng IP server nếu deploy
+
 
     @GetMapping("/renter/join")
     public String dashboard(Model model, HttpSession session) {
@@ -71,6 +80,14 @@ public class ParticipantController {
 
         model.addAttribute("suggestions", suggestionService.getSuggestionsByUser(userId));
         model.addAttribute("histories", historyService.getHistoryByUser(userId));
+
+        /*lấy sự kiện gợi ý từ mô hình đã huấn luyện */
+        List<Long> suggestedIds = getSuggestedEventIdsFromPython(userId);
+        List<Event> suggestedEvents = suggestedIds.isEmpty() 
+        ? eventService.getFeaturedEvents() 
+        : eventService.getEventsByIds(suggestedIds); 
+
+        model.addAttribute("suggestedEvents", suggestedEvents);
 
         return "renter/join";
     }
@@ -218,6 +235,8 @@ public class ParticipantController {
         suggestionService.submitSuggestion(suggestion);
         return ResponseEntity.ok(Map.of("success", true, "message", "Đề xuất đã gửi!"));
     }
+
+    
 
     // AJAX: Load đề xuất đã gửi
     @GetMapping("/api/suggestions")
@@ -513,6 +532,40 @@ public class ParticipantController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi hệ thống"));
         }
+    }
+
+    /**
+     * Gọi API Python để lấy gợi ý sự kiện dựa trên mô hình ML
+     */
+    private List<Long> getSuggestedEventIdsFromPython(Long userId) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            var requestBody = Map.of("user_id", userId);
+            HttpEntity<Map<String, Long>> entity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                PYTHON_API_URL,
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Object suggested = response.getBody().get("suggested_events");
+                if (suggested instanceof List) {
+                    return ((List<?>) suggested).stream()
+                            .map(obj -> Long.valueOf(obj.toString()))
+                            .limit(10) // lấy tối đa 10
+                            .toList();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi gọi API gợi ý Python: " + e.getMessage());
+            // Không làm crash trang nếu ML server down
+        }
+        return List.of(); // trả về rỗng nếu lỗi
     }
 
 }

@@ -251,4 +251,20 @@ public class EventRepository {
             """;
         return jdbcTemplate.queryForList(sql, organizerId);
     }
+
+    public List<Event> getEventsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Tạo chuỗi placeholder (?, ?, ...) tương ứng số lượng IDs
+        String placeholders = String.join(",", ids.stream().map(id -> "?").toArray(String[]::new));
+        String sql = "SELECT * FROM su_kien WHERE su_kien_id IN (" + placeholders + ")";
+
+        // Chuyển List<Long> sang Object[] để truyền vào jdbcTemplate
+        Object[] params = ids.toArray();
+
+        return jdbcTemplate.query(sql, params, new BeanPropertyRowMapper<>(Event.class));
+    }
+
 }

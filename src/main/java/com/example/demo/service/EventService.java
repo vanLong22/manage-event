@@ -215,4 +215,8 @@ public class EventService {
     public List<Map<String, Object>> getEventsByType(Long organizerId) {
         return eventRepository.getEventsByType(organizerId);
     }
+
+    public List<Event> getEventsByIds(List<Long> ids) {
+        return eventRepository.getEventsByIds(ids);
+    }
 }

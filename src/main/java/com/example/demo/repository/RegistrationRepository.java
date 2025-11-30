@@ -176,7 +176,7 @@ public class RegistrationRepository {
         return jdbcTemplate.queryForObject(sql, Integer.class, organizerId);
     }
 
-    // Thêm mới: Count total participants
+    // đếm tổng số người tham gia đã được duyệt trong tất cả các sự kiện do một người tổ chức cụ thể tạo ra
     public int countTotalParticipants(Long organizerId) {
         String sql = """
             SELECT COUNT(*) FROM dang_ky_su_kien dk

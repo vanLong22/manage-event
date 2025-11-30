@@ -10,6 +10,7 @@ public class Notification {
     private Long daDoc;
     private String loaiThongBao;
     private String tieuDe;
+    private Long suKienId;
 
     public Notification(){
         
@@ -24,6 +25,18 @@ public class Notification {
         this.loaiThongBao = loaiThongBao;
         this.tieuDe = tieuDe;
     }
+
+    public Notification(Long thongBaoId, Long nguoiDungId, String noiDung, Date thoiGian, Long daDoc, String loaiThongBao, String tieuDe, Long suKienId) {
+        this.thongBaoId = thongBaoId;
+        this.nguoiDungId = nguoiDungId;
+        this.noiDung = noiDung;
+        this.thoiGian = thoiGian;
+        this.daDoc = daDoc;
+        this.loaiThongBao = loaiThongBao;
+        this.tieuDe = tieuDe;
+        this.suKienId = suKienId;
+    }
+
     // Getters & Setters
     public Long getThongBaoId() { return thongBaoId; }
     public void setThongBaoId(Long thongBaoId) { this.thongBaoId = thongBaoId; }
@@ -56,4 +69,13 @@ public class Notification {
         this.tieuDe = tieuDe;
     }
 
+    public Long getSuKienId() {
+        return suKienId;
+    }
+
+    public void setSuKienId(Long suKienId) {
+        this.suKienId = suKienId;
+    }
+
+    
 }

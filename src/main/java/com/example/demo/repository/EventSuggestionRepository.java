@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -160,5 +161,123 @@ public class EventSuggestionRepository {
     public List<EventSuggestion> findByStatus(String status) {
         String sql = "SELECT * FROM dang_su_kien WHERE trang_thai = ? ORDER BY thoi_gian_tao DESC";
         return jdbcTemplate.query(sql, new EventSuggestionRowMapper(), status);
+    }
+
+    // Lấy danh sách đề xuất với các bộ lọc (cho organizer)
+    public List<Map<String, Object>> findSuggestionsWithFilters(Integer loaiSuKienId, String diaDiem, String soLuongKhachRange, String trangThai) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT ds.*, nd.ho_ten, nd.email, nd.so_dien_thoai, lsk.ten_loai as loai_su_kien_ten " +
+            "FROM dang_su_kien ds " +
+            "LEFT JOIN nguoi_dung nd ON ds.nguoi_dung_id = nd.nguoi_dung_id " +
+            "LEFT JOIN loai_su_kien lsk ON ds.loai_su_kien_id = lsk.loai_su_kien_id " +
+            "WHERE 1=1"
+        );
+
+        if (loaiSuKienId != null) {
+            sql.append(" AND ds.loai_su_kien_id = ").append(loaiSuKienId);
+        }
+        if (diaDiem != null && !diaDiem.trim().isEmpty()) {
+            sql.append(" AND LOWER(ds.dia_diem) LIKE LOWER('%").append(diaDiem).append("%')");
+        }
+        if (soLuongKhachRange != null && !soLuongKhachRange.isEmpty()) {
+            switch (soLuongKhachRange) {
+                case "0-50":
+                    sql.append(" AND ds.so_luong_khach BETWEEN 0 AND 50");
+                    break;
+                case "50-100":
+                    sql.append(" AND ds.so_luong_khach BETWEEN 50 AND 100");
+                    break;
+                case "100-200":
+                    sql.append(" AND ds.so_luong_khach BETWEEN 100 AND 200");
+                    break;
+                case "200-500":
+                    sql.append(" AND ds.so_luong_khach BETWEEN 200 AND 500");
+                    break;
+                case "500":
+                    sql.append(" AND ds.so_luong_khach > 500");
+                    break;
+            }
+        }
+        if (trangThai != null && !trangThai.isEmpty()) {
+            sql.append(" AND ds.trang_thai = '").append(trangThai).append("'");
+        }
+
+        sql.append(" ORDER BY ds.thoi_gian_tao DESC");
+
+        return jdbcTemplate.query(sql.toString(), new RowMapper<Map<String, Object>>() {
+            @Override
+            public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                Map<String, Object> result = new java.util.HashMap<>();
+                result.put("dangSuKienId", rs.getLong("dang_su_kien_id"));
+                result.put("nguoiDungId", rs.getLong("nguoi_dung_id"));
+                result.put("tieuDe", rs.getString("tieu_de"));
+                result.put("moTaNhuCau", rs.getString("mo_ta_nhu_cau"));
+                result.put("loaiSuKienId", rs.getInt("loai_su_kien_id"));
+                result.put("loaiSuKienTen", rs.getString("loai_su_kien_ten"));
+                result.put("diaDiem", rs.getString("dia_diem"));
+                result.put("thoiGianDuKien", rs.getTimestamp("thoi_gian_du_kien"));
+                result.put("soLuongKhach", rs.getInt("so_luong_khach"));
+                result.put("giaCaLong", rs.getString("gia_ca_long"));
+                result.put("thongTinLienLac", rs.getString("thong_tin_lien_lac"));
+                result.put("trangThai", rs.getString("trang_thai"));
+                result.put("thoiGianTao", rs.getTimestamp("thoi_gian_tao"));
+                result.put("thoiGianPhanHoi", rs.getTimestamp("thoi_gian_phan_hoi"));
+                
+                // Thông tin user
+                Map<String, Object> user = new java.util.HashMap<>();
+                user.put("hoTen", rs.getString("ho_ten"));
+                user.put("email", rs.getString("email"));
+                user.put("soDienThoai", rs.getString("so_dien_thoai"));
+                result.put("user", user);
+                
+                return result;
+            }
+        });
+    }
+
+    // Lấy chi tiết đề xuất kèm thông tin user
+    public Map<String, Object> findSuggestionDetailById(Long suggestionId) {
+        String sql = "SELECT ds.*, nd.ho_ten, nd.email, nd.so_dien_thoai, nd.dia_chi, nd.gioi_tinh, " +
+                     "lsk.ten_loai as loai_su_kien_ten " +
+                     "FROM dang_su_kien ds " +
+                     "LEFT JOIN nguoi_dung nd ON ds.nguoi_dung_id = nd.nguoi_dung_id " +
+                     "LEFT JOIN loai_su_kien lsk ON ds.loai_su_kien_id = lsk.loai_su_kien_id " +
+                     "WHERE ds.dang_su_kien_id = ?";
+
+        try {
+            return jdbcTemplate.queryForObject(sql, new RowMapper<Map<String, Object>>() {
+                @Override
+                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Map<String, Object> result = new java.util.HashMap<>();
+                    result.put("dangSuKienId", rs.getLong("dang_su_kien_id"));
+                    result.put("nguoiDungId", rs.getLong("nguoi_dung_id"));
+                    result.put("tieuDe", rs.getString("tieu_de"));
+                    result.put("moTaNhuCau", rs.getString("mo_ta_nhu_cau"));
+                    result.put("loaiSuKienId", rs.getInt("loai_su_kien_id"));
+                    result.put("loaiSuKienTen", rs.getString("loai_su_kien_ten"));
+                    result.put("diaDiem", rs.getString("dia_diem"));
+                    result.put("thoiGianDuKien", rs.getTimestamp("thoi_gian_du_kien"));
+                    result.put("soLuongKhach", rs.getInt("so_luong_khach"));
+                    result.put("giaCaLong", rs.getString("gia_ca_long"));
+                    result.put("thongTinLienLac", rs.getString("thong_tin_lien_lac"));
+                    result.put("trangThai", rs.getString("trang_thai"));
+                    result.put("thoiGianTao", rs.getTimestamp("thoi_gian_tao"));
+                    result.put("thoiGianPhanHoi", rs.getTimestamp("thoi_gian_phan_hoi"));
+                    
+                    // Thông tin user chi tiết
+                    Map<String, Object> user = new java.util.HashMap<>();
+                    user.put("hoTen", rs.getString("ho_ten"));
+                    user.put("email", rs.getString("email"));
+                    user.put("soDienThoai", rs.getString("so_dien_thoai"));
+                    user.put("diaChi", rs.getString("dia_chi"));
+                    user.put("gioiTinh", rs.getString("gioi_tinh"));
+                    result.put("user", user);
+                    
+                    return result;
+                }
+            }, suggestionId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

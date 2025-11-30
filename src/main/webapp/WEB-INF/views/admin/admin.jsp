@@ -779,6 +779,47 @@
             z-index: 2000;
             pointer-events: none;
         }
+
+        /* form cho chức năng chỉnh sửa sự kiện */
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-text {
+            font-size: 12px;
+            color: #6c757d;
+        }
     </style> 
 </head>
 <body>
@@ -820,12 +861,14 @@
                         <span>Thống kê</span>
                     </a>
                 </li>
+                <!--
                 <li class="menu-item">
                     <a href="#" class="menu-link" data-target="suggestions">
                         <i class="fas fa-lightbulb"></i>
                         <span>Gợi ý sự kiện</span>
                     </a>
                 </li>
+                -->
                 <li class="menu-item">
                     <a href="#" class="menu-link" data-target="settings">
                         <i class="fas fa-cog"></i>
@@ -1051,22 +1094,27 @@
                     </div>
                 </div>
                 
-                <!--biểu đồ-->
-                <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px;">
-                    <div class="chart-container">
-                        <h3>Sự Kiện Theo Trạng Thái</h3>
-                        <img id="eventsByStatusChart" src="" alt="Biểu đồ sự kiện theo trạng thái" style="width: 100%; height: auto;">
-                        <div id="eventsByStatusPlaceholder" class="chart-placeholder" style="display: none;">Đang tải biểu đồ...</div>
+                <!-- hiển thị biểu đồ -->
+                <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Sự Kiện Theo Loại</h4>
+                        <img id="events-by-type-chart" style="width: 100%; height: auto;">
                     </div>
-                    <div class="chart-container">
-                        <h3>Đăng Ký Theo Sự Kiện Phổ Biến</h3>
-                        <img id="registrationsByEventChart" src="" alt="Biểu đồ đăng ký theo sự kiện" style="width: 100%; height: auto;">
-                        <div id="registrationsByEventPlaceholder" class="chart-placeholder" style="display: none;">Đang tải biểu đồ...</div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Người Dùng Theo Vai Trò</h4>
+                        <img id="users-by-role-chart" style="width: 100%; height: auto;">
                     </div>
-                    <div class="chart-container">
-                        <h3>Đăng Ký Theo Thời Gian</h3>
-                        <img id="registrationsOverTimeChart" src="" alt="Biểu đồ đăng ký theo thời gian" style="width: 100%; height: auto;">
-                        <div id="registrationsOverTimePlaceholder" class="chart-placeholder" style="display: none;">Đang tải biểu đồ...</div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Tỷ Lệ Giới Tính</h4>
+                        <img id="gender-pie-chart" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Tỷ Lệ Trạng Thái Yêu Cầu</h4>
+                        <img id="request-status-pie-chart" style="width: 100%; height: auto;">
+                    </div>
+                    <div class="chart-card">
+                        <h4>Biểu Đồ Đăng Ký Theo Thời Gian</h4>
+                        <img id="registrations-line-chart" style="width: 100%; height: auto;">
                     </div>
                 </div>
             </div>
@@ -1160,13 +1208,87 @@
         </div>
     </div>
 
+    <!-- Edit Event Modal -->
+    <div class="modal" id="edit-event-modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>Chỉnh sửa sự kiện</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-event-form">
+                    <input type="hidden" id="edit-event-id">
+                    
+                    <div class="form-group">
+                        <label for="edit-event-name">Tên sự kiện *</label>
+                        <input type="text" id="edit-event-name" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-event-description">Mô tả</label>
+                        <textarea id="edit-event-description" class="form-control" rows="4" placeholder="Nhập mô tả sự kiện..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-event-start">Thời gian bắt đầu *</label>
+                            <input type="datetime-local" id="edit-event-start" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-event-end">Thời gian kết thúc *</label>
+                            <input type="datetime-local" id="edit-event-end" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-event-location">Địa điểm *</label>
+                        <input type="text" id="edit-event-location" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-event-status">Trạng thái</label>
+                            <select id="edit-event-status" class="form-control">
+                                <option value="SapDienRa">Sắp diễn ra</option>
+                                <option value="DangDienRa">Đang diễn ra</option>
+                                <option value="DaKetThuc">Đã kết thúc</option>
+                                <option value="Huy">Đã hủy</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-event-max-attendees">Số lượng tối đa *</label>
+                            <input type="number" id="edit-event-max-attendees" class="form-control" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-event-current-attendees">Số lượng đã đăng ký</label>
+                            <input type="number" id="edit-event-current-attendees" class="form-control" readonly>
+                            <small class="form-text text-muted">Không thể chỉnh sửa trường này</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Lưu thay đổi
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-edit">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
     // Global variables
     let currentUsers = [];
     let currentEvents = [];
 
     // Thêm toast container vào body nếu chưa có
-    if ($('#toast-container').length === 0) {
+    if ($('#toast-container').length == 0) {
         $('body').append('<div class="toast-container" id="toast-container"></div>');
     }
 
@@ -1261,12 +1383,12 @@
 
         // Modal functionality
         $('.close-modal').click(function() {
-            $('#user-modal, #event-modal').hide();
+            $('#user-modal, #event-modal, #edit-event-modal').hide();
         });
 
         $(window).click(function(e) {
             if ($(e.target).hasClass('modal')) {
-                $('#user-modal, #event-modal').hide();
+                $('#user-modal, #event-modal, #edit-event-modal').hide();
             }
         });
 
@@ -1334,7 +1456,7 @@
         // Thêm sự kiện click cho card sự kiện
         $(document).on('click', '.event-card', function(e) {
             // Ngăn chặn sự kiện khi click vào các nút hành động
-            if ($(e.target).closest('.action-btn').length === 0) {
+            if ($(e.target).closest('.action-btn').length == 0) {
                 const eventId = $(this).find('.btn-view-event').data('event-id') || 
                             $(this).closest('[data-event-id]').data('event-id') ||
                             $(this).data('event-id');
@@ -1352,6 +1474,13 @@
                 viewEvent(eventId);
             }
         });
+
+        // Sự kiện cho nút chỉnh sửa sự kiện trong modal
+        $(document).on('click', '.btn-edit-event', function() {
+            const eventId = $(this).data('event-id');
+            openEditEventModal(eventId);
+        });
+
 
     }
 
@@ -1467,18 +1596,29 @@
         });
     }
 
+    // hiển thị danh sách sự kiện trong tab "Quản lý sự kiện"
     function loadEvents() {
         const status = $('#event-status').val();
         const type = $('#event-type').val();
         
         const filters = { status: status, type: type };
         
+        // Hiển thị loading
+        $('#events-tbody').html(`
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary); margin-bottom: 10px;"></i>
+                    <p>Đang tải danh sách sự kiện...</p>
+                </td>
+            </tr>
+        `);
+        
         $.get('/admin/api/events', filters, function(events) {
             currentEvents = events;
             let html = '';
             
             if (events.length == 0) {
-                html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray);">' +
+                html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray);">' +
                     '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
                     '<h3>Không tìm thấy sự kiện</h3>' +
                     '<p>Không có sự kiện nào phù hợp với bộ lọc của bạn.</p>' +
@@ -1490,20 +1630,34 @@
                     const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                     const eventType = event.loaiSuKien == 'CongKhai' ? 'Công khai' : 'Riêng tư';
                     
+                    // Kiểm tra xem có cần cập nhật trạng thái không
+                    const needsUpdate = event.needsStatusUpdate;
+                    const realTimeStatusText = getEventStatusText(event.realTimeStatus);
+                    
                     html += '<tr class="event-row" data-event-id="' + event.suKienId + '">' +
                         '<td>' + event.tenSuKien + '</td>' +
                         '<td>' + event.organizerName + '</td>' +
                         '<td>' + eventDate + '</td>' +
                         '<td>' + event.diaDiem + '</td>' +
                         '<td>' + eventType + '</td>' +
-                        '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+                        '<td>' +
+                            '<span class="status ' + statusClass + '">' + statusText + '</span>' +
+                            (needsUpdate ? 
+                                '<div class="status-warning" title="Trạng thái thực tế: ' + realTimeStatusText + '">' +
+                                '<i class="fas fa-exclamation-triangle"></i>' +
+                                '</div>' : '') +
+                        '</td>' +
                         '<td class="action-buttons">' +
                             '<div class="action-btn btn-view-event" data-event-id="' + event.suKienId + '" title="Xem chi tiết">' +
                                 '<i class="fas fa-eye"></i>' +
                             '</div>' +
-                            '<div class="action-btn" title="Chỉnh sửa">' +
+                            '<div class="action-btn btn-edit-event" data-event-id="' + event.suKienId + '" title="Chỉnh sửa">' +
                                 '<i class="fas fa-edit"></i>' +
                             '</div>' +
+                            (needsUpdate ? 
+                                '<div class="action-btn btn-sync-status" data-event-id="' + event.suKienId + '" title="Đồng bộ trạng thái (' + realTimeStatusText + ')">' +
+                                    '<i class="fas fa-sync-alt"></i>' +
+                                '</div>' : '') +
                             '<div class="action-btn btn-delete-event" data-event-id="' + event.suKienId + '" title="Xóa">' +
                                 '<i class="fas fa-trash"></i>' +
                             '</div>' +
@@ -1515,8 +1669,38 @@
         }).fail(function(xhr, status, error) {
             console.error('Error loading events:', error);
             showToast('Lỗi tải danh sách sự kiện: ' + error, false);
+            $('#events-tbody').html(`
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>Lỗi tải dữ liệu</h3>
+                        <p>Không thể tải danh sách sự kiện.</p>
+                    </td>
+                </tr>
+            `);
         });
     }
+
+    // Hàm đồng bộ trạng thái
+    function syncEventStatus(eventId) {
+        $.post('/admin/api/events/' + eventId + '/sync-status', function(response) {
+            if (response.success) {
+                showToast(response.message, true);
+                loadEvents(); // Reload danh sách
+            } else {
+                showToast(response.message, false);
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('Error syncing event status:', error);
+            showToast('Lỗi đồng bộ trạng thái: ' + error, false);
+        });
+    }
+
+    // Thêm event listener cho nút đồng bộ
+    $(document).on('click', '.btn-sync-status', function() {
+        const eventId = $(this).data('event-id');
+        syncEventStatus(eventId);
+    });
 
     function loadPendingEvents() {
         $.get('/admin/api/events/pending', function(data) {
@@ -1664,7 +1848,7 @@
         });
     }
 
-    // Action Functions - Sửa hàm viewEvent
+    // hàm viewEvent
     function viewEvent(eventId) {
         $.get('/admin/api/events/' + eventId, function(event) {
             const startDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleString('vi-VN') : 'N/A';
@@ -1723,14 +1907,15 @@
                 '</div>' +
             '</div>';
             
-            html += '<div class="form-group" style="margin-top: 20px;">' +
-                    '<button class="btn btn-primary">' +
-                        '<i class="fas fa-edit"></i> Chỉnh sửa' +
-                    '</button>' +
-                    '<button class="btn btn-danger btn-delete-event" data-event-id="' + event.suKienId + '" style="margin-left: 10px;">' +
-                        '<i class="fas fa-trash"></i> Xóa sự kiện' +
-                    '</button>' +
-                '</div>';
+            // Thêm nút hành động
+            html += '<div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
+                '<button class="btn btn-primary btn-edit-event" data-event-id="' + event.suKienId + '">' +
+                    '<i class="fas fa-edit"></i> Chỉnh sửa' +
+                '</button>' +
+                '<button class="btn btn-danger btn-delete-event" data-event-id="' + event.suKienId + '">' +
+                    '<i class="fas fa-trash"></i> Xóa sự kiện' +
+                '</button>' +
+            '</div>';
             
             $('#event-modal-content').html(html);
             $('#event-modal').show();
@@ -1739,6 +1924,7 @@
             showToast('Lỗi tải thông tin sự kiện: ' + error, false);
         });
     }
+
 
     // Thêm event delegation cho các nút trong modal
     $(document).on('click', '.btn-approve-event', function() {
@@ -1919,7 +2105,7 @@
         const $recentEventsContainer = $('#recent-events');
         const $eventCards = $recentEventsContainer.find('.event-card');
         
-        if ($eventCards.length === 0) {
+        if ($eventCards.length == 0) {
             $recentEventsContainer.html(`
                 <div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">
                     <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>
@@ -2040,20 +2226,40 @@
         $('.menu-link[data-target="events"]').click();
     }
 
-    function loadAnalytics() {
-        $.get('/admin/api/analytics', function(data) {
-            $('#stat-total-users').text(data.totalUsers);
-            $('#stat-active-events').text(data.activeEvents);
-            $('#stat-pending-events').text(data.pendingEvents);
-            $('#stat-avg-participation').text(data.avgParticipation + '%');
-
-            // Phần mới: Render charts từ base64
-            renderChart('eventsByStatusChart', data.eventsByStatusChart);
-            renderChart('registrationsByEventChart', data.registrationsByEventChart);
-            renderChart('registrationsOverTimeChart', data.registrationsOverTimeChart);
+    function loadAnalytics(period) {
+        // Gọi API để lấy số liệu tổng quan  
+        $.get('/admin/api/analytics/stats?period=' + period, function(stats) {
+            $('#stat-total-users').text(stats.totalUsers);
+            $('#stat-active-events').text(stats.activeEvents);
+            $('#stat-pending-events').text(stats.pendingEvents);
+            $('#stat-avg-participation').text(stats.avgParticipation + '%');
         }).fail(function(xhr, status, error) {
             console.error('Error loading analytics:', error);
             showToast('Lỗi tải dữ liệu thống kê: ' + error, false);
+        });
+
+        // Gọi API để lấy biểu đồ, có thể với period (mặc định là 'month' nếu không có)
+        period = period || 'month';
+        $.get('/admin/api/analytics/stats?period=' + period, function(data) {
+            // Các stats khác từ prompt
+            if (data.eventsByTypeChart) {
+                $('#events-by-type-chart').attr('src', 'data:image/png;base64,' + data.eventsByTypeChart);
+            }
+            if (data.usersByRoleChart) {
+                $('#users-by-role-chart').attr('src', 'data:image/png;base64,' + data.usersByRoleChart);
+            }
+            if (data.genderPieChart) {
+                $('#gender-pie-chart').attr('src', 'data:image/png;base64,' + data.genderPieChart);
+            }
+            if (data.requestStatusPieChart) {
+                $('#request-status-pie-chart').attr('src', 'data:image/png;base64,' + data.requestStatusPieChart);
+            }
+            if (data.registrationsLineChart) {
+                $('#registrations-line-chart').attr('src', 'data:image/png;base64,' + data.registrationsLineChart);
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('Error loading chart data:', error);
+            showToast('Lỗi tải biểu đồ: ' + error, false);
         });
     }
 
@@ -2069,6 +2275,114 @@
             imgElem.hide();
             placeholderElem.text('Không thể tải biểu đồ (lỗi generation)').show();
         }
+    }
+
+    // chỉnh sửa sự kiên --------------------------------------------------------------
+    // Hàm mở modal chỉnh sửa
+    function openEditEventModal(eventId) {
+        $.get('/admin/api/events/' + eventId, function(event) {
+            // Format datetime để hiển thị trong input datetime-local
+            const formatDateTimeForInput = (dateString) => {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toISOString().slice(0, 16);
+            };
+            
+            const startDate = formatDateTimeForInput(event.thoiGianBatDau);
+            const endDate = formatDateTimeForInput(event.thoiGianKetThuc);
+            
+            // Điền dữ liệu vào form
+            $('#edit-event-id').val(event.suKienId);
+            $('#edit-event-name').val(event.tenSuKien);
+            $('#edit-event-description').val(event.moTa || '');
+            $('#edit-event-start').val(startDate);
+            $('#edit-event-end').val(endDate);
+            $('#edit-event-location').val(event.diaDiem);
+            $('#edit-event-type').val(event.loaiSuKien);
+            $('#edit-event-status').val(event.trangThai);
+            $('#edit-event-max-attendees').val(event.soLuongToiDa);
+            $('#edit-event-current-attendees').val(event.soLuongDaDangKy);
+            
+            // Hiển thị modal
+            $('#event-modal').hide();
+            $('#edit-event-modal').show();
+            
+        }).fail(function(xhr, status, error) {
+            console.error('Error loading event for edit:', error);
+            showToast('Lỗi tải thông tin sự kiện để chỉnh sửa: ' + error, false);
+        });
+    }
+
+    // Xử lý submit form chỉnh sửa
+    $('#edit-event-form').on('submit', function(e) {
+        e.preventDefault();
+        const eventId = $('#edit-event-id').val();
+        saveEventChanges(eventId);
+    });
+
+    // Xử lý nút hủy
+    $('#btn-cancel-edit').click(function() {
+        $('#edit-event-modal').hide();
+    });
+
+    // Hàm lưu thay đổi sự kiện
+    function saveEventChanges(eventId) {
+        const formData = {
+            tenSuKien: $('#edit-event-name').val(),
+            moTa: $('#edit-event-description').val(),
+            thoiGianBatDau: $('#edit-event-start').val(),
+            thoiGianKetThuc: $('#edit-event-end').val(),
+            diaDiem: $('#edit-event-location').val(),
+            loaiSuKien: $('#edit-event-type').val(),
+            trangThai: $('#edit-event-status').val(),
+            soLuongToiDa: $('#edit-event-max-attendees').val()
+        };
+        
+        // Validate dữ liệu
+        if (!formData.tenSuKien.trim()) {
+            showToast('Tên sự kiện không được để trống', false);
+            return;
+        }
+        
+        if (!formData.thoiGianBatDau || !formData.thoiGianKetThuc) {
+            showToast('Thời gian bắt đầu và kết thúc là bắt buộc', false);
+            return;
+        }
+        
+        if (new Date(formData.thoiGianBatDau) >= new Date(formData.thoiGianKetThuc)) {
+            showToast('Thời gian kết thúc phải sau thời gian bắt đầu', false);
+            return;
+        }
+        
+        if (formData.soLuongToiDa < 1) {
+            showToast('Số lượng tối đa phải lớn hơn 0', false);
+            return;
+        }
+        
+        $.ajax({
+            url: '/admin/api/events/' + eventId,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đã cập nhật sự kiện thành công', true);
+                    // Đóng modal
+                    $('#edit-event-modal').hide();
+                    // Reload dữ liệu
+                    loadEvents();
+                    loadDashboardData();
+                } else {
+                    showToast(response.message || 'Lỗi cập nhật sự kiện', false);
+                    $('#edit-event-form').find('button[type="submit"]').html('<i class="fas fa-save"></i> Lưu thay đổi').prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating event:', error);
+                showToast('Lỗi cập nhật sự kiện: ' + error, false);
+                $('#edit-event-form').find('button[type="submit"]').html('<i class="fas fa-save"></i> Lưu thay đổi').prop('disabled', false);
+            }
+        });
     }
 </script>
 </body>

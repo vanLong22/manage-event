@@ -1,16 +1,13 @@
 package com.example.demo.repository;
 
 import com.example.demo.model.User;
-
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-//import java.util.List;
+import java.util.List;
+import java.util.Map;
 
 @Repository
 public class UserRepository {
@@ -47,8 +44,8 @@ public class UserRepository {
 
     public void save(User user) {
         String sql = "INSERT INTO nguoi_dung (ten_dang_nhap, mat_khau, email, so_dien_thoai, ho_ten, " +
-                     "dia_chi, gioi_tinh, anh_dai_dien, vai_tro, ngay_tao) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now())";
+                     "dia_chi, gioi_tinh, anh_dai_dien, vai_tro, ngay_tao, trang_thai) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?)";
         
         jdbcTemplate.update(sql, 
             user.getTenDangNhap(),
@@ -59,7 +56,8 @@ public class UserRepository {
             user.getDiaChi(),
             user.getGioiTinh(),
             user.getAnhDaiDien(),
-            user.getVaiTro()
+            user.getVaiTro(),
+            user.getTrangThai()
         );
     }
 
@@ -68,11 +66,9 @@ public class UserRepository {
         return jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), id);
     }
 
-    
-
     public void update(User user) {
-        String sql = "UPDATE nguoi_dung SET ho_ten = ?, email = ?, so_dien_thoai = ?, dia_chi = ?, gioi_tinh = ?, anh_dai_dien = ? WHERE nguoi_dung_id = ?";
-        jdbcTemplate.update(sql, user.getHoTen(), user.getEmail(), user.getSoDienThoai(), user.getDiaChi(), user.getGioiTinh(), user.getAnhDaiDien(), user.getNguoiDungId());
+        String sql = "UPDATE nguoi_dung SET ho_ten = ?, email = ?, so_dien_thoai = ?, dia_chi = ?, gioi_tinh = ?, anh_dai_dien = ?, trang_thai = ? WHERE nguoi_dung_id = ?";
+        jdbcTemplate.update(sql, user.getHoTen(), user.getEmail(), user.getSoDienThoai(), user.getDiaChi(), user.getGioiTinh(), user.getAnhDaiDien(), user.getTrangThai(), user.getNguoiDungId());
     }
 
     public boolean updatePassword(Long userId, String currentPassword, String newPassword) {
@@ -101,6 +97,12 @@ public class UserRepository {
         jdbcTemplate.update(sql, newPassword, userId);
     }
 
+    // Cập nhật trạng thái người dùng
+    public void updateStatus(Long userId, Integer status) {
+        String sql = "UPDATE nguoi_dung SET trang_thai = ? WHERE nguoi_dung_id = ?";
+        jdbcTemplate.update(sql, status, userId);
+    }
+
     // Phương thức tạo biểu đồ: Số lượng người dùng theo vai trò (Bar Chart)
     public List<Map<String, Object>> getUsersByRole() {
         String sql = "SELECT vai_tro, COUNT(nguoi_dung_id) as count FROM nguoi_dung GROUP BY vai_tro";
@@ -110,6 +112,12 @@ public class UserRepository {
     // Phương thức tạo biểu đồ: Tỷ lệ giới tính người dùng (Pie Chart)
     public List<Map<String, Object>> getGenderDistribution() {
         String sql = "SELECT gioi_tinh, COUNT(nguoi_dung_id) as count FROM nguoi_dung GROUP BY gioi_tinh";
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    // Phương thức tạo biểu đồ: Số lượng người dùng theo trạng thái
+    public List<Map<String, Object>> getUsersByStatus() {
+        String sql = "SELECT trang_thai, COUNT(nguoi_dung_id) as count FROM nguoi_dung GROUP BY trang_thai";
         return jdbcTemplate.queryForList(sql);
     }
 }

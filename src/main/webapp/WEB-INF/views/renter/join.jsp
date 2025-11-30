@@ -1424,60 +1424,55 @@
                         <div class="card-icon secondary">
                             <i class="fas fa-star"></i>
                         </div>
-                        <h3 id="suggestions-sent"><c:out value="${stats.suggestionsSent}"/></h3>
+                        <h3 id="suggestions-sent"><c:out value="${suggestedEvents.size()}"/></h3>
                         <p>Sự kiện đã đề xuất</p>
                     </div>
                 </div>
 
                 <!-- ================== SỰ KIỆN GỢI Ý TỪ MÔ HÌNH ML ================== -->
                 <div class="section-header">
-                    <h3 class="section-title">
-                        <i class="fas fa-brain</i> Sự kiện gợi ý dành riêng cho bạn
-                    </h3>
-                    <span class="badge badge-ai">AI Powered</span>
+                    <h3 class="section-title">Sự kiện gợi ý cho bạn</h3>
+                    <!--
+                    <button class="btn btn-outline" id="view-all-suggested">
+                        <i class="fas fa-eye"></i> Xem tất cả
+                    </button>
+                    -->
                 </div>
 
                 <div class="events-grid" id="suggested-events-grid">
                     <c:choose>
-                        <c:when test="${not empty suggestedEvents && suggestedEvents.size() > 0}">
+                        <c:when test="${not empty suggestedEvents}">
                             <c:forEach var="event" items="${suggestedEvents}">
-                                <div class="event-card highlight-ai" data-event-id="${event.suKienId}">
+                                <div class="event-card" data-event-id="${event.suKienId}">
                                     <div class="event-image">
                                         <c:choose>
                                             <c:when test="${not empty event.anhBia}">
                                                 <img src="<c:out value='${event.anhBia}'/>" 
                                                     alt="<c:out value='${event.tenSuKien}'/>" 
-                                                    style="width:100%; height:100%; object-fit:cover;">
+                                                    style="width: 100%; height: 100%; object-fit: cover;">
                                             </c:when>
                                             <c:otherwise>
-                                                <div style="width:100%; height:100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display:flex; align-items:center; justify-content:center; color:white;">
-                                                    <i class="fas fa-magic fa-3x"></i>
+                                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: var(--primary-light); color: var(--primary);">
+                                                    <i class="fas fa-calendar-alt" style="font-size: 40px;"></i>
                                                 </div>
                                             </c:otherwise>
                                         </c:choose>
-                                        <div class="ai-badge">Gợi ý AI</div>
                                     </div>
-
                                     <div class="event-content">
                                         <h4 class="event-title"><c:out value="${event.tenSuKien}"/></h4>
-
                                         <div class="event-meta">
                                             <span><i class="far fa-calendar"></i> 
                                                 <fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/>
                                             </span>
                                             <span><i class="fas fa-map-marker-alt"></i> <c:out value="${event.diaDiem}"/></span>
                                         </div>
-
-                                        <p class="event-description">
-                                            <c:out value="${fn:substring(event.moTa, 0, 80)}${fn:length(event.moTa) > 80 ? '...' : ''}"/>
-                                        </p>
-
+                                        <p class="event-description"><c:out value="${fn:substring(event.moTa, 0, 100)}${fn:length(event.moTa) > 100 ? '...' : ''}"/></p>
                                         <div class="event-footer">
                                             <span class="status ${fn:toLowerCase(event.trangThai)}">
                                                 <c:out value="${event.trangThai}"/>
                                             </span>
                                             <span><i class="fas fa-users"></i> 
-                                                ${event.soLuongDaDangKy}/${event.soLuongToiDa}
+                                                <c:out value="${event.soLuongDaDangKy}"/>/<c:out value="${event.soLuongToiDa}"/>
                                             </span>
                                         </div>
                                     </div>
@@ -1485,31 +1480,15 @@
                             </c:forEach>
                         </c:when>
                         <c:otherwise>
-                            <div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
-                                <i class="fas fa-robot fa-4x" style="color: var(--primary); margin-bottom: 20px; opacity: 0.7;"></i>
-                                <h3>Chưa có gợi ý nào</h3>
-                                <p>AI đang học sở thích của bạn... Hãy tham gia vài sự kiện để nhận gợi ý chính xác hơn!</p>
-                                <p><small>Hoặc chúng tôi sẽ hiển thị sự kiện nổi bật</small></p>
+                            <div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">
+                                <i class="fas fa-lightbulb" style="font-size: 48px; margin-bottom: 15px;"></i>
+                                <h3>Chưa có gợi ý sự kiện</h3>
+                                <p>Tham gia thêm sự kiện để hệ thống gợi ý phù hợp hơn!</p>
                             </div>
                         </c:otherwise>
                     </c:choose>
                 </div>
                 <!-- ================== KẾT THÚC PHẦN GỢI Ý AI ================== -->
-
-                <!-- Thêm phần sự kiện sắp diễn ra -->
-                <div class="section-header" style="margin-top: 40px;">
-                    <h3 class="section-title">Sự kiện sắp diễn ra</h3>
-                    <button class="btn btn-outline" id="view-all-upcoming">
-                        <i class="fas fa-eye"></i> Xem tất cả
-                    </button>
-                </div>
-
-                <div class="events-grid" id="upcoming-events-grid">
-                    <!-- Sẽ được cập nhật bằng JavaScript -->
-                    <div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 20px;">
-                        <i class="fas fa-spinner fa-spin"></i> Đang tải...
-                    </div>
-                </div>
             </div>
 
             <!-- Events Content -->

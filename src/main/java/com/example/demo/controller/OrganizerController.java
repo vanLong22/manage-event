@@ -5,10 +5,10 @@ import com.example.demo.model.LoaiSuKien;
 import com.example.demo.model.Registration;
 import com.example.demo.model.User;
 import com.example.demo.service.EventService;
+import com.example.demo.service.EventSuggestionService;
 import com.example.demo.service.LoaiSuKienService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.UserService;
-//import com.example.demo.service.FileStorageService; 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpSession;
@@ -42,6 +42,9 @@ public class OrganizerController {
 
     @Autowired
     private LoaiSuKienService loaiSuKienService;
+
+    @Autowired
+    private EventSuggestionService eventSuggestionService;
 
     //@Autowired
     //private FileStorageService fileStorageService; // Để handle upload anhBia
@@ -564,7 +567,7 @@ public class OrganizerController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> request, HttpSession session) {
         try {
-            String token = request.get("token");
+            //String token = request.get("token");
             String newPassword = request.get("newPassword");
             String confirmPassword = request.get("confirmPassword");
 
@@ -590,5 +593,68 @@ public class OrganizerController {
         }
     }
 
+
+    // API lấy danh sách đề xuất sự kiện
+    @GetMapping("/api/event-suggestions")
+    public ResponseEntity<List<Map<String, Object>>> getEventSuggestions(
+            @RequestParam(required = false) Integer loaiSuKienId,
+            @RequestParam(required = false) String diaDiem,
+            @RequestParam(required = false) String soLuongKhach,
+            @RequestParam(required = false) String trangThai,
+            HttpSession session) {
+        
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        List<Map<String, Object>> suggestions = eventSuggestionService.getSuggestionsWithFilters(
+            loaiSuKienId, diaDiem, soLuongKhach, trangThai);
+        
+        return ResponseEntity.ok(suggestions);
+    }
+
+    // API lấy chi tiết đề xuất
+    @GetMapping("/api/event-suggestions/{id}")
+    public ResponseEntity<Map<String, Object>> getEventSuggestionDetail(@PathVariable Long id, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        Map<String, Object> suggestionDetail = eventSuggestionService.getSuggestionDetail(id);
+        if (suggestionDetail != null) {
+            return ResponseEntity.ok(suggestionDetail);
+        }
+        
+        return ResponseEntity.notFound().build();
+    }
+
+    // API xử lý đề xuất (chấp nhận/từ chối)
+    @PostMapping("/api/event-suggestions/process")
+    public ResponseEntity<Map<String, Object>> processEventSuggestion(@RequestBody Map<String, Object> request, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        Long dangSuKienId = Long.parseLong(request.get("dangSuKienId").toString());
+        String action = (String) request.get("action");
+        String message = (String) request.get("message");
+        
+        boolean success = eventSuggestionService.processSuggestion(dangSuKienId, action, message, organizerId);
+        
+        if (success) {
+            return ResponseEntity.ok(new HashMap<>() {{
+                put("success", true);
+                put("message", "Xử lý đề xuất thành công!");
+            }});
+        } else {
+            return ResponseEntity.badRequest().body(new HashMap<>() {{
+                put("success", false);
+                put("message", "Xử lý đề xuất thất bại!");
+            }});
+        }
+    }
 
 }

@@ -7,8 +7,6 @@ import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -58,8 +56,7 @@ public class ParticipantController {
         model.addAttribute("stats", Map.of(
             "eventsAttended", registrationService.countAttendedEvents(userId),
             "upcomingEvents", registrationService.countUpcomingEvents(userId),
-            "pendingEvents", registrationService.countPendingRegistrations(userId),
-            "suggestionsSent", 5
+            "pendingEvents", registrationService.countPendingRegistrations(userId)
         ));
 
         model.addAttribute("featuredEvents", eventService.getFeaturedEvents());
@@ -78,7 +75,9 @@ public class ParticipantController {
         model.addAttribute("notifications", notifications);
         model.addAttribute("unreadNotificationCount", unreadCount);
 
+        // sự kiện mà người tham gia đã đề xuất cho người tổ chức
         model.addAttribute("suggestions", suggestionService.getSuggestionsByUser(userId));
+        // lịch sử tương tác 
         model.addAttribute("histories", historyService.getHistoryByUser(userId));
 
         /*lấy sự kiện gợi ý từ mô hình đã huấn luyện */
@@ -199,15 +198,15 @@ public class ParticipantController {
     */
     // AJAX: Load sự kiện của tôi
     @GetMapping("/api/my-events")
-    public ResponseEntity<List<Registration>> getMyEvents() {
-        Long userId = 1001L; // Từ session
+    public ResponseEntity<List<Registration>> getMyEvents(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId"); 
         return ResponseEntity.ok(registrationService.getRegistrationsByUser(userId));
     }
 
     // AJAX: Load thông báo
     @GetMapping("/api/notifications")
-    public ResponseEntity<List<Notification>> getNotifications() {
-        Long userId = 1001L;
+    public ResponseEntity<List<Notification>> getNotifications(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
         return ResponseEntity.ok(notificationService.getNotificationsByUser(userId));
     }
 
@@ -221,16 +220,16 @@ public class ParticipantController {
 
     // AJAX: Đánh dấu tất cả đọc
     @PostMapping("/api/notifications/mark-all-read")
-    public ResponseEntity<Map<String, Object>> markAllRead() {
-        Long userId = 1001L;
+    public ResponseEntity<Map<String, Object>> markAllRead(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
     // AJAX: Gửi đề xuất sự kiện
     @PostMapping("/api/suggestions")
-    public ResponseEntity<Map<String, Object>> submitSuggestion(@RequestBody EventSuggestion suggestion) {
-        Long userId = 1001L;
+    public ResponseEntity<Map<String, Object>> submitSuggestion(@RequestBody EventSuggestion suggestion, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
         suggestion.setNguoiDungId(userId);
         suggestionService.submitSuggestion(suggestion);
         return ResponseEntity.ok(Map.of("success", true, "message", "Đề xuất đã gửi!"));
@@ -240,15 +239,15 @@ public class ParticipantController {
 
     // AJAX: Load đề xuất đã gửi
     @GetMapping("/api/suggestions")
-    public ResponseEntity<List<EventSuggestion>> getSuggestions() {
-        Long userId = 1001L;
+    public ResponseEntity<List<EventSuggestion>> getSuggestions(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
         return ResponseEntity.ok(suggestionService.getSuggestionsByUser(userId));
     }
 
     // AJAX: Load lịch sử hoạt động
     @GetMapping("/api/history")
-    public ResponseEntity<List<ActivityHistory>> getHistory() {
-        Long userId = 1001L;
+    public ResponseEntity<List<ActivityHistory>> getHistory(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
         return ResponseEntity.ok(historyService.getHistoryByUser(userId));
     }
 

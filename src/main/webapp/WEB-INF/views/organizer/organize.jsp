@@ -595,7 +595,181 @@
             pointer-events: none;
         }
 
+        /* Thêm vào phần CSS hiện tại */
+    .modal-content {
+        background: white;
+        border-radius: var(--border-radius);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        position: relative;
+        margin: 20px;
+    }
 
+    /* Responsive cho modal */
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 95%;
+            max-width: 95%;
+            margin: 10px;
+            max-height: 95vh;
+        }
+        
+        .modal-header {
+            padding: 15px 20px;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .modal-content {
+            width: 98%;
+            max-width: 98%;
+            margin: 5px;
+            border-radius: 8px;
+        }
+        
+        .modal-header {
+            padding: 12px 15px;
+        }
+        
+        .modal-body {
+            padding: 15px;
+        }
+        
+        .modal-header h3 {
+            font-size: 16px;
+        }
+        
+        .close-modal {
+            font-size: 20px;
+        }
+    }
+
+    /* Đảm bảo modal luôn căn giữa */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    /* Cải thiện hiển thị nội dung modal chi tiết người tham gia */
+    #participant-detail-body {
+        line-height: 1.6;
+    }
+
+    #participant-detail-body h4 {
+        color: var(--primary);
+        margin-bottom: 15px;
+        font-size: 20px;
+        border-bottom: 2px solid var(--primary-light);
+        padding-bottom: 10px;
+    }
+
+    #participant-detail-body p {
+        margin-bottom: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    #participant-detail-body p:last-child {
+        border-bottom: none;
+    }
+
+    /* Responsive cho nội dung chi tiết */
+    @media (max-width: 480px) {
+        #participant-detail-body h4 {
+            font-size: 18px;
+        }
+        
+        #participant-detail-body p {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+    }
+
+    /* CSS cho phần đề xuất sự kiện */
+    .detail-section {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .detail-section h5 {
+        color: var(--primary);
+        margin-bottom: 15px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+
+    .detail-item strong {
+        color: var(--dark);
+        min-width: 140px;
+        font-weight: 600;
+    }
+
+    .detail-item span {
+        color: var(--gray);
+        text-align: right;
+        flex: 1;
+    }
+
+    .detail-content {
+        background: var(--primary-light);
+        padding: 15px;
+        border-radius: 8px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
         
     </style>
 </head>
@@ -618,6 +792,12 @@
                     <a href="#" class="menu-link" data-target="events">
                         <i class="fas fa-calendar-week"></i>
                         <span>Quản lý sự kiện</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-target="event-suggestions">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Đề xuất sự kiện</span>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -786,6 +966,85 @@
                                     </td>
                                 </tr>
                             </c:forEach>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Event Suggestions Content -->
+            <div id="event-suggestions" class="content-section">
+                <div class="section-header">
+                    <h3 class="section-title">Quản lý đề xuất sự kiện</h3>
+                    <button class="btn btn-outline" id="refresh-suggestions">
+                        <i class="fas fa-sync-alt"></i> Làm mới
+                    </button>
+                </div>
+
+                <!-- Bộ lọc -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filter-suggestion-type">Loại sự kiện</label>
+                        <select id="filter-suggestion-type">
+                            <option value="">Tất cả loại</option>
+                            <c:forEach var="type" items="${eventTypes}">
+                                <option value="<c:out value="${type.loaiSuKienId}"/>"><c:out value="${type.tenLoai}"/></option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-suggestion-location">Địa điểm</label>
+                        <input type="text" id="filter-suggestion-location" placeholder="Nhập địa điểm">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-suggestion-guests">Số lượng khách</label>
+                        <select id="filter-suggestion-guests">
+                            <option value="">Tất cả</option>
+                            <option value="0-50">Dưới 50 người</option>
+                            <option value="50-100">50-100 người</option>
+                            <option value="100-200">100-200 người</option>
+                            <option value="200-500">200-500 người</option>
+                            <option value="500">Trên 500 người</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-suggestion-price">Mức giá</label>
+                        <select id="filter-suggestion-price">
+                            <option value="">Tất cả mức giá</option>
+                            <option value="duoi-5-trieu">Dưới 5 triệu</option>
+                            <option value="5-10-trieu">5 - 10 triệu</option>
+                            <option value="10-20-trieu">10 - 20 triệu</option>
+                            <option value="20-50-trieu">20 - 50 triệu</option>
+                            <option value="tren-50-trieu">Trên 50 triệu</option>
+                            <option value="thuong-luong">Thương lượng</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-suggestion-status">Trạng thái</label>
+                        <select id="filter-suggestion-status">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="ChoDuyet">Chờ duyệt</option>
+                            <option value="DaDuyet">Đã duyệt</option>
+                            <option value="TuChoi">Từ chối</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="suggestions-table">
+                        <thead>
+                            <tr>
+                                <th>Tiêu đề</th>
+                                <th>Loại sự kiện</th>
+                                <th>Địa điểm</th>
+                                <th>Thời gian dự kiến</th>
+                                <th>Số lượng khách</th>
+                                <th>Giá cả mong muốn</th>
+                                <th>Người đề xuất</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dữ liệu sẽ được tải bằng AJAX -->
                         </tbody>
                     </table>
                 </div>
@@ -992,7 +1251,7 @@
                         <p>Tỷ lệ hủy đăng ký</p>
                     </div>
                 </div>
-
+                <!--
                 <div class="form-group">
                     <label for="report-period">Chọn kỳ báo cáo</label>
                     <select id="report-period">
@@ -1003,7 +1262,7 @@
                         <option value="custom">Tùy chỉnh</option>
                     </select>
                 </div>
-
+                -->
                 <div class="content-section" style="margin-top: 20px;">
                     <h4 style="margin-bottom: 15px;">Sự kiện phổ biến nhất</h4>
                     <div class="table-container">
@@ -1028,7 +1287,7 @@
                     </div>
                 </div>
 
-                <!-- Trong <div id="analytics" class="content-section">, sau bảng popular events -->
+                <!-- hiển thị biểu đồ -->
                 <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
                     <div class="chart-card">
                         <h4>Biểu Đồ Sự Kiện Theo Loại</h4>
@@ -1251,10 +1510,55 @@
         </div>
     </div>
 
+    <!-- Event Suggestion Detail Modal -->
+    <div class="modal" id="suggestion-detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chi tiết đề xuất sự kiện</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="suggestion-detail-body">
+                <!-- Nội dung sẽ load bằng AJAX -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Accept/Reject Suggestion Modal -->
+    <div class="modal" id="suggestion-action-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="suggestion-action-title">Xử lý đề xuất</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="suggestion-action-form">
+                    <input type="hidden" id="action-suggestion-id">
+                    <input type="hidden" id="action-type">
+                    
+                    <div class="form-group" id="accept-fields" style="display: none;">
+                        <label for="suggestion-response">Thông báo chấp nhận</label>
+                        <textarea id="suggestion-response" placeholder="Thông báo sẽ được gửi đến người đề xuất...">Đề xuất sự kiện của bạn đã được chấp nhận. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất!</textarea>
+                    </div>
+                    
+                    <div class="form-group" id="reject-fields" style="display: none;">
+                        <label for="suggestion-reject-reason">Lý do từ chối</label>
+                        <textarea id="suggestion-reject-reason" placeholder="Nhập lý do từ chối..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success" id="submit-suggestion-action" style="width: 100%;">
+                            <i class="fas fa-check"></i> Xác nhận
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
    <script>
     $(document).ready(function() {
         // Thêm toast container vào body nếu chưa có
-        if ($('#toast-container').length === 0) {
+        if ($('#toast-container').length == 0) {
             $('body').append('<div class="toast-container" id="toast-container"></div>');
         }
 
@@ -1375,6 +1679,11 @@
                         pageSubtitle.textContent = 'Quản lý thông tin cá nhân của bạn';
                         loadAccount();
                         break;
+                    case 'event-suggestions':
+                        pageTitle.textContent = 'Đề xuất sự kiện';
+                        pageSubtitle.textContent = 'Quản lý các đề xuất sự kiện từ người dùng';
+                        loadEventSuggestions();
+                        break;
                 }
             });
         }
@@ -1491,7 +1800,7 @@
                 $('#event-privacy').val(event.loaiSuKien);
 
                 // Hiển thị và điền mã riêng tư nếu sự kiện là riêng tư
-                if (event.loaiSuKien === 'RiengTu') {
+                if (event.loaiSuKien == 'RiengTu') {
                     $('#private-event-id-group').show();
                     $('#private-event-id').val(event.maRiengTu || '').prop('required', true);
                 } else {
@@ -1548,7 +1857,7 @@
 
         // Hiển thị/ẩn trường mã sự kiện riêng tư
         $('#event-privacy').on('change', function() {
-            if (this.value === 'RiengTu') {
+            if (this.value == 'RiengTu') {
                 $('#private-event-id-group').show();
                 $('#private-event-id').prop('required', true);
             } else {
@@ -1581,7 +1890,7 @@
             };
             
             // Thêm mã sự kiện riêng tư nếu có
-            if ($('#event-privacy').val() === 'RiengTu') {
+            if ($('#event-privacy').val() == 'RiengTu') {
                 event.matKhauSuKienRiengTu = $('#private-event-id').val();
             }
             
@@ -1641,8 +1950,8 @@
                     for (var i = 0; i < data.length; i++) {
                         var reg = data[i];
                         var statusClass = reg.trangThai.toLowerCase();
-                        var diemDanhText = reg.trangThai === 'DaThamGia' ? 'Đã tham gia' : 'Chưa tham gia';
-                        var toggleIcon = reg.trangThai === 'DaThamGia' ? 'fa-times' : 'fa-check';
+                        var diemDanhText = reg.trangThai == 'DaThamGia' ? 'Đã tham gia' : 'Chưa tham gia';
+                        var toggleIcon = reg.trangThai == 'DaThamGia' ? 'fa-times' : 'fa-check';
                         var newStatus = reg.trangThai !== 'DaThamGia';
                         html += '<tr data-reg-id="' + reg.dangKyId + '">' +
                                     '<td>' + reg.user.hoTen + '</td>' +
@@ -1651,7 +1960,7 @@
                                     '<td>' + new Date(reg.thoiGianDangKy).toLocaleString() + '</td>' +
                                     '<td><span class="status ' + statusClass + '">' + diemDanhText + '</span></td>' +
                                     '<td class="action-buttons">' +
-                                        '<div class="action-btn toggle-attendance" data-reg-id="' + reg.dangKyId + '" data-new-status="' + newStatus + '" title="' + (reg.trangThai === 'DaThamGia' ? 'Đánh dấu vắng' : 'Đánh dấu tham gia') + '">' +
+                                        '<div class="action-btn toggle-attendance" data-reg-id="' + reg.dangKyId + '" data-new-status="' + newStatus + '" title="' + (reg.trangThai == 'DaThamGia' ? 'Đánh dấu vắng' : 'Đánh dấu tham gia') + '">' +
                                             '<i class="fas ' + toggleIcon + '"></i>' +
                                         '</div>' +
                                     '</td>' +
@@ -1742,7 +2051,6 @@
                         var soDienThoai = reg.user ? reg.user.soDienThoai : 'N/A';
                         var tenSuKien = reg.event ? reg.event.tenSuKien : 'N/A';
                         
-                        // 🟢 Dịch trạng thái sang tiếng Việt
                         var trangThaiGoc = reg.trangThai || 'Unknown';
                         var trangThaiTV = '';
                         switch (trangThaiGoc) {
@@ -2017,18 +2325,81 @@
         // Open participant detail modal
         function openParticipantDetailModal(regId, suKienId) {
             $.get('/organizer/api/registrations/' + regId, { suKienId: suKienId }, function(reg) {
-
                 var item = reg[0];
+                
+                // Format giới tính
+                var gioiTinhText = item.user.gioiTinh == 'Nam' ? 'Nam' : 
+                                item.user.gioiTinh == 'Nu' ? 'Nữ' : 'Không xác định';
+                
+                // Format trạng thái
+                var trangThaiText = '';
+                switch(item.trangThai) {
+                    case 'ChoDuyet':
+                        trangThaiText = 'Chờ duyệt';
+                        break;
+                    case 'DaDuyet':
+                        trangThaiText = 'Đã duyệt';
+                        break;
+                    case 'TuChoi':
+                        trangThaiText = 'Từ chối';
+                        break;
+                    case 'DaThamGia':
+                        trangThaiText = 'Đã tham gia';
+                        break;
+                    default:
+                        trangThaiText = item.trangThai;
+                }
 
-                var html = '<h4>' + item.user.hoTen + '</h4>' +
-                            '<p>Email: ' + item.user.email + '</p>' +
-                            '<p>Số điện thoại: ' + item.user.soDienThoai + '</p>' +
-                            '<p>Địa chỉ: ' + item.user.diaChi + '</p>' +
-                            '<p>Giới tính: ' + item.user.gioiTinh + '</p>' +
-                            '<p>Sự kiện: ' + item.event.tenSuKien + '</p>' +
-                            '<p>Thời gian đăng ký: ' + new Date(item.thoiGianDangKy).toLocaleString() + '</p>' +
-                            '<p>Trạng thái: ' + item.trangThai + '</p>' +
-                            '<p>Ghi chú: ' + (item.ghiChu || 'Không có') + '</p>';
+                var html = '<div class="participant-detail-content">' +
+                            '<div class="participant-header">' +
+                                '<div class="participant-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;">' +
+                                    item.user.hoTen.split(' ').map(n => n[0]).join('').toUpperCase() +
+                                '</div>' +
+                                '<h4>' + item.user.hoTen + '</h4>' +
+                                '<p class="participant-email" style="color: var(--gray); margin-bottom: 20px;">' + item.user.email + '</p>' +
+                            '</div>' +
+                            
+                            '<div class="participant-info-grid" style="display: grid; gap: 15px;">' +
+                                '<div class="info-item">' +
+                                    '<strong><i class="fas fa-phone" style="margin-right: 8px; color: var(--primary);"></i>Số điện thoại:</strong>' +
+                                    '<span>' + (item.user.soDienThoai || 'Chưa cập nhật') + '</span>' +
+                                '</div>' +
+                                
+                                '<div class="info-item">' +
+                                    '<strong><i class="fas fa-map-marker-alt" style="margin-right: 8px; color: var(--primary);"></i>Địa chỉ:</strong>' +
+                                    '<span>' + (item.user.diaChi || 'Chưa cập nhật') + '</span>' +
+                                '</div>' +
+                                
+                                '<div class="info-item">' +
+                                    '<strong><i class="fas fa-venus-mars" style="margin-right: 8px; color: var(--primary);"></i>Giới tính:</strong>' +
+                                    '<span>' + gioiTinhText + '</span>' +
+                                '</div>' +
+                                
+                                '<div class="info-item">' +
+                                    '<strong><i class="fas fa-calendar-check" style="margin-right: 8px; color: var(--primary);"></i>Sự kiện:</strong>' +
+                                    '<span>' + item.event.tenSuKien + '</span>' +
+                                '</div>' +
+                                
+                                '<div class="info-item">' +
+                                    '<strong><i class="fas fa-clock" style="margin-right: 8px; color: var(--primary);"></i>Thời gian đăng ký:</strong>' +
+                                    '<span>' + new Date(item.thoiGianDangKy).toLocaleString('vi-VN') + '</span>' +
+                                '</div>' +
+                                
+                                '<div class="info-item">' +
+                                    '<strong><i class="fas fa-info-circle" style="margin-right: 8px; color: var(--primary);"></i>Trạng thái:</strong>' +
+                                    '<span class="status ' + item.trangThai.toLowerCase() + '">' + trangThaiText + '</span>' +
+                                '</div>' +
+                            '</div>';
+                
+                // Thêm ghi chú nếu có
+                if (item.ghiChu) {
+                    html += '<div class="info-item" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1);">' +
+                            '<strong><i class="fas fa-sticky-note" style="margin-right: 8px; color: var(--primary);"></i>Ghi chú:</strong>' +
+                            '<p style="margin: 8px 0 0 0; padding: 10px; background: var(--primary-light); border-radius: 5px;">' + item.ghiChu + '</p>' +
+                            '</div>';
+                }
+                
+                html += '</div>';
 
                 $('#participant-detail-body').html(html);
                 showModal('participant-detail-modal');
@@ -2038,7 +2409,6 @@
                 showToast('Lỗi tải chi tiết người tham gia: ' + error, false);
             });
         }
-
         // Open send notification modal
         function openSendNotificationModal(regId) {
             $('#send-notification-form')[0].dataset.regId = regId;
@@ -2249,7 +2619,7 @@
             
             // Cập nhật thanh độ mạnh
             strengthBar.removeClass('weak medium strong');
-            if (password.length === 0) {
+            if (password.length == 0) {
                 // Ẩn thanh khi không có mật khẩu
                 strengthBar.css('opacity', '0');
             } else {
@@ -2285,7 +2655,342 @@
                 $('#confirm-password-error-modal').hide();
             }
         });
+
+
+        // ----------------------  lọc và hiển thị danh sách sự kiện mà người dùng đã đăng nhu cầu
+        // Hàm tải danh sách đề xuất
+        function loadEventSuggestions() {
+            showLoading('#suggestions-table tbody');
+            
+            var filters = {
+                loaiSuKienId: $('#filter-suggestion-type').val(),
+                diaDiem: $('#filter-suggestion-location').val(),
+                soLuongKhach: $('#filter-suggestion-guests').val(),
+                giaCa: $('#filter-suggestion-price').val(),
+                trangThai: $('#filter-suggestion-status').val()
+            };
+            
+            $.get('/organizer/api/event-suggestions', filters)
+            .done(function(data) {
+                renderSuggestionsTable(data);
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Error loading event suggestions:', error);
+                showToast('Lỗi tải danh sách đề xuất: ' + error, false);
+                $('#suggestions-table tbody').html('<tr><td colspan="9" style="text-align: center; color: red;">Lỗi khi tải dữ liệu</td></tr>');
+            });
+        }
+
+        // Hàm hiển thị bảng đề xuất
+        // Hàm hiển thị bảng đề xuất
+        function renderSuggestionsTable(suggestions) {
+            var html = '';
+            
+            if (suggestions && suggestions.length > 0) {
+                suggestions.forEach(function(suggestion) {
+                    var trangThaiMap = {
+                        'ChoDuyet': { text: 'Chờ duyệt', class: 'pending' },
+                        'DaDuyet': { text: 'Đã duyệt', class: 'approved' },
+                        'TuChoi': { text: 'Từ chối', class: 'cancelled' }
+                    };
+                    
+                    var status = trangThaiMap[suggestion.trangThai] || { text: suggestion.trangThai, class: 'pending' };
+                    var thoiGian = suggestion.thoiGianDuKien ? new Date(suggestion.thoiGianDuKien).toLocaleDateString('vi-VN') : 'Chưa xác định';
+                    
+                    // Format hiển thị giá cả
+                    var giaCaDisplay = 'Thương lượng';
+                    if (suggestion.giaCaLong) {
+                        if (suggestion.giaCaLong.toLowerCase().includes('triệu') || 
+                            suggestion.giaCaLong.toLowerCase().includes('tr') ||
+                            suggestion.giaCaLong.match(/\d/)) {
+                            giaCaDisplay = suggestion.giaCaLong;
+                        } else {
+                            giaCaDisplay = suggestion.giaCaLong;
+                        }
+                    }
+                    
+                    html += '<tr data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                                '<td>' + escapeHtml(suggestion.tieuDe || 'Không có tiêu đề') + '</td>' +
+                                '<td>' + escapeHtml(suggestion.loaiSuKienTen || 'N/A') + '</td>' +
+                                '<td>' + escapeHtml(suggestion.diaDiem || 'Chưa xác định') + '</td>' +
+                                '<td>' + thoiGian + '</td>' +
+                                '<td>' + (suggestion.soLuongKhach || 0) + '</td>' +
+                                '<td>' + escapeHtml(giaCaDisplay) + '</td>' +
+                                '<td>' + escapeHtml(suggestion.user ? suggestion.user.hoTen : 'N/A') + '</td>' +
+                                '<td><span class="status ' + status.class + '">' + status.text + '</span></td>' +
+                                '<td class="action-buttons">' +
+                                    '<div class="action-btn view-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Xem chi tiết">' +
+                                        '<i class="fas fa-eye"></i>' +
+                                    '</div>';
+                    
+                    if (suggestion.trangThai === 'ChoDuyet') {
+                        html += '<div class="action-btn accept-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Chấp nhận">' +
+                                    '<i class="fas fa-check"></i>' +
+                                '</div>' +
+                                '<div class="action-btn reject-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Từ chối">' +
+                                    '<i class="fas fa-times"></i>' +
+                                '</div>';
+                    }
+                    
+                    html += '</td></tr>';
+                });
+            } else {
+                html = '<tr><td colspan="9" style="text-align: center;">Không có đề xuất nào</td></tr>';
+            }
+            
+            $('#suggestions-table tbody').html(html);
+        }
+
+
+        // Hàm mở modal chi tiết đề xuất
+        function openSuggestionDetailModal(suggestionId) {
+            $.get('/organizer/api/event-suggestions/' + suggestionId)
+            .done(function(suggestion) {
+                var trangThaiMap = {
+                    'ChoDuyet': { text: 'Chờ duyệt', class: 'pending' },
+                    'DaDuyet': { text: 'Đã duyệt', class: 'approved' },
+                    'TuChoi': { text: 'Từ chối', class: 'cancelled' }
+                };
+                
+                var status = trangThaiMap[suggestion.trangThai] || { text: suggestion.trangThai, class: 'pending' };
+                var thoiGianDuKien = suggestion.thoiGianDuKien ? new Date(suggestion.thoiGianDuKien).toLocaleString('vi-VN') : 'Chưa xác định';
+                var thoiGianTao = suggestion.thoiGianTao ? new Date(suggestion.thoiGianTao).toLocaleString('vi-VN') : 'N/A';
+                
+                var html = '<div class="suggestion-detail-content">' +
+                            '<h4 style="color: var(--primary); margin-bottom: 20px;">' + escapeHtml(suggestion.tieuDe) + '</h4>' +
+                            
+                            '<div class="detail-section">' +
+                                '<h5><i class="fas fa-info-circle"></i> Thông tin chung</h5>' +
+                                '<div class="detail-grid">' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Loại sự kiện:</strong>' +
+                                        '<span>' + escapeHtml(suggestion.loaiSuKienTen) + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Địa điểm:</strong>' +
+                                        '<span>' + escapeHtml(suggestion.diaDiem) + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Thời gian dự kiến:</strong>' +
+                                        '<span>' + thoiGianDuKien + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Số lượng khách:</strong>' +
+                                        '<span>' + suggestion.soLuongKhach + ' người</span>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            
+                            '<div class="detail-section">' +
+                                '<h5><i class="fas fa-money-bill-wave"></i> Thông tin tài chính</h5>' +
+                                '<div class="detail-item">' +
+                                    '<strong>Giá cả mong muốn:</strong>' +
+                                    '<span>' + escapeHtml(suggestion.giaCaLong || 'Thương lượng') + '</span>' +
+                                '</div>' +
+                            '</div>' +
+                            
+                            '<div class="detail-section">' +
+                                '<h5><i class="fas fa-file-alt"></i> Mô tả chi tiết</h5>' +
+                                '<div class="detail-content">' +
+                                    escapeHtml(suggestion.moTaNhuCau || 'Không có mô tả') +
+                                '</div>' +
+                            '</div>' +
+                            
+                            '<div class="detail-section">' +
+                                '<h5><i class="fas fa-user"></i> Thông tin người đề xuất</h5>' +
+                                '<div class="detail-grid">' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Họ tên:</strong>' +
+                                        '<span>' + escapeHtml(suggestion.user.hoTen) + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Email:</strong>' +
+                                        '<span>' + escapeHtml(suggestion.user.email) + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Số điện thoại:</strong>' +
+                                        '<span>' + escapeHtml(suggestion.user.soDienThoai || 'Chưa cập nhật') + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Thông tin liên hệ:</strong>' +
+                                        '<span>' + escapeHtml(suggestion.thongTinLienLac || 'Không có') + '</span>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            
+                            '<div class="detail-section">' +
+                                '<h5><i class="fas fa-history"></i> Thông tin hệ thống</h5>' +
+                                '<div class="detail-grid">' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Trạng thái:</strong>' +
+                                        '<span class="status ' + status.class + '">' + status.text + '</span>' +
+                                    '</div>' +
+                                    '<div class="detail-item">' +
+                                        '<strong>Thời gian tạo:</strong>' +
+                                        '<span>' + thoiGianTao + '</span>' +
+                                    '</div>';
+                
+                if (suggestion.thoiGianPhanHoi) {
+                    html += '<div class="detail-item">' +
+                                '<strong>Thời gian phản hồi:</strong>' +
+                                '<span>' + new Date(suggestion.thoiGianPhanHoi).toLocaleString('vi-VN') + '</span>' +
+                            '</div>';
+                }
+                
+                html += '</div></div>';
+                
+                // Thêm nút hành động nếu đang chờ duyệt
+                if (suggestion.trangThai == 'ChoDuyet') {
+                    html += '<div class="action-buttons" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">' +
+                                '<button class="btn btn-success accept-suggestion-from-modal" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                                    '<i class="fas fa-check"></i> Chấp nhận' +
+                                '</button>' +
+                                '<button class="btn btn-danger reject-suggestion-from-modal" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                                    '<i class="fas fa-times"></i> Từ chối' +
+                                '</button>' +
+                            '</div>';
+                }
+                
+                html += '</div>';
+                
+                $('#suggestion-detail-body').html(html);
+                showModal('suggestion-detail-modal');
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Error loading suggestion details:', error);
+                showToast('Lỗi tải chi tiết đề xuất: ' + error, false);
+            });
+        }
+
+        // Hàm mở modal hành động (chấp nhận/từ chối)
+        function openSuggestionActionModal(suggestionId, actionType) {
+            $('#action-suggestion-id').val(suggestionId);
+            $('#action-type').val(actionType);
+            
+            if (actionType == 'accept') {
+                $('#suggestion-action-title').text('Chấp nhận đề xuất');
+                $('#accept-fields').show();
+                $('#reject-fields').hide();
+                $('#suggestion-reject-reason').prop('required', false);
+            } else {
+                $('#suggestion-action-title').text('Từ chối đề xuất');
+                $('#accept-fields').hide();
+                $('#reject-fields').show();
+                $('#suggestion-reject-reason').prop('required', true);
+            }
+            
+            showModal('suggestion-action-modal');
+        }
+
+        // Hàm xử lý hành động đề xuất
+        function processSuggestionAction() {
+            var suggestionId = $('#action-suggestion-id').val();
+            var actionType = $('#action-type').val();
+            var responseMessage = actionType == 'accept' ? 
+                $('#suggestion-response').val() : 
+                $('#suggestion-reject-reason').val();
+            
+            var requestData = {
+                dangSuKienId: suggestionId,
+                action: actionType,
+                message: responseMessage
+            };
+            
+            $('#submit-suggestion-action').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+            
+            $.ajax({
+                url: '/organizer/api/event-suggestions/process',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(requestData),
+                success: function(response) {
+                    $('#submit-suggestion-action').prop('disabled', false).html('<i class="fas fa-check"></i> Xác nhận');
+                    
+                    if (response.success) {
+                        showToast(response.message, true);
+                        hideModal('suggestion-action-modal');
+                        hideModal('suggestion-detail-modal');
+                        loadEventSuggestions();
+                        
+                        // Reset form
+                        $('#suggestion-action-form')[0].reset();
+                    } else {
+                        showToast(response.message, false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#submit-suggestion-action').prop('disabled', false).html('<i class="fas fa-check"></i> Xác nhận');
+                    showToast('Lỗi xử lý đề xuất: ' + error, false);
+                }
+            });
+        }
+
+        // Hàm hiển thị loading
+        function showLoading(selector) {
+            $(selector).html(
+                '<tr>' +
+                    '<td colspan="9" style="text-align: center; padding: 40px;">' +
+                        '<div class="loading-spinner" style="display: inline-block; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>' +
+                        '<p style="margin-top: 10px; color: var(--gray);">Đang tải dữ liệu...</p>' +
+                    '</td>' +
+                '</tr>'
+            );
+        }
+
+        // Escape HTML để tránh XSS
+        function escapeHtml(unsafe) {
+            if (unsafe == null) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Event Handlers cho tính năng đề xuất sự kiện
+        $(document).ready(function() {
+            // Refresh suggestions
+            $('#refresh-suggestions').on('click', function() {
+                loadEventSuggestions();
+            });
+
+            // Lọc theo các tiêu chí (bao gồm cả giá cả)
+            $('#filter-suggestion-type, #filter-suggestion-location, #filter-suggestion-guests, #filter-suggestion-price, #filter-suggestion-status').on('change', function() {
+                loadEventSuggestions();
+            });
+
+            // Event handlers cho bảng đề xuất
+            $('#suggestions-table tbody').on('click', '.action-btn', function() {
+                var target = $(this);
+                var suggestionId = target.data('suggestion-id');
+                
+                if (target.hasClass('view-suggestion')) {
+                    openSuggestionDetailModal(suggestionId);
+                } else if (target.hasClass('accept-suggestion')) {
+                    openSuggestionActionModal(suggestionId, 'accept');
+                } else if (target.hasClass('reject-suggestion')) {
+                    openSuggestionActionModal(suggestionId, 'reject');
+                }
+            });
+
+            // Event handlers từ modal chi tiết
+            $('#suggestion-detail-body').on('click', '.accept-suggestion-from-modal, .reject-suggestion-from-modal', function() {
+                var target = $(this);
+                var suggestionId = target.data('suggestion-id');
+                var actionType = target.hasClass('accept-suggestion-from-modal') ? 'accept' : 'reject';
+                
+                hideModal('suggestion-detail-modal');
+                openSuggestionActionModal(suggestionId, actionType);
+            });
+
+            // Submit form hành động
+            $('#suggestion-action-form').on('submit', function(e) {
+                e.preventDefault();
+                processSuggestionAction();
+            });
+        });
     });
-</script>
+    </script>
 </body>
 </html>

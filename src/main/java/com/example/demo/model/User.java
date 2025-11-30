@@ -14,15 +14,16 @@ public class User {
     private String anhDaiDien;
     private String vaiTro;
     private Date ngayTao;
+    private Integer trangThai;  
 
     // Default Constructor
     public User() {
     }
 
-    // All-Args Constructor
+    // All-Args Constructor (cập nhật)
     public User(Long nguoiDungId, String tenDangNhap, String matKhau, String email, String soDienThoai,
                 String hoTen, String diaChi, String gioiTinh, String anhDaiDien, String vaiTro,
-                Date ngayTao) {
+                Date ngayTao, Integer trangThai) {
         this.nguoiDungId = nguoiDungId;
         this.tenDangNhap = tenDangNhap;
         this.matKhau = matKhau;
@@ -34,9 +35,10 @@ public class User {
         this.anhDaiDien = anhDaiDien;
         this.vaiTro = vaiTro;
         this.ngayTao = ngayTao;
+        this.trangThai = trangThai;
     }
 
-    // Getters and Setters
+    // Getters and Setters (thêm getter/setter cho trangThai)
     public Long getNguoiDungId() {
         return nguoiDungId;
     }
@@ -123,5 +125,13 @@ public class User {
 
     public void setNgayTao(Date ngayTao) {
         this.ngayTao = ngayTao;
+    }
+
+    public Integer getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
     }
 }

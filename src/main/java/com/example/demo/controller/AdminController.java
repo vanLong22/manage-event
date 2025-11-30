@@ -8,6 +8,8 @@ import com.example.demo.service.RegistrationService;
 import com.example.demo.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -18,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,12 +176,55 @@ public class AdminController {
             @RequestParam(required = false) String type) {
         
         List<Event> allEvents = eventService.getAllEvents();
+        Date now = new Date();
         
-        // Filter by status
+        // Filter by status với điều kiện thời gian thực
         if (status != null && !status.isEmpty()) {
-            allEvents = allEvents.stream()
-                .filter(event -> status.equals(event.getTrangThai()))
-                .collect(Collectors.toList());
+            switch (status) {
+                case "SapDienRa":
+                    // Sắp diễn ra: ngày bắt đầu > NOW()
+                    allEvents = allEvents.stream()
+                        .filter(event -> {
+                            Date startDate = event.getThoiGianBatDau();
+                            return startDate.after(now) && !"Huy".equals(event.getTrangThai());
+                        })
+                        .collect(Collectors.toList());
+                    break;
+                    
+                case "DangDienRa":
+                    // Đang diễn ra: ngày bắt đầu <= NOW() AND ngày kết thúc >= NOW()
+                    allEvents = allEvents.stream()
+                        .filter(event -> {
+                            Date startDate = event.getThoiGianBatDau();
+                            Date endDate = event.getThoiGianKetThuc();
+                            return (startDate.before(now) || startDate.equals(now)) &&
+                                (endDate.after(now) || endDate.equals(now)) &&
+                                !"Huy".equals(event.getTrangThai());
+                        })
+                        .collect(Collectors.toList());
+                    break;
+                    
+                case "DaKetThuc":
+                    // Đã kết thúc: ngày kết thúc < NOW()
+                    allEvents = allEvents.stream()
+                        .filter(event -> {
+                            Date endDate = event.getThoiGianKetThuc();
+                            return endDate.before(now) && !"Huy".equals(event.getTrangThai());
+                        })
+                        .collect(Collectors.toList());
+                    break;
+                    
+                case "Huy":
+                    // Đã hủy: trạng thái là "Huy"
+                    allEvents = allEvents.stream()
+                        .filter(event -> "Huy".equals(event.getTrangThai()))
+                        .collect(Collectors.toList());
+                    break;
+                    
+                default:
+                    // Giữ nguyên nếu không khớp
+                    break;
+            }
         }
         
         // Filter by type
@@ -188,7 +234,7 @@ public class AdminController {
                 .collect(Collectors.toList());
         }
         
-        // Map events to include organizer name
+        // Map events và thêm thông tin trạng thái thực tế
         return allEvents.stream().map(event -> {
             Map<String, Object> eventData = new HashMap<>();
             eventData.put("suKienId", event.getSuKienId());
@@ -198,10 +244,15 @@ public class AdminController {
             eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
             eventData.put("diaDiem", event.getDiaDiem());
             eventData.put("loaiSuKien", event.getLoaiSuKien());
-            eventData.put("trangThai", event.getTrangThai());
+            eventData.put("trangThai", event.getTrangThai()); // Trạng thái trong DB
             eventData.put("soLuongToiDa", event.getSoLuongToiDa());
             eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
             eventData.put("nguoiToChucId", event.getNguoiToChucId());
+            
+            // Tính toán trạng thái thực tế
+            String realTimeStatus = calculateRealTimeStatus(event, now);
+            eventData.put("realTimeStatus", realTimeStatus);
+            eventData.put("needsStatusUpdate", !realTimeStatus.equals(event.getTrangThai()));
             
             // Lấy thông tin người tổ chức
             User organizer = userService.findById(event.getNguoiToChucId());
@@ -209,6 +260,71 @@ public class AdminController {
             
             return eventData;
         }).collect(Collectors.toList());
+    }
+
+    // API để cập nhật trạng thái sự kiện theo thực tế
+    @PostMapping("/api/events/{id}/sync-status")
+    @ResponseBody
+    public Map<String, Object> syncEventStatus(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Event event = eventService.getEventById(id);
+            if (event != null) {
+                Date now = new Date();
+                String realTimeStatus = calculateRealTimeStatus(event, now);
+                
+                // Chỉ cập nhật nếu trạng thái thực tế khác với trạng thái trong DB
+                if (!realTimeStatus.equals(event.getTrangThai())) {
+                    event.setTrangThai(realTimeStatus);
+                    eventService.updateSuKien(event);
+                    response.put("success", true);
+                    response.put("message", "Đã đồng bộ trạng thái sự kiện: " + realTimeStatus);
+                    response.put("newStatus", realTimeStatus);
+                } else {
+                    response.put("success", true);
+                    response.put("message", "Trạng thái sự kiện đã được cập nhật");
+                    response.put("newStatus", realTimeStatus);
+                }
+            } else {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy sự kiện");
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi đồng bộ trạng thái: " + e.getMessage());
+        }
+        
+        return response;
+    }
+
+    // Hàm tính toán trạng thái thực tế
+    private String calculateRealTimeStatus(Event event, Date now) {
+        // Nếu sự kiện đã bị hủy, giữ nguyên trạng thái
+        if ("Huy".equals(event.getTrangThai())) {
+            return "Huy";
+        }
+        
+        Date startDate = event.getThoiGianBatDau();
+        Date endDate = event.getThoiGianKetThuc();
+        
+        // Đang diễn ra: ngày bắt đầu <= NOW() AND ngày kết thúc >= NOW()
+        if ((startDate.before(now) || startDate.equals(now)) && 
+            (endDate.after(now) || endDate.equals(now))) {
+            return "DangDienRa";
+        }
+        
+        // Đã kết thúc: ngày kết thúc < NOW()
+        if (endDate.before(now)) {
+            return "DaKetThuc";
+        }
+        
+        // Sắp diễn ra: ngày bắt đầu > NOW()
+        if (startDate.after(now)) {
+            return "SapDienRa";
+        }
+        
+        return event.getTrangThai(); // Mặc định giữ nguyên nếu không xác định được
     }
 
     // Get pending events
@@ -405,94 +521,76 @@ public class AdminController {
             return ResponseEntity.status(500).body(Collections.emptyMap());
         }
     }
-
     // API Analytics data
-    @GetMapping("/api/analytics")
-    @ResponseBody
-    public Map<String, Object> getAnalytics() {
-        Map<String, Object> data = new HashMap<>();
+    @GetMapping("/api/analytics/stats")
+    public ResponseEntity<Map<String, Object>> getStats(@RequestParam(defaultValue = "month") String period, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Map<String, Object> stats = registrationService.getAnalyticsStats(organizerId);
         
         List<User> allUsers = userService.findAll();
         List<Event> allEvents = eventService.getAllEvents();
         
-        data.put("totalUsers", allUsers.size());
-        data.put("activeEvents", allEvents.stream()
+        stats.put("totalUsers", allUsers.size());
+        stats.put("activeEvents", allEvents.stream()
             .filter(e -> "DangDienRa".equals(e.getTrangThai()))
             .count());
-        data.put("pendingEvents", allEvents.stream()
+        stats.put("pendingEvents", allEvents.stream()
             .filter(e -> "SapDienRa".equals(e.getTrangThai()))
             .count());
-        data.put("avgParticipation", 85); // Placeholder - calculate real average (tỷ lệ tham gia trung bình)
-        
-        // Lấy dữ liệu cho charts
-        List<Event> events = eventService.getAllEvents(); // Dữ liệu sự kiện
-        List<Registration> registrations = registrationService.getAllRegistrations(); // Dữ liệu đăng ký (giả định service tồn tại)
-        List<Event> popularEvents = eventService.getPopularEvents(5); // Giả định method get popular events (top 5 by soLuongDaDangKy)
+        stats.put("avgParticipation", 85);
 
-        // Generate charts và thêm vào data
-        data.put("eventsByStatusChart", generateChart("events_by_status", events));
-        data.put("registrationsByEventChart", generateChart("registrations_by_event", popularEvents));
-        data.put("registrationsOverTimeChart", generateChart("registrations_over_time", registrations));
+        // Thêm biểu đồ
+        List<Map<String, Object>> eventsByTypeData = eventService.getEventsByType(organizerId);
+        stats.put("eventsByTypeChart", generateChart("events_by_type", eventsByTypeData));
 
-        return data;
+        List<Map<String, Object>> usersByRoleData = userService.getUsersByRole();
+        stats.put("usersByRoleChart", generateChart("users_by_role", usersByRoleData));
+
+        List<Map<String, Object>> genderData = userService.getGenderDistribution();
+        stats.put("genderPieChart", generateChart("gender_pie", genderData));
+
+        List<Map<String, Object>> requestStatusData = registrationService.getRequestStatusDistribution();
+        stats.put("requestStatusPieChart", generateChart("request_status_pie", requestStatusData));
+
+        List<Map<String, Object>> registrationsLineData = registrationService.getRegistrationsOverTime(period);
+        stats.put("registrationsLineChart", generateChart("registrations_line", registrationsLineData));
+
+        return ResponseEntity.ok(stats);
     }
 
-    // Method mới: Generate chart base64 (copy và điều chỉnh từ mã cũ)
-    private String generateChart(String chartType, List<?> data) {
+    private String generateChart(String chartType, List<Map<String, Object>> data) {
         try {
-            // Đường dẫn relative đến script Python (dễ deploy hơn absolute path)
-            String scriptPath = "src/main/resources/scripts/chart.py"; // Thay nếu khác
-            ProcessBuilder pb = new ProcessBuilder("python", scriptPath, chartType);
+            ProcessBuilder pb = new ProcessBuilder("python", "D:/2022-2026/HOC KI 7/XD HTTT/quanLySuKien/demo/src/main/resources/scripts/chart.py", chartType);  // Thay path thực
+            pb.redirectErrorStream(true);
             Process p = pb.start();
 
-            // Gửi JSON data qua stdin
             try (OutputStream os = p.getOutputStream()) {
                 ObjectMapper mapper = new ObjectMapper();
                 os.write(mapper.writeValueAsBytes(data));
                 os.flush();
             }
 
-            // Đọc stdout (base64)
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (InputStream is = p.getInputStream()) {
-                byte[] buffer = new byte[8192];
+                byte[] buffer = new byte[16384];
                 int bytesRead;
                 while ((bytesRead = is.read(buffer)) != -1) {
                     baos.write(buffer, 0, bytesRead);
                 }
             }
 
-            // Đọc stderr cho debug
-            ByteArrayOutputStream errorBaos = new ByteArrayOutputStream();
-            try (InputStream errorIs = p.getErrorStream()) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = errorIs.read(buffer)) != -1) {
-                    errorBaos.write(buffer, 0, bytesRead);
-                }
-            }
-            String errorOutput = errorBaos.toString("UTF-8").trim();
-            if (!errorOutput.isEmpty()) {
-                System.out.println("Python stderr: " + errorOutput);
-            }
-
             int exitCode = p.waitFor();
-            String result = baos.toString("UTF-8").trim();
+            String base64 = baos.toString("UTF-8").trim();
 
-            // Debug log
-            System.out.println("=== CHART DEBUG ===");
-            System.out.println("Chart type: " + chartType);
-            System.out.println("Exit code: " + exitCode);
-            System.out.println("Output length: " + result.length() + " chars");
-            System.out.println("===================");
-
-            if (exitCode != 0 || result.isEmpty() || result.length() < 5000) {
-                System.err.println("Python failed or base64 too short for chart: " + chartType);
-                return null; // Fallback: null nếu fail
+            if (exitCode != 0 || base64.length() < 10000) {
+                System.err.println("Python error: " + base64);
+                return null;
             }
 
-            return result;
-
+            return base64;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -541,5 +639,61 @@ public class AdminController {
     }
 
 
-
+    // chỉnh sửa sự kiện
+    @PutMapping("/api/events/{id}")
+    @ResponseBody
+    public Map<String, Object> updateEvent(@PathVariable Long id, @RequestBody Map<String, Object> eventData) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Event existingEvent = eventService.getEventById(id);
+            if (existingEvent != null) {
+                // Cập nhật các trường từ eventData
+                if (eventData.containsKey("tenSuKien")) {
+                    existingEvent.setTenSuKien((String) eventData.get("tenSuKien"));
+                }
+                if (eventData.containsKey("moTa")) {
+                    existingEvent.setMoTa((String) eventData.get("moTa"));
+                }
+                if (eventData.containsKey("thoiGianBatDau")) {
+                    String startTimeStr = (String) eventData.get("thoiGianBatDau");
+                    // Chuyển từ "yyyy-MM-ddTHH:mm" sang "yyyy-MM-dd HH:mm:ss"
+                    startTimeStr = startTimeStr.replace("T", " ") + ":00";
+                    existingEvent.setThoiGianBatDau(java.sql.Timestamp.valueOf(startTimeStr));
+                }
+                if (eventData.containsKey("thoiGianKetThuc")) {
+                    String endTimeStr = (String) eventData.get("thoiGianKetThuc");
+                    // Chuyển từ "yyyy-MM-ddTHH:mm" sang "yyyy-MM-dd HH:mm:ss"
+                    endTimeStr = endTimeStr.replace("T", " ") + ":00";
+                    existingEvent.setThoiGianKetThuc(java.sql.Timestamp.valueOf(endTimeStr));
+                }
+                if (eventData.containsKey("diaDiem")) {
+                    existingEvent.setDiaDiem((String) eventData.get("diaDiem"));
+                }
+                if (eventData.containsKey("loaiSuKien")) {
+                    existingEvent.setLoaiSuKien((String) eventData.get("loaiSuKien"));
+                }
+                if (eventData.containsKey("trangThai")) {
+                    existingEvent.setTrangThai((String) eventData.get("trangThai"));
+                }
+                if (eventData.containsKey("soLuongToiDa")) {
+                    existingEvent.setSoLuongToiDa(Integer.parseInt(eventData.get("soLuongToiDa").toString()));
+                }
+                
+                eventService.updateSuKien(existingEvent);
+                
+                response.put("success", true);
+                response.put("message", "Đã cập nhật sự kiện thành công");
+                response.put("event", existingEvent);
+            } else {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy sự kiện");
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi cập nhật sự kiện: " + e.getMessage());
+        }
+        
+        return response;
+    }
 }

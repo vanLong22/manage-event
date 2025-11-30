@@ -39,8 +39,9 @@ public class UserService {
             throw new RuntimeException("Số điện thoại đã được sử dụng!");
         }
 
-        // Thiết lập ngày tạo
+        // Thiết lập ngày tạo và trạng thái mặc định (1 - Hoạt động)
         user.setNgayTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
+        user.setTrangThai(1); // 1: Hoạt động, 0: Bị khóa
 
         // Lưu vào DB
         userRepository.save(user);
@@ -57,7 +58,19 @@ public class UserService {
     }
 
     public User login(String tenDangNhap, String matKhau) {
-        return userRepository.findByTenDangNhapAndMatKhau(tenDangNhap, matKhau);
+        User user = userRepository.findByTenDangNhapAndMatKhau(tenDangNhap, matKhau);
+        
+        // Kiểm tra trạng thái tài khoản
+        if (user != null) {
+            if (user.getTrangThai() == 0) {
+                throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+            } else if (user.getTrangThai() == 2) {
+                throw new RuntimeException("Tài khoản của bạn đang tạm ngừng hoạt động.");
+            }
+            // Trạng thái 1: Hoạt động - cho phép đăng nhập
+        }
+        
+        return user;
     }
 
     public void save(User user) {
@@ -68,10 +81,19 @@ public class UserService {
         userRepository.update(user);
     }
 
-    // Xóa người dùng theo ID
+    // Xóa người dùng theo ID (soft delete - cập nhật trạng thái)
     public void delete(Long id) {
-        String sql = "DELETE FROM nguoi_dung WHERE nguoi_dung_id = ?";
+        String sql = "UPDATE nguoi_dung SET trang_thai = 0 WHERE nguoi_dung_id = ?";
         int rowsAffected = jdbcTemplate.update(sql, id);
+        if (rowsAffected == 0) {
+            throw new RuntimeException("Không tìm thấy người dùng với ID: " + id);
+        }
+    }
+
+    // Khóa/Mở khóa người dùng
+    public void toggleUserStatus(Long id, Integer status) {
+        String sql = "UPDATE nguoi_dung SET trang_thai = ? WHERE nguoi_dung_id = ?";
+        int rowsAffected = jdbcTemplate.update(sql, status, id);
         if (rowsAffected == 0) {
             throw new RuntimeException("Không tìm thấy người dùng với ID: " + id);
         }
@@ -83,6 +105,12 @@ public class UserService {
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class));
     }
 
+    // Lấy người dùng theo trạng thái
+    public List<User> findByStatus(Integer status) {
+        String sql = "SELECT * FROM nguoi_dung WHERE trang_thai = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class), status);
+    }
+
     // Kiểm tra email đã tồn tại
     public boolean isEmailExists(String email) {
         String sql = "SELECT COUNT(*) FROM nguoi_dung WHERE email = ?";
@@ -92,6 +120,9 @@ public class UserService {
 
     // Kiểm tra số điện thoại đã tồn tại
     public boolean isPhoneExists(String soDienThoai) {
+        if (soDienThoai == null || soDienThoai.trim().isEmpty()) {
+            return false;
+        }
         String sql = "SELECT COUNT(*) FROM nguoi_dung WHERE so_dien_thoai = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, soDienThoai);
         return count != null && count > 0;
@@ -131,5 +162,16 @@ public class UserService {
 
     public List<Map<String, Object>> getGenderDistribution(){
         return userRepository.getGenderDistribution();
+    }
+
+    // Lấy số lượng người dùng theo trạng thái
+    public Map<String, Object> getUserStatusStats() {
+        String sql = "SELECT " +
+                     "SUM(CASE WHEN trang_thai = 1 THEN 1 ELSE 0 END) as active, " +
+                     "SUM(CASE WHEN trang_thai = 0 THEN 1 ELSE 0 END) as inactive, " +
+                     "SUM(CASE WHEN trang_thai = 2 THEN 1 ELSE 0 END) as suspended, " +
+                     "COUNT(*) as total " +
+                     "FROM nguoi_dung";
+        return jdbcTemplate.queryForMap(sql);
     }
 }

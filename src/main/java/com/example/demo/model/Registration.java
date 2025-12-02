@@ -9,6 +9,7 @@ public class Registration {
     private Date thoiGianDangKy;
     private String trangThai;
     private String ghiChu;
+    private String trangThaiDiemDanh;
 
     private Event suKien;
 
@@ -37,6 +38,17 @@ public class Registration {
         this.ghiChu = ghiChu;
     }
 
+    public Registration(Long dangKyId, Long nguoiDungId, Long suKienId, Date thoiGianDangKy, String trangThai,
+            String ghiChu, String trangThaiDiemDanh) {
+        this.dangKyId = dangKyId;
+        this.nguoiDungId = nguoiDungId;
+        this.suKienId = suKienId;
+        this.thoiGianDangKy = thoiGianDangKy;
+        this.trangThai = trangThai;
+        this.ghiChu = ghiChu;
+        this.trangThaiDiemDanh = trangThaiDiemDanh;
+    }
+
     public Long getDangKyId() { return dangKyId; }
     public void setDangKyId(Long dangKyId) { this.dangKyId = dangKyId; }
 
@@ -54,5 +66,14 @@ public class Registration {
 
     public String getGhiChu() { return ghiChu; }
     public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
+
+    public String getTrangThaiDiemDanh() {
+        return trangThaiDiemDanh;
+    }
+    public void setTrangThaiDiemDanh(String trangThaiDiemDanh) {
+        this.trangThaiDiemDanh = trangThaiDiemDanh;
+    }
+
+    
 
 }

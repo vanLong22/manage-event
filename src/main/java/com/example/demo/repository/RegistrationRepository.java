@@ -120,6 +120,7 @@ public class RegistrationRepository {
                 reg.setSuKienId(rs.getLong("su_kien_id"));
                 reg.setThoiGianDangKy(rs.getTimestamp("thoi_gian_dang_ky"));
                 reg.setTrangThai(rs.getString("trang_thai"));
+                reg.setTrangThaiDiemDanh(rs.getString("trang_thai_diem_danh"));
 
                 User user = new User();
                 user.setHoTen(rs.getString("userHoTen"));
@@ -141,6 +142,7 @@ public class RegistrationRepository {
                 System.out.println("Tên sự kiện: " + event.getTenSuKien());
                 System.out.println("Thời gian đăng ký: " + reg.getThoiGianDangKy());
                 System.out.println("Trạng thái: " + reg.getTrangThai());
+                System.out.println("Trạng thái điểm danh: " + reg.getTrangThaiDiemDanh());
 
                 System.out.println("Họ tên người dùng: " + user.getHoTen());
                 System.out.println("Email người dùng: " + user.getEmail());
@@ -166,7 +168,7 @@ public class RegistrationRepository {
 
     // Thêm mới: Update attendance (giả sử có field trang_thai_diem_danh trong table)
     public void updateAttendance(Long dangKyId, String trangThai) {
-        String sql = "UPDATE dang_ky_su_kien SET trang_thai = ? WHERE dang_ky_su_kien_id = ?";
+        String sql = "UPDATE dang_ky_su_kien SET trang_thai_diem_danh = ? WHERE dang_ky_su_kien_id = ?";
         jdbcTemplate.update(sql, trangThai, dangKyId);
     }
 

@@ -49,38 +49,40 @@ public class NotificationService {
     }
 
     public void processNotificationAction(Long notificationId, Long userId, String action) {
-    Notification notification = notificationRepository.findById(notificationId);
+        Notification notification = notificationRepository.findById(notificationId);
+        
+        if (notification == null) {
+            throw new RuntimeException("Không tìm thấy thông báo với ID: " + notificationId);
+        }
+
+        // Kiểm tra quyền sở hữu
+        if (!notification.getNguoiDungId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền xử lý thông báo này!");
+        }
+
+        // Xử lý hành động
+        switch (action.toLowerCase()) {
+            case "read":
+                markAsRead(notificationId);
+                break;
+
+            case "delete":
+                deleteNotification(notificationId, userId);
+                break;
+
+            case "accept":
+                updateNotificationStatus(notificationId, "DA_CHAP_NHAN");
+                break;
+
+            case "reject":
+                updateNotificationStatus(notificationId, "TU_CHOI");
+                break;
+
+            default:
+                throw new RuntimeException("Hành động không hợp lệ: " + action);
+        }
+    }
+
     
-    if (notification == null) {
-        throw new RuntimeException("Không tìm thấy thông báo với ID: " + notificationId);
-    }
-
-    // Kiểm tra quyền sở hữu
-    if (!notification.getNguoiDungId().equals(userId)) {
-        throw new RuntimeException("Bạn không có quyền xử lý thông báo này!");
-    }
-
-    // Xử lý hành động
-    switch (action.toLowerCase()) {
-        case "read":
-            markAsRead(notificationId);
-            break;
-
-        case "delete":
-            deleteNotification(notificationId, userId);
-            break;
-
-        case "accept":
-            updateNotificationStatus(notificationId, "DA_CHAP_NHAN");
-            break;
-
-        case "reject":
-            updateNotificationStatus(notificationId, "TU_CHOI");
-            break;
-
-        default:
-            throw new RuntimeException("Hành động không hợp lệ: " + action);
-    }
-}
 
 }

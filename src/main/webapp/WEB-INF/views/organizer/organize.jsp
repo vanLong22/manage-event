@@ -818,12 +818,14 @@
                         <span>Người tham gia</span>
                     </a>
                 </li>
+                <!--
                 <li class="menu-item">
                     <a href="#" class="menu-link" data-target="analytics">
                         <i class="fas fa-chart-bar"></i>
                         <span>Thống kê</span>
                     </a>
                 </li>
+                -->
                 <li class="menu-item">
                     <a href="#" class="menu-link" data-target="account">
                         <i class="fas fa-user-cog"></i>
@@ -887,9 +889,11 @@
 
                 <div class="section-header">
                     <h3 class="section-title">Sự kiện sắp diễn ra</h3>
+                    <!--
                     <button class="btn btn-outline">
                         <i class="fas fa-eye"></i> Xem tất cả
                     </button>
+                    -->
                 </div>
 
                 <div class="events-grid" id="upcoming-events-grid">
@@ -959,9 +963,6 @@
                                         </div>
                                         <div class="action-btn delete-event" data-event-id="<c:out value="${event.suKienId}"/>" title="Xóa">
                                             <i class="fas fa-trash"></i>
-                                        </div>
-                                        <div class="action-btn export-event" data-event-id="<c:out value="${event.suKienId}"/>" title="Xuất danh sách">
-                                            <i class="fas fa-file-export"></i>
                                         </div>
                                     </td>
                                 </tr>
@@ -1358,11 +1359,6 @@
                     <div class="form-group">
                         <label for="user-address">Địa chỉ</label>
                         <input type="text" id="user-address">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="user-bio">Giới thiệu bản thân</label>
-                        <textarea id="user-bio" placeholder="Mô tả về bản thân"></textarea>
                     </div>
 
                     <div class="form-group">
@@ -1950,7 +1946,7 @@
                     for (var i = 0; i < data.length; i++) {
                         var reg = data[i];
                         var statusClass = reg.trangThai.toLowerCase();
-                        var diemDanhText = reg.trangThai == 'DaThamGia' ? 'Đã tham gia' : 'Chưa tham gia';
+                        var diemDanhText = reg.trangThaiDiemDanh == 'DaThamGia' ? 'Đã tham gia' : 'Chưa tham gia';
                         var toggleIcon = reg.trangThai == 'DaThamGia' ? 'fa-times' : 'fa-check';
                         var newStatus = reg.trangThai !== 'DaThamGia';
                         html += '<tr data-reg-id="' + reg.dangKyId + '">' +
@@ -2076,9 +2072,6 @@
                                     '<td class="action-buttons">' +
                                         '<div class="action-btn view-participant-detail" data-reg-id="' + reg.dangKyId + '" title="Xem chi tiết">' +
                                             '<i class="fas fa-eye"></i>' +
-                                        '</div>' +
-                                        '<div class="action-btn send-notification" data-reg-id="' + reg.dangKyId + '" title="Gửi thông báo">' +
-                                            '<i class="fas fa-bell"></i>' +
                                         '</div>' +
                                     '</td>' +
                                 '</tr>';

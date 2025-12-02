@@ -126,7 +126,7 @@ public class EventRepository {
     public void save(Event suKien) {
         String sql = "INSERT INTO su_kien (ten_su_kien, mo_ta, dia_diem, anh_bia, loai_su_kien_id, nguoi_to_chuc_id, " +
                      "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_kien, mat_khau_su_kien_rieng_tu, trang_thai, so_luong_toi_da, so_luong_da_dang_ky, ngay_tao) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, suKien.getTenSuKien(), suKien.getMoTa(), suKien.getDiaDiem(), 
                 suKien.getAnhBia(), suKien.getLoaiSuKienId(), suKien.getNguoiToChucId(), suKien.getThoiGianBatDau(), 
                 suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getMatKhauSuKienRiengTu(), suKien.getTrangThai(), 

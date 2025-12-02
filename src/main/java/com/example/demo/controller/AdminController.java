@@ -145,6 +145,7 @@ public class AdminController {
             userData.put("vaiTro", user.getVaiTro());
             userData.put("ngayTao", user.getNgayTao());
             userData.put("diaChi", user.getDiaChi());
+            userData.put("trangThai", user.getTrangThai());
             return userData;
         }).collect(Collectors.toList());
     }
@@ -163,6 +164,7 @@ public class AdminController {
             userData.put("vaiTro", user.getVaiTro());
             userData.put("ngayTao", user.getNgayTao());
             userData.put("diaChi", user.getDiaChi());
+            userData.put("trangThai", user.getTrangThai());
             return ResponseEntity.ok(userData);
         }
         return ResponseEntity.notFound().build();
@@ -696,4 +698,46 @@ public class AdminController {
         
         return response;
     }
+
+
+    // API Update user status (lock/unlock)
+@PostMapping("/api/users/{id}/status")
+@ResponseBody
+public Map<String, Object> updateUserStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
+    Map<String, Object> response = new HashMap<>();
+    
+    try {
+        String action = request.get("action"); // "lock" hoặc "unlock"
+        User user = userService.findById(id);
+        
+        if (user != null) {
+            if ("lock".equals(action)) {
+                // Khóa tài khoản: set trạng thái = 0
+                user.setTrangThai(0);
+                userService.update(user); // Sử dụng phương thức update đã có
+                response.put("success", true);
+                response.put("message", "Đã khóa tài khoản thành công");
+            } else if ("unlock".equals(action)) {
+                // Mở khóa tài khoản: set trạng thái = 1
+                user.setTrangThai(1);
+                userService.update(user); // Sử dụng phương thức update đã có
+                response.put("success", true);
+                response.put("message", "Đã mở khóa tài khoản thành công");
+            } else {
+                response.put("success", false);
+                response.put("message", "Hành động không hợp lệ");
+                return response;
+            }
+        } else {
+            response.put("success", false);
+            response.put("message", "Không tìm thấy người dùng");
+        }
+    } catch (Exception e) {
+        response.put("success", false);
+        response.put("message", "Lỗi cập nhật trạng thái: " + e.getMessage());
+        e.printStackTrace();
+    }
+    
+    return response;
+}
 }

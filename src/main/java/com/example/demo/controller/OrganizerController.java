@@ -75,6 +75,43 @@ public class OrganizerController {
         return "organizer/organize";
     }
 
+    // API create event 
+    @PostMapping(value = "/api/events/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> createEvent(
+            @RequestParam("event") String eventJson, 
+            @RequestParam(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
+            HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        try {
+            // Convert JSON string to Event object
+            ObjectMapper objectMapper = new ObjectMapper();
+            Event event = objectMapper.readValue(eventJson, Event.class);
+            
+            event.setNguoiToChucId(organizerId);
+            if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
+                String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
+                event.setAnhBia(fileName);
+            }
+            
+            eventService.createSuKien(event);
+            return ResponseEntity.ok(new HashMap<>() {{
+                put("success", true);
+                put("message", "Tạo sự kiện thành công!");
+            }});
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body(new HashMap<>() {{
+                put("success", false);
+                put("message", "Lỗi khi xử lý dữ liệu: " + e.getMessage());
+            }});
+        }
+    }
+
     // API lấy tất cả events của organizer
     @GetMapping("/api/events")
     public ResponseEntity<List<Event>> getEvents(HttpSession session) {
@@ -130,43 +167,6 @@ public class OrganizerController {
     //         put("message", "Tạo sự kiện thành công!");
     //     }});
     // }
-
-    // API create event 
-    @PostMapping(value = "/api/events/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> createEvent(
-            @RequestParam("event") String eventJson, 
-            @RequestParam(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
-            HttpSession session) {
-        Long organizerId = (Long) session.getAttribute("userId");
-        if (organizerId == null) {
-            return ResponseEntity.status(401).build();
-        }
-        
-        try {
-            // Convert JSON string to Event object
-            ObjectMapper objectMapper = new ObjectMapper();
-            Event event = objectMapper.readValue(eventJson, Event.class);
-            
-            event.setNguoiToChucId(organizerId);
-            if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
-                String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
-                event.setAnhBia(fileName);
-            }
-            
-            eventService.createSuKien(event);
-            return ResponseEntity.ok(new HashMap<>() {{
-                put("success", true);
-                put("message", "Tạo sự kiện thành công!");
-            }});
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(400).body(new HashMap<>() {{
-                put("success", false);
-                put("message", "Lỗi khi xử lý dữ liệu: " + e.getMessage());
-            }});
-        }
-    }
 
     // API update event
     @PostMapping("/api/events/update")
@@ -251,6 +251,22 @@ public class OrganizerController {
         }
     }
 
+    // Thêm phương thức GET để tránh lỗi 405
+    @GetMapping("/api/attendance/update")
+    public ResponseEntity<Map<String, Object>> attendanceUpdateGet(HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                "success", false,
+                "message", "Unauthorized"
+            ));
+        }
+        return ResponseEntity.status(405).body(Map.of(
+            "success", false,
+            "message", "Method Not Allowed. Please use POST method."
+        ));
+    }
+
     // API update attendance
     @PostMapping("/api/attendance/update")
     public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request, HttpSession session) {
@@ -306,6 +322,7 @@ public class OrganizerController {
         if (userId == null || !userId.equals(user.getNguoiDungId())) {
             return ResponseEntity.status(401).build();
         }
+        user.setTrangThai(1);
         userService.update(user);
         return ResponseEntity.ok(new HashMap<>() {{
             put("success", true);
@@ -656,5 +673,9 @@ public class OrganizerController {
             }});
         }
     }
+
+
+
+    
 
 }

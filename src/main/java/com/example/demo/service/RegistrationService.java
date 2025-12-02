@@ -92,7 +92,7 @@ public class RegistrationService {
 
     // Thêm mới: Update attendance
     public void updateAttendance(Long dangKyId, boolean trangThaiDiemDanh) {
-        registrationRepository.updateAttendance(dangKyId, trangThaiDiemDanh ? "DaThamGia" : "ChuaThamGia"); // Giả sử trạng thái
+        registrationRepository.updateAttendance(dangKyId, trangThaiDiemDanh ? "DaThamGia" : "ChuaThamGia"); 
     }
 
     // Thêm mới: Analytics stats

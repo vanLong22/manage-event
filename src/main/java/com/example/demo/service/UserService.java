@@ -174,4 +174,75 @@ public class UserService {
                      "FROM nguoi_dung";
         return jdbcTemplate.queryForMap(sql);
     }
+
+    // Phương thức cập nhật thông tin user
+    public boolean updateUserInfo(User user) {
+    try {
+        if (user == null || user.getNguoiDungId() == null) {
+            throw new RuntimeException("Thông tin người dùng không hợp lệ!");
+        }
+        
+        // Lấy user hiện tại
+        User existingUser = userRepository.findById(user.getNguoiDungId());
+        if (existingUser == null) {
+            throw new RuntimeException("Không tìm thấy người dùng!");
+        }
+        
+        // Validate email
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Email không được để trống!");
+        }
+        
+        // Kiểm tra email format
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (!user.getEmail().matches(emailRegex)) {
+            throw new RuntimeException("Email không hợp lệ!");
+        }
+        
+        // Kiểm tra email đã tồn tại chưa (trừ email của chính user này)
+        if (!existingUser.getEmail().equals(user.getEmail()) && isEmailExists(user.getEmail())) {
+            throw new RuntimeException("Email đã được sử dụng bởi tài khoản khác!");
+        }
+        
+        // Validate số điện thoại
+        if (user.getSoDienThoai() == null || user.getSoDienThoai().trim().isEmpty()) {
+            throw new RuntimeException("Số điện thoại không được để trống!");
+        }
+        
+        // Kiểm tra định dạng số điện thoại
+        String phoneRegex = "^[0-9]{10,11}$";
+        if (!user.getSoDienThoai().matches(phoneRegex)) {
+            throw new RuntimeException("Số điện thoại không hợp lệ!");
+        }
+        
+        // Kiểm tra số điện thoại
+        if (!existingUser.getSoDienThoai().equals(user.getSoDienThoai()) && isPhoneExists(user.getSoDienThoai())) {
+            throw new RuntimeException("Số điện thoại đã được sử dụng bởi tài khoản khác!");
+        }
+        
+        // Validate họ tên
+        if (user.getHoTen() == null || user.getHoTen().trim().isEmpty()) {
+            throw new RuntimeException("Họ tên không được để trống!");
+        }
+        
+        // Cập nhật thông tin
+        existingUser.setHoTen(user.getHoTen());
+        existingUser.setEmail(user.getEmail());
+        existingUser.setSoDienThoai(user.getSoDienThoai());
+        existingUser.setDiaChi(user.getDiaChi());
+        
+        // Lưu vào database
+        boolean updated = userRepository.updateInfo(existingUser);
+        
+        if (updated) {
+            // Ghi log hoạt động
+            System.out.println("Cập nhật thông tin user ID: " + user.getNguoiDungId());
+        }
+        
+        return updated;
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new RuntimeException(e.getMessage());
+    }
+} 
 }

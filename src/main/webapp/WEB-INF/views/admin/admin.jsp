@@ -985,7 +985,7 @@
                     <table id="users-table">
                         <thead>
                             <tr>
-                                <th>Họ tên</th>
+                                <th>Họ và tên</th>
                                 <th>Email</th>
                                 <th>Số điện thoại</th>
                                 <th>Vai trò</th>
@@ -1087,10 +1087,6 @@
                     <div class="stat-card">
                         <div class="stat-value" id="stat-pending-events">0</div>
                         <div class="stat-label">Sự kiện chờ duyệt</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-avg-participation">0%</div>
-                        <div class="stat-label">Tỷ lệ tham gia trung bình</div>
                     </div>
                 </div>
                 
@@ -1558,26 +1554,33 @@
             } else {
                 users.forEach(function(user) {
                     // Xử lý dữ liệu thực tế từ server
-                    const statusClass = user.trangThai == 'active' ? 'active' : 'inactive';
-                    const statusText = user.trangThai == 'active' ? 'Đang hoạt động' : 'Đã khóa';
+                    const statusClass = user.trangThai == 1 ? 'active' : 'inactive';
+                    const statusText = user.trangThai == 1 ? 'Đang hoạt động' : 'Đã khóa';
                     const registrationDate = user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A';
-                    
+                    const roleText = user.vaiTro === 'ToChuc' ? 'Tổ chức' :
+                             user.vaiTro === 'Admin' ? 'Quản trị viên' :
+                             user.vaiTro === 'NguoiDung' ? 'Người dùng' :
+                             'Không xác định';
+
                     html += '<tr>' +
-                        '<td>' + (user.hoTen) + '</td>' +
-                        '<td>' + user.email + '</td>' +
-                        '<td>' + (user.soDienThoai) + '</td>' +
-                        '<td>' + user.vaiTro + '</td>' +
-                        '<td>' + registrationDate + '</td>' +
-                        '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
-                        '<td class="action-buttons">' +
-                            '<div class="action-btn btn-view-user" data-user-id="' + user.nguoiDungId + '" title="Xem chi tiết">' +
-                                '<i class="fas fa-eye"></i>' +
-                            '</div>' +
-                            '<div class="action-btn btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 'active') + '" title="' + (user.trangThai == 'active' ? 'Khóa' : 'Mở khóa') + ' tài khoản">' +
-                                '<i class="fas ' + (user.trangThai == 'active' ? 'fa-lock' : 'fa-unlock') + '"></i>' +
-                            '</div>' +
-                        '</td>' +
-                    '</tr>';
+                            '<td>' + (user.hoTen) + '</td>' +
+                            '<td>' + user.email + '</td>' +
+                            '<td>' + (user.soDienThoai) + '</td>' +
+                            '<td>' + roleText + '</td>' +
+                            '<td>' + registrationDate + '</td>' +
+                            '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+                            '<td class="action-buttons">' +
+                                '<div class="action-btn btn-view-user" data-user-id="' + user.nguoiDungId + '" title="Xem chi tiết">' +
+                                    '<i class="fas fa-eye"></i>' +
+                                '</div>' +
+                                '<div class="action-btn btn-toggle-user-status" ' +
+                                    'data-user-id="' + user.nguoiDungId + '" ' +
+                                    'data-is-active="' + (user.trangThai == 1) + '"' +
+                                    'title="' + (user.trangThai == 0 ? 'Khóa' : 'Mở khóa') + ' tài khoản">' +
+                                    '<i class="fas ' + (user.trangThai == 0 ? 'fa-lock' : 'fa-unlock') + '"></i>' +
+                                '</div>' +
+                            '</td>' +
+                        '</tr>';
                 });
             }
             $('#users-tbody').html(html);
@@ -1785,12 +1788,12 @@
         }
         $('#recent-events').html(html);
     }
-            
+    
     // Action Functions - Sửa hàm viewUser
     function viewUser(userId) {
         $.get('/admin/api/users/' + userId, function(user) {
             const registrationDate = user.ngayTao ? new Date(user.ngayTao).toLocaleDateString('vi-VN') : 'N/A';
-            const statusText = user.trangThai == 'active' ? 'Đang hoạt động' : 'Đã khóa';
+            const statusText = user.trangThai == 1 ? 'Đang hoạt động' : 'Đã khóa';
             
             let html = '';
             html += '<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">' +
@@ -1826,18 +1829,12 @@
                 '</div>' +
                 '<div class="form-group">' +
                     '<label>Trạng thái:</label>' +
-                    '<p><span class="status ' + (user.trangThai == 'active' ? 'active' : 'inactive') + '">' + statusText + '</span></p>' +
+                    '<p><span class="status ' + (user.trangThai == 1 ? 'active' : 'inactive') + '">' + statusText + '</span></p>' +
                 '</div>' +
             '</div>' +
             
             '<div class="form-group" style="margin-top: 20px;">' +
-                '<button class="btn btn-primary">' +
-                    '<i class="fas fa-edit"></i> Chỉnh sửa' +
-                '</button>' +
-                '<button class="btn ' + (user.trangThai == 'active' ? 'btn-danger' : 'btn-success') + ' btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 'active') + '" style="margin-left: 10px;">' +
-                    '<i class="fas ' + (user.trangThai == 'active' ? 'fa-lock' : 'fa-unlock') + '"></i>' +
-                    (user.trangThai == 'active' ? ' Khóa' : ' Mở khóa') + ' tài khoản' +
-                '</button>' +
+                '<button class="btn ' + (user.trangThai == 1 ? 'btn-danger' : 'btn-success') + ' btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 1) + '" style="margin-left: 10px;">' +
             '</div>';
             
             $('#user-modal-content').html(html);
@@ -1967,13 +1964,25 @@
             'Bạn có chắc chắn muốn mở khóa tài khoản này?';
         
         if (confirm(confirmMessage)) {
-            $.post('/admin/api/users/' + userId + '/status', { action: action }, function() {
-                showToast(`Đã ${isActive ? 'khóa' : 'mở khóa'} tài khoản thành công`, true);
-                loadUsers();
-                $('#user-modal').hide();
-            }).fail(function(xhr, status, error) {
-                console.error('Error updating user status:', error);
-                showToast('Lỗi cập nhật trạng thái người dùng: ' + error, false);
+            // Gửi request với đúng định dạng JSON
+            $.ajax({
+                url: '/admin/api/users/' + userId + '/status',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ action: action }),
+                success: function(response) {
+                    if (response.success) {
+                        showToast(response.message, true);
+                        loadUsers();
+                        $('#user-modal').hide();
+                    } else {
+                        showToast(response.message, false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error updating user status:', error);
+                    showToast('Lỗi cập nhật trạng thái người dùng: ' + error, false);
+                }
             });
         }
     }
@@ -2232,7 +2241,6 @@
             $('#stat-total-users').text(stats.totalUsers);
             $('#stat-active-events').text(stats.activeEvents);
             $('#stat-pending-events').text(stats.pendingEvents);
-            $('#stat-avg-participation').text(stats.avgParticipation + '%');
         }).fail(function(xhr, status, error) {
             console.error('Error loading analytics:', error);
             showToast('Lỗi tải dữ liệu thống kê: ' + error, false);

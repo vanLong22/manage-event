@@ -251,11 +251,33 @@ public class ParticipantController {
         return ResponseEntity.ok(historyService.getHistoryByUser(userId));
     }
 
-    // AJAX: Cập nhật tài khoản
+    // API: Cập nhật thông tin tài khoản với validation
     @PostMapping("/api/account/update")
-    public ResponseEntity<Map<String, Object>> updateAccount(@RequestBody User user) {
-        userService.update(user);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật thành công!"));
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateAccount(@RequestBody User user, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
+        
+        // Đảm bảo user id từ session trùng với user id trong đối tượng user
+        // Để tránh người dùng cập nhật thông tin người khác
+        user.setNguoiDungId(userId);
+        
+        try {
+            boolean success = userService.updateUserInfo(user);
+            if (success) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật thành công!"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Cập nhật thất bại!"));
+            }
+        } catch (RuntimeException e) {
+            // Bắt exception từ updateUserInfo (email/số điện thoại đã tồn tại)
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi hệ thống!"));
+        }
     }
 
     @GetMapping("/api/events/search")

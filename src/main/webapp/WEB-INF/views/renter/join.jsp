@@ -1309,6 +1309,9 @@
 </head>
 
 <body>
+    <!-- Thêm vào phần header hoặc bất kỳ đâu trong HTML -->
+    <input type="hidden" id="currentUserId" value="${user.nguoiDungId}">
+    
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -1678,7 +1681,7 @@
                         </button>
                     </div>
                 </div>
-
+                <!--
                 <div class="notification-filters" style="margin-bottom: 20px;">
                     <div class="filter-row">
                         <div class="filter-group">
@@ -1701,7 +1704,7 @@
                         </div>
                     </div>
                 </div>
-
+                -->
                 <ul class="notification-list" id="notification-list">
                     <c:choose>
                         <c:when test="${not empty notifications}">
@@ -1728,6 +1731,7 @@
                                             <fmt:formatDate value="${notification.thoiGian}" pattern="dd/MM/yyyy HH:mm"/>
                                         </div>
                                     </div>
+                                    <!--
                                     <div class="notification-actions">
                                         <c:if test="${notification.daDoc.intValue() == 0}">
                                             <button class="btn-mark-read" title="Đánh dấu đã đọc">
@@ -1738,6 +1742,7 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
+                                    -->
                                 </li>
                             </c:forEach>
                         </c:when>
@@ -1910,7 +1915,15 @@
                         <tbody>
                             <c:forEach var="history" items="${histories}">
                                 <tr>
-                                    <td><c:out value="${history.loaiHoatDong}"/></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${history.loaiHoatDong == 'DangSuKien'}">Đăng sự kiện</c:when>
+                                            <c:when test="${history.loaiHoatDong == 'DangKy'}">Đăng ký</c:when>
+                                            <c:when test="${history.loaiHoatDong == 'HuyDangKy'}">Hủy đăng ký</c:when>
+                                            <c:when test="${history.loaiHoatDong == 'CapNhat'}">Cập nhật</c:when>
+                                            <c:otherwise>Khác</c:otherwise>
+                                        </c:choose>
+                                    </td>
                                     <td><c:out value="${history.chiTiet}"/></td>
                                     <td>
                                         <fmt:formatDate value="${history.thoiGian}" pattern="dd/MM/yyyy HH:mm"/>
@@ -1939,9 +1952,11 @@
                                         <c:out value="${fn:substring(user.hoTen, 0, 1)}${fn:substring(user.hoTen, fn:indexOf(user.hoTen, ' ') + 1, fn:indexOf(user.hoTen, ' ') + 2)}"/>
                                     </c:if>
                                 </div>
+                                <!--
                                 <button type="button" class="btn btn-outline" id="change-avatar">
                                     <i class="fas fa-camera"></i> Thay đổi ảnh
                                 </button>
+                                -->
                             </div>
                         </div>
                     </div>
@@ -3620,6 +3635,306 @@
         `;
 
         $(changePasswordStyles).appendTo('head');
+
+
+        // Xử lý form cập nhật thông tin tài khoản
+$('#account-form').submit(function(e) {
+    e.preventDefault();
+    
+    const submitBtn = $('#save-account');
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
+    
+    // Lấy dữ liệu từ form
+    const firstName = $('#first-name').val().trim();
+    const lastName = $('#last-name').val().trim();
+    const email = $('#user-email').val().trim();
+    const phone = $('#user-phone').val().trim();
+    const address = $('#user-address').val().trim();
+    
+    // Validation cơ bản
+    if (!firstName || !lastName) {
+        showToast('Vui lòng nhập đầy đủ họ và tên!', false);
+        submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu thay đổi');
+        return;
+    }
+    
+    if (!email) {
+        showToast('Vui lòng nhập email!', false);
+        submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu thay đổi');
+        return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast('Email không hợp lệ!', false);
+        submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu thay đổi');
+        return;
+    }
+    
+    if (!phone) {
+        showToast('Vui lòng nhập số điện thoại!', false);
+        submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu thay đổi');
+        return;
+    }
+    
+    // Validate phone number (basic)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(phone.replace(/\D/g, ''))) {
+        showToast('Số điện thoại không hợp lệ!', false);
+        submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu thay đổi');
+        return;
+    }
+    
+    // Tạo object user để gửi lên server
+    const userData = {
+        hoTen: firstName + ' ' + lastName,
+        email: email,
+        soDienThoai: phone,
+        diaChi: address,
+        nguoiDungId: $('#currentUserId').val() // Lấy từ biến ẩn
+    };
+    
+    console.log('Sending user data:', userData);
+    
+    // Gửi request đến API cập nhật
+    $.ajax({
+        url: '/participant/api/account/update',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(userData),
+        success: function(response) {
+            if (response.success) {
+                showToast('Cập nhật thông tin thành công!', true);
+                
+                // Cập nhật thông tin hiển thị trên giao diện
+                updateUserDisplayInfo(userData);
+                
+                // Đổi avatar hiển thị nếu cần
+                updateAvatarDisplay(userData.hoTen);
+                
+            } else {
+                showToast('Cập nhật thất bại: ' + (response.message || 'Lỗi không xác định'), false);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Update error:', error);
+            let errorMessage = 'Lỗi kết nối đến server';
+            
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.status === 401) {
+                errorMessage = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            }
+            
+            showToast('Cập nhật thất bại: ' + errorMessage, false);
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu thay đổi');
+        }
+    });
+});
+
+// Hàm lấy userId từ session (giả lập)
+function getCurrentUserId() {
+    // Trong thực tế, bạn có thể lấy từ:
+    // 1. Biến ẩn trong JSP
+    // 2. LocalStorage
+    // 3. Attribute trong session
+    
+    // Cách 1: Từ biến ẩn trong JSP (thêm vào HTML)
+    // <input type="hidden" id="currentUserId" value="${user.nguoiDungId}">
+    
+    if ($('#currentUserId').length) {
+        return $('#currentUserId').val();
+    }
+    
+    // Cách 2: Từ attribute trong element
+    const userInfo = $('#user-avatar').data('user-id');
+    if (userInfo) {
+        return userInfo;
+    }
+    
+    // Fallback: lấy từ URL hoặc giả lập
+    return window.currentUserId || 0;
+}
+
+// Hàm cập nhật thông tin hiển thị
+function updateUserDisplayInfo(userData) {
+    // Cập nhật tên trong header
+    $('#user-name').text(userData.hoTen);
+    
+    // Cập nhật email (nếu có phần hiển thị email)
+    $('#user-email-display').text(userData.email);
+    
+    // Cập nhật thông tin trong các phần khác nếu cần
+    console.log('Updated user info on display');
+}
+
+// Hàm cập nhật avatar hiển thị
+function updateAvatarDisplay(fullName) {
+    const avatarElement = $('#user-avatar, #account-avatar');
+    
+    // Tạo chữ cái đầu từ họ tên
+    const names = fullName.split(' ');
+    let initials = '';
+    
+    if (names.length >= 1) {
+        initials += names[0].charAt(0).toUpperCase();
+    }
+    if (names.length >= 2) {
+        initials += names[names.length - 1].charAt(0).toUpperCase();
+    } else if (names[0].length > 1) {
+        initials += names[0].charAt(1).toUpperCase();
+    }
+    
+    // Cập nhật avatar
+    avatarElement.each(function() {
+        $(this).text(initials);
+    });
+}
+
+// Xử lý thay đổi ảnh đại diện (nếu có)
+$('#change-avatar').click(function(e) {
+    e.preventDefault();
+    
+    // Tạo input file ẩn
+    const input = $('<input type="file" accept="image/*" style="display: none;">');
+    
+    input.on('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Kiểm tra kích thước file (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('Kích thước ảnh không được vượt quá 5MB!', false);
+            return;
+        }
+        
+        // Kiểm tra định dạng
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            showToast('Chỉ chấp nhận file ảnh (JPEG, PNG, GIF, WebP)!', false);
+            return;
+        }
+        
+        // Hiển thị preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Tạo ảnh preview tạm thời
+            const img = new Image();
+            img.onload = function() {
+                // Có thể crop/resize ảnh ở đây nếu cần
+                $('#account-avatar').html(
+                    '<img src="' + e.target.result + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">'
+                );
+                
+                // Gửi ảnh lên server (cần API upload)
+                uploadAvatar(file);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    input.click();
+});
+
+// Hàm upload ảnh đại diện
+function uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    $.ajax({
+        url: '/participant/api/account/upload-avatar',
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(response) {
+            if (response.success) {
+                showToast('Cập nhật ảnh đại diện thành công!', true);
+                
+                // Cập nhật ảnh ở header nếu có
+                $('#user-avatar').html(
+                    '<img src="' + response.avatarUrl + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">'
+                );
+            } else {
+                showToast('Cập nhật ảnh thất bại: ' + response.message, false);
+            }
+        },
+        error: function() {
+            showToast('Lỗi khi tải ảnh lên server', false);
+        }
+    });
+}
+
+// Thêm CSS cho form validation
+const accountFormStyles = `
+<style>
+#account-form .form-group.error input,
+#account-form .form-group.error select,
+#account-form .form-group.error textarea {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
+}
+
+#account-form .error-message {
+    color: var(--danger);
+    font-size: 13px;
+    margin-top: 5px;
+    display: none;
+}
+
+#account-form .form-group.error .error-message {
+    display: block;
+}
+
+.avatar-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.avatar-upload-btn:hover {
+    background: #43A047;
+    transform: scale(1.1);
+}
+</style>
+`;
+
+// Thêm CSS vào document
+$(accountFormStyles).appendTo('head');
     });    
     </script>
 </body>

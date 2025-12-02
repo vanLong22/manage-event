@@ -45,7 +45,7 @@ public class UserRepository {
     public void save(User user) {
         String sql = "INSERT INTO nguoi_dung (ten_dang_nhap, mat_khau, email, so_dien_thoai, ho_ten, " +
                      "dia_chi, gioi_tinh, anh_dai_dien, vai_tro, ngay_tao, trang_thai) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, now(), 1)";
         
         jdbcTemplate.update(sql, 
             user.getTenDangNhap(),
@@ -56,8 +56,7 @@ public class UserRepository {
             user.getDiaChi(),
             user.getGioiTinh(),
             user.getAnhDaiDien(),
-            user.getVaiTro(),
-            user.getTrangThai()
+            user.getVaiTro()
         );
     }
 
@@ -67,8 +66,22 @@ public class UserRepository {
     }
 
     public void update(User user) {
-        String sql = "UPDATE nguoi_dung SET ho_ten = ?, email = ?, so_dien_thoai = ?, dia_chi = ?, gioi_tinh = ?, anh_dai_dien = ?, trang_thai = ? WHERE nguoi_dung_id = ?";
-        jdbcTemplate.update(sql, user.getHoTen(), user.getEmail(), user.getSoDienThoai(), user.getDiaChi(), user.getGioiTinh(), user.getAnhDaiDien(), user.getTrangThai(), user.getNguoiDungId());
+        String sql = "UPDATE nguoi_dung SET ho_ten = ?, email = ?, so_dien_thoai = ?, dia_chi = ?, anh_dai_dien = ?, trang_thai = ? WHERE nguoi_dung_id = ?";
+        jdbcTemplate.update(sql, user.getHoTen(), user.getEmail(), user.getSoDienThoai(), user.getDiaChi(), user.getAnhDaiDien(), user.getTrangThai(), user.getNguoiDungId());
+    }
+
+    public boolean updateInfo(User user) {
+        String sql = "UPDATE nguoi_dung SET ho_ten = ?, email = ?, so_dien_thoai = ?, dia_chi = ? WHERE nguoi_dung_id = ?";
+        
+        int rowsAffected = jdbcTemplate.update(sql,
+            user.getHoTen(),
+            user.getEmail(),
+            user.getSoDienThoai(),
+            user.getDiaChi(),
+            user.getNguoiDungId()
+        );
+        
+        return rowsAffected > 0;
     }
 
     public boolean updatePassword(Long userId, String currentPassword, String newPassword) {

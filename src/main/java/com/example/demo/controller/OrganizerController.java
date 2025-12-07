@@ -169,30 +169,59 @@ public class OrganizerController {
     // }
 
     // API update event
-    @PostMapping("/api/events/update")
+    @PostMapping(value = "/api/events/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> updateEvent(
-            @RequestPart("event") Event event,
-            @RequestPart(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
+            @PathVariable Long id,
+            @RequestParam("event") String eventJson, 
+            @RequestParam(value = "anhBiaFile", required = false) MultipartFile anhBiaFile,
             HttpSession session) {
+        
         Long organizerId = (Long) session.getAttribute("userId");
         if (organizerId == null) {
             return ResponseEntity.status(401).build();
         }
-        Event existing = eventService.getSuKienById(event.getSuKienId());
-        if (existing == null || !existing.getNguoiToChucId().equals(organizerId)) {
-            return ResponseEntity.notFound().build();
+        
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            Event event = objectMapper.readValue(eventJson, Event.class);
+            
+            // Đảm bảo ID trong path khớp với ID trong event object
+            if (!id.equals(event.getSuKienId())) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "ID trong URL không khớp với ID trong dữ liệu"
+                ));
+            }
+            
+            // Đảm bảo event thuộc về organizer
+            Event existing = eventService.getSuKienById(id);
+            if (existing == null || !existing.getNguoiToChucId().equals(organizerId)) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Set lại organizerId từ session để đảm bảo an toàn
+            event.setNguoiToChucId(organizerId);
+            
+            if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
+                String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
+                event.setAnhBia(fileName);
+            } else {
+                event.setAnhBia(existing.getAnhBia());
+            }
+            
+            eventService.updateSuKien(event);
+            return ResponseEntity.ok(new HashMap<>() {{
+                put("success", true);
+                put("message", "Cập nhật sự kiện thành công!");
+            }});
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body(new HashMap<>() {{
+                put("success", false);
+                put("message", "Lỗi khi xử lý dữ liệu: " + e.getMessage());
+            }});
         }
-        if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
-            String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
-            event.setAnhBia(fileName);
-        } else {
-            event.setAnhBia(existing.getAnhBia());
-        }
-        eventService.updateSuKien(event);
-        return ResponseEntity.ok(new HashMap<>() {{
-            put("success", true);
-            put("message", "Cập nhật sự kiện thành công!");
-        }});
     }
 
     // API delete event

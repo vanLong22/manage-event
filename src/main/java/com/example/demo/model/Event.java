@@ -1,5 +1,4 @@
 package com.example.demo.model;
- 
 
 import java.util.Date;
 
@@ -15,7 +14,10 @@ public class Event {
     private Date thoiGianKetThuc;
     private String loaiSuKien;
     private String matKhauSuKienRiengTu;
-    private String trangThai;
+
+    private String trangThaiPheDuyet;   // NEW
+    private String trangThaiThoiGian;   // NEW
+
     private Integer soLuongToiDa;
     private Integer soLuongDaDangKy;
     private Date ngayTao;
@@ -26,10 +28,11 @@ public class Event {
 
     // All-Args Constructor
     public Event(Long suKienId, String tenSuKien, String moTa, String diaDiem, String anhBia,
-                  Long loaiSuKienId, Long nguoiToChucId, Date thoiGianBatDau,
-                  Date thoiGianKetThuc, String loaiSuKien, String matKhauSuKienRiengTu,
-                  String trangThai, Integer soLuongToiDa, Integer soLuongDaDangKy,
-                  Date ngayTao) {
+                 Long loaiSuKienId, Long nguoiToChucId, Date thoiGianBatDau,
+                 Date thoiGianKetThuc, String loaiSuKien, String matKhauSuKienRiengTu,
+                 String trangThaiPheDuyet, String trangThaiThoiGian,
+                 Integer soLuongToiDa, Integer soLuongDaDangKy, Date ngayTao) {
+
         this.suKienId = suKienId;
         this.tenSuKien = tenSuKien;
         this.moTa = moTa;
@@ -41,7 +44,8 @@ public class Event {
         this.thoiGianKetThuc = thoiGianKetThuc;
         this.loaiSuKien = loaiSuKien;
         this.matKhauSuKienRiengTu = matKhauSuKienRiengTu;
-        this.trangThai = trangThai;
+        this.trangThaiPheDuyet = trangThaiPheDuyet;
+        this.trangThaiThoiGian = trangThaiThoiGian;
         this.soLuongToiDa = soLuongToiDa;
         this.soLuongDaDangKy = soLuongDaDangKy;
         this.ngayTao = ngayTao;
@@ -136,12 +140,20 @@ public class Event {
         this.matKhauSuKienRiengTu = matKhauSuKienRiengTu;
     }
 
-    public String getTrangThai() {
-        return trangThai;
+    public String getTrangThaiPheDuyet() {
+        return trangThaiPheDuyet;
     }
 
-    public void setTrangThai(String trangThai) {
-        this.trangThai = trangThai;
+    public void setTrangThaiPheDuyet(String trangThaiPheDuyet) {
+        this.trangThaiPheDuyet = trangThaiPheDuyet;
+    }
+
+    public String getTrangThaiThoiGian() {
+        return trangThaiThoiGian;
+    }
+
+    public void setTrangThaiThoiGian(String trangThaiThoiGian) {
+        this.trangThaiThoiGian = trangThaiThoiGian;
     }
 
     public Integer getSoLuongToiDa() {

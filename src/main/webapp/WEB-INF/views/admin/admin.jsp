@@ -954,9 +954,6 @@
             <div id="users" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý người dùng</h3>
-                    <button class="btn btn-outline" id="btn-export-users">
-                        <i class="fas fa-file-export"></i> Xuất báo cáo
-                    </button>
                 </div>
 
                 <div class="filter-section">
@@ -1005,9 +1002,6 @@
             <div id="events" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý sự kiện</h3>
-                    <button class="btn btn-outline" id="btn-export-events">
-                        <i class="fas fa-file-export"></i> Xuất báo cáo
-                    </button>
                 </div>
 
                 <div class="filter-section">
@@ -1070,9 +1064,6 @@
             <div id="analytics" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Thống kê hệ thống</h3>
-                    <button class="btn btn-outline" id="btn-download-report">
-                        <i class="fas fa-download"></i> Tải báo cáo
-                    </button>
                 </div>
 
                 <div class="stats-grid">
@@ -1092,10 +1083,12 @@
                 
                 <!-- hiển thị biểu đồ -->
                 <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+                    <!--
                     <div class="chart-card">
                         <h4>Biểu Đồ Sự Kiện Theo Loại</h4>
                         <img id="events-by-type-chart" style="width: 100%; height: auto;">
                     </div>
+                    -->
                     <div class="chart-card">
                         <h4>Biểu Đồ Người Dùng Theo Vai Trò</h4>
                         <img id="users-by-role-chart" style="width: 100%; height: auto;">

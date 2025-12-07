@@ -1673,9 +1673,6 @@
                 <div class="section-header">
                     <h3 class="section-title">Thông báo</h3>
                     <div>
-                        <button class="btn btn-outline" id="filter-unread">
-                            <i class="fas fa-filter"></i> Chỉ xem chưa đọc
-                        </button>
                         <button class="btn btn-outline" id="mark-all-read">
                             <i class="fas fa-check-double"></i> Đánh dấu đã đọc tất cả
                         </button>

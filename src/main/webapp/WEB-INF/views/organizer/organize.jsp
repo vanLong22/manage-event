@@ -1122,7 +1122,7 @@
 
                     <div class="form-group">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Tạo sự kiện
+                            <i class="fas fa-save"></i> Lưu sự kiện
                         </button>
                         <button type="reset" class="btn btn-outline">
                             <i class="fas fa-redo"></i> Đặt lại
@@ -1169,9 +1169,6 @@
                     <button class="btn btn-success" id="save-attendance">
                         <i class="fas fa-save"></i> Lưu điểm danh
                     </button>
-                    <button class="btn btn-outline" id="export-attendance">
-                        <i class="fas fa-file-export"></i> Xuất báo cáo
-                    </button>
                 </div>
             </div>
 
@@ -1179,9 +1176,6 @@
             <div id="participants" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý người tham gia</h3>
-                    <button class="btn btn-outline" id="export-participants">
-                        <i class="fas fa-file-export"></i> Xuất danh sách
-                    </button>
                 </div>
 
                 <div class="form-group">
@@ -1760,9 +1754,6 @@
                                     '<div class="action-btn delete-event" data-event-id="' + event.suKienId + '" title="Xóa">' +
                                         '<i class="fas fa-trash"></i>' +
                                     '</div>' +
-                                    '<div class="action-btn export-event" data-event-id="' + event.suKienId + '" title="Xuất danh sách">' +
-                                        '<i class="fas fa-file-export"></i>' +
-                                    '</div>' +
                                 '</td>' +
                             '</tr>';
                 }
@@ -1779,6 +1770,9 @@
                 showToast("ID sự kiện không hợp lệ!", false);
                 return;
             }
+
+            // Đóng modal nếu đang mở
+            hideModal('event-modal');
 
             $.get('/organizer/api/events/' + suKienId, function(event) {
                 if (!event) {
@@ -1895,8 +1889,11 @@
             if (imageFile) {
                 formData.append('anhBiaFile', imageFile);
             }
-            var url = isEdit ? '/organizer/api/events/update' : '/organizer/api/events/create';
+            
+            // Sửa URL để bao gồm ID khi update
+            var url = isEdit ? '/organizer/api/events/update/' + isEdit : '/organizer/api/events/create';
             var formElement = this;
+            
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -2285,9 +2282,6 @@
                             '<div class="form-group" style="margin-top: 20px;">' +
                                 '<button class="btn btn-primary edit-event-from-modal" data-event-id="' + event.suKienId + '">' +
                                     '<i class="fas fa-edit"></i> Chỉnh sửa' +
-                                '</button>' +
-                                '<button class="btn btn-outline export-event-from-modal" data-event-id="' + event.suKienId + '">' +
-                                    '<i class="fas fa-file-export"></i> Xuất danh sách' +
                                 '</button>' +
                             '</div>';
                 $('#event-modal-body').html(html);

@@ -34,21 +34,34 @@ public class EventSuggestionRepository {
             suggestion.setGiaCaLong(rs.getString("gia_ca_long"));
             suggestion.setThongTinLienLac(rs.getString("thong_tin_lien_lac"));
             suggestion.setTrangThai(rs.getString("trang_thai"));
+            suggestion.setTrangThaiPheDuyet(rs.getString("trang_thai_phe_duyet"));
             suggestion.setThoiGianTao(rs.getTimestamp("thoi_gian_tao"));
             suggestion.setThoiGianPhanHoi(rs.getTimestamp("thoi_gian_phan_hoi"));
             return suggestion;
         }
     }
 
+    // Phương thức tự động cập nhật trạng thái thành "Huy" nếu thời gian dự kiến cách ngày hiện tại <= 1 ngày
+    public void autoUpdateStatusForUpcomingEvents() {
+        String sql = "UPDATE dang_su_kien " +
+                     "SET trang_thai = 'Huy' " +
+                     "WHERE trang_thai_phe_duyet = 'DaDuyet' " +
+                     "AND thoi_gian_du_kien IS NOT NULL " +
+                     "AND DATEDIFF(thoi_gian_du_kien, NOW()) <= 1 " +
+                     "AND trang_thai != 'Huy' " +
+                     "AND trang_thai != 'TuChoi'";
+        jdbcTemplate.update(sql);
+    }
+
     public List<EventSuggestion> findByUserId(Long userId) {
-        String sql = "SELECT * FROM dang_su_kien WHERE nguoi_dung_id = ? ORDER BY thoi_gian_tao DESC";
+        String sql = "SELECT * FROM dang_su_kien WHERE nguoi_dung_id = ? AND trang_thai_phe_duyet IS NOT NULL ORDER BY thoi_gian_tao DESC";
         return jdbcTemplate.query(sql, new EventSuggestionRowMapper(), userId);
     }
 
     public EventSuggestion findById(Long id) {
         try {
             return jdbcTemplate.queryForObject(
-                "SELECT * FROM dang_su_kien WHERE dang_su_kien_id = ?",
+                "SELECT * FROM dang_su_kien WHERE dang_su_kien_id = ? AND trang_thai_phe_duyet IS NOT NULL",
                 new EventSuggestionRowMapper(),
                 id
             );
@@ -60,7 +73,7 @@ public class EventSuggestionRepository {
     public Optional<EventSuggestion> findByIdAndUserId(Long id, Long userId) {
         try {
             EventSuggestion suggestion = jdbcTemplate.queryForObject(
-                "SELECT * FROM dang_su_kien WHERE dang_su_kien_id = ? AND nguoi_dung_id = ?",
+                "SELECT * FROM dang_su_kien WHERE dang_su_kien_id = ? AND nguoi_dung_id = ? AND trang_thai_phe_duyet IS NOT NULL",
                 new EventSuggestionRowMapper(),
                 id, userId
             );
@@ -74,8 +87,8 @@ public class EventSuggestionRepository {
         String sql = "INSERT INTO dang_su_kien (" +
                      "nguoi_dung_id, tieu_de, mo_ta_nhu_cau, loai_su_kien_id, " +
                      "dia_diem, thoi_gian_du_kien, so_luong_khach, gia_ca_long, " +
-                     "thong_tin_lien_lac, trang_thai, thoi_gian_tao) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "thong_tin_lien_lac, trang_thai, trang_thai_phe_duyet, thoi_gian_tao) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         jdbcTemplate.update(sql,
             suggestion.getNguoiDungId(),
@@ -88,6 +101,7 @@ public class EventSuggestionRepository {
             suggestion.getGiaCaLong(),
             suggestion.getThongTinLienLac(),
             suggestion.getTrangThai() != null ? suggestion.getTrangThai() : "CHO_DUYET",
+            "ChoDuyet", // Trạng thái phê duyệt mặc định
             suggestion.getThoiGianTao()
         );
     }
@@ -96,8 +110,8 @@ public class EventSuggestionRepository {
         String sql = "INSERT INTO dang_su_kien (" +
                      "nguoi_dung_id, tieu_de, mo_ta_nhu_cau, loai_su_kien_id, " +
                      "dia_diem, thoi_gian_du_kien, so_luong_khach, gia_ca_long, " +
-                     "thong_tin_lien_lac, trang_thai, thoi_gian_tao) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "thong_tin_lien_lac, trang_thai, trang_thai_phe_duyet, thoi_gian_tao) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         KeyHolder keyHolder = new GeneratedKeyHolder();
         
@@ -114,7 +128,8 @@ public class EventSuggestionRepository {
             ps.setString(8, suggestion.getGiaCaLong());
             ps.setString(9, suggestion.getThongTinLienLac());
             ps.setString(10, suggestion.getTrangThai() != null ? suggestion.getTrangThai() : "CHO_DUYET");
-            ps.setTimestamp(11, suggestion.getThoiGianTao() != null ? 
+            ps.setString(11, "ChoDuyet"); // Trạng thái phê duyệt mặc định
+            ps.setTimestamp(12, suggestion.getThoiGianTao() != null ? 
                 new Timestamp(suggestion.getThoiGianTao().getTime()) : new Timestamp(System.currentTimeMillis()));
             return ps;
         }, keyHolder);
@@ -134,7 +149,7 @@ public class EventSuggestionRepository {
         int affectedRows = jdbcTemplate.update(
             "UPDATE dang_su_kien SET tieu_de = ?, mo_ta_nhu_cau = ?, loai_su_kien_id = ?, " +
             "dia_diem = ?, thoi_gian_du_kien = ?, so_luong_khach = ?, gia_ca_long = ?, " +
-            "thong_tin_lien_lac = ?, trang_thai = ? WHERE dang_su_kien_id = ? AND nguoi_dung_id = ?",
+            "thong_tin_lien_lac = ?, trang_thai = ?, trang_thai_phe_duyet = ? WHERE dang_su_kien_id = ? AND nguoi_dung_id = ?",
             suggestion.getTieuDe(),
             suggestion.getMoTaNhuCau(),
             suggestion.getLoaiSuKienId(),
@@ -144,6 +159,7 @@ public class EventSuggestionRepository {
             suggestion.getGiaCaLong(),
             suggestion.getThongTinLienLac(),
             suggestion.getTrangThai(),
+            suggestion.getTrangThaiPheDuyet(),
             suggestion.getDangSuKienId(),
             suggestion.getNguoiDungId()
         );
@@ -157,22 +173,91 @@ public class EventSuggestionRepository {
         );
         return affectedRows > 0;
     }
-
-    public List<EventSuggestion> findByStatus(String status) {
-        String sql = "SELECT * FROM dang_su_kien WHERE trang_thai = ? ORDER BY thoi_gian_tao DESC";
-        return jdbcTemplate.query(sql, new EventSuggestionRowMapper(), status);
+    
+    public boolean updateSuggestionApprovalStatus(Long suggestionId, String trangThaiPheDuyet) {
+        int affectedRows = jdbcTemplate.update(
+            "UPDATE dang_su_kien SET trang_thai_phe_duyet = ? WHERE dang_su_kien_id = ?",
+            trangThaiPheDuyet, suggestionId
+        );
+        return affectedRows > 0;
     }
 
-    // Lấy danh sách đề xuất với các bộ lọc (cho organizer)
-    public List<Map<String, Object>> findSuggestionsWithFilters(Integer loaiSuKienId, String diaDiem, String soLuongKhachRange, String trangThai) {
+    public List<EventSuggestion> findByStatus(String status) {
+        String sql = "SELECT * FROM dang_su_kien WHERE trang_thai = ? AND trang_thai_phe_duyet IS NOT NULL ORDER BY thoi_gian_tao DESC";
+        return jdbcTemplate.query(sql, new EventSuggestionRowMapper(), status);
+    }
+    
+    // Thêm vào EventSuggestionRepository
+    public Map<String, Object> findSuggestionDetailById(Long suggestionId) {
+        String sql = "SELECT ds.*, nd.ho_ten, nd.email, nd.so_dien_thoai, nd.dia_chi, nd.gioi_tinh, " +
+                    "lsk.ten_loai as loai_su_kien_ten, nd.vai_tro " +
+                    "FROM dang_su_kien ds " +
+                    "LEFT JOIN nguoi_dung nd ON ds.nguoi_dung_id = nd.nguoi_dung_id " +
+                    "LEFT JOIN loai_su_kien lsk ON ds.loai_su_kien_id = lsk.loai_su_kien_id " +
+                    "WHERE ds.dang_su_kien_id = ? AND ds.trang_thai_phe_duyet IS NOT NULL";
+
+        try {
+            return jdbcTemplate.queryForObject(sql, new RowMapper<Map<String, Object>>() {
+                @Override
+                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Map<String, Object> result = new java.util.HashMap<>();
+                    result.put("dangSuKienId", rs.getLong("dang_su_kien_id"));
+                    result.put("nguoiDungId", rs.getLong("nguoi_dung_id"));
+                    result.put("tieuDe", rs.getString("tieu_de"));
+                    result.put("moTaNhuCau", rs.getString("mo_ta_nhu_cau"));
+                    result.put("loaiSuKienId", rs.getInt("loai_su_kien_id"));
+                    result.put("loaiSuKienTen", rs.getString("loai_su_kien_ten"));
+                    result.put("diaDiem", rs.getString("dia_diem"));
+                    result.put("thoiGianDuKien", rs.getTimestamp("thoi_gian_du_kien"));
+                    result.put("soLuongKhach", rs.getInt("so_luong_khach"));
+                    result.put("giaCaLong", rs.getString("gia_ca_long"));
+                    result.put("thongTinLienLac", rs.getString("thong_tin_lien_lac"));
+                    result.put("trangThai", rs.getString("trang_thai"));
+                    result.put("trangThaiPheDuyet", rs.getString("trang_thai_phe_duyet"));
+                    result.put("thoiGianTao", rs.getTimestamp("thoi_gian_tao"));
+                    result.put("thoiGianPhanHoi", rs.getTimestamp("thoi_gian_phan_hoi"));
+                    
+                    // Thông tin user chi tiết
+                    Map<String, Object> user = new java.util.HashMap<>();
+                    user.put("hoTen", rs.getString("ho_ten"));
+                    user.put("email", rs.getString("email"));
+                    user.put("soDienThoai", rs.getString("so_dien_thoai"));
+                    user.put("diaChi", rs.getString("dia_chi"));
+                    user.put("gioiTinh", rs.getString("gioi_tinh"));
+                    user.put("vaiTro", rs.getString("vai_tro"));
+                    result.put("user", user);
+                    
+                    return result;
+                }
+            }, suggestionId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+       
+    // Thêm phương thức mới: Lọc theo trạng thái phê duyệt
+    public List<EventSuggestion> findByApprovalStatus(String trangThaiPheDuyet) {
+        String sql = "SELECT * FROM dang_su_kien WHERE trang_thai_phe_duyet = ? ORDER BY thoi_gian_tao DESC";
+        return jdbcTemplate.query(sql, new EventSuggestionRowMapper(), trangThaiPheDuyet);
+    }
+
+    // Sửa phương thức findSuggestionsWithFilters để chỉ lấy những đề xuất có trạng thái phê duyệt
+    public List<Map<String, Object>> findSuggestionsWithFilters(Integer loaiSuKienId, String diaDiem, 
+            String soLuongKhachRange, String trangThaiPheDuyet) {
         StringBuilder sql = new StringBuilder(
             "SELECT ds.*, nd.ho_ten, nd.email, nd.so_dien_thoai, lsk.ten_loai as loai_su_kien_ten " +
             "FROM dang_su_kien ds " +
             "LEFT JOIN nguoi_dung nd ON ds.nguoi_dung_id = nd.nguoi_dung_id " +
             "LEFT JOIN loai_su_kien lsk ON ds.loai_su_kien_id = lsk.loai_su_kien_id " +
-            "WHERE 1=1"
+            "WHERE ds.trang_thai_phe_duyet IS NOT NULL"
         );
 
+        // Lọc theo trạng thái phê duyệt
+        if (trangThaiPheDuyet != null && !trangThaiPheDuyet.isEmpty()) {
+            sql.append(" AND ds.trang_thai_phe_duyet = '").append(trangThaiPheDuyet).append("'");
+        }
+
+        // Các bộ lọc khác
         if (loaiSuKienId != null) {
             sql.append(" AND ds.loai_su_kien_id = ").append(loaiSuKienId);
         }
@@ -198,9 +283,6 @@ public class EventSuggestionRepository {
                     break;
             }
         }
-        if (trangThai != null && !trangThai.isEmpty()) {
-            sql.append(" AND ds.trang_thai = '").append(trangThai).append("'");
-        }
 
         sql.append(" ORDER BY ds.thoi_gian_tao DESC");
 
@@ -220,6 +302,7 @@ public class EventSuggestionRepository {
                 result.put("giaCaLong", rs.getString("gia_ca_long"));
                 result.put("thongTinLienLac", rs.getString("thong_tin_lien_lac"));
                 result.put("trangThai", rs.getString("trang_thai"));
+                result.put("trangThaiPheDuyet", rs.getString("trang_thai_phe_duyet"));
                 result.put("thoiGianTao", rs.getTimestamp("thoi_gian_tao"));
                 result.put("thoiGianPhanHoi", rs.getTimestamp("thoi_gian_phan_hoi"));
                 
@@ -233,51 +316,5 @@ public class EventSuggestionRepository {
                 return result;
             }
         });
-    }
-
-    // Lấy chi tiết đề xuất kèm thông tin user
-    public Map<String, Object> findSuggestionDetailById(Long suggestionId) {
-        String sql = "SELECT ds.*, nd.ho_ten, nd.email, nd.so_dien_thoai, nd.dia_chi, nd.gioi_tinh, " +
-                     "lsk.ten_loai as loai_su_kien_ten " +
-                     "FROM dang_su_kien ds " +
-                     "LEFT JOIN nguoi_dung nd ON ds.nguoi_dung_id = nd.nguoi_dung_id " +
-                     "LEFT JOIN loai_su_kien lsk ON ds.loai_su_kien_id = lsk.loai_su_kien_id " +
-                     "WHERE ds.dang_su_kien_id = ?";
-
-        try {
-            return jdbcTemplate.queryForObject(sql, new RowMapper<Map<String, Object>>() {
-                @Override
-                public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Map<String, Object> result = new java.util.HashMap<>();
-                    result.put("dangSuKienId", rs.getLong("dang_su_kien_id"));
-                    result.put("nguoiDungId", rs.getLong("nguoi_dung_id"));
-                    result.put("tieuDe", rs.getString("tieu_de"));
-                    result.put("moTaNhuCau", rs.getString("mo_ta_nhu_cau"));
-                    result.put("loaiSuKienId", rs.getInt("loai_su_kien_id"));
-                    result.put("loaiSuKienTen", rs.getString("loai_su_kien_ten"));
-                    result.put("diaDiem", rs.getString("dia_diem"));
-                    result.put("thoiGianDuKien", rs.getTimestamp("thoi_gian_du_kien"));
-                    result.put("soLuongKhach", rs.getInt("so_luong_khach"));
-                    result.put("giaCaLong", rs.getString("gia_ca_long"));
-                    result.put("thongTinLienLac", rs.getString("thong_tin_lien_lac"));
-                    result.put("trangThai", rs.getString("trang_thai"));
-                    result.put("thoiGianTao", rs.getTimestamp("thoi_gian_tao"));
-                    result.put("thoiGianPhanHoi", rs.getTimestamp("thoi_gian_phan_hoi"));
-                    
-                    // Thông tin user chi tiết
-                    Map<String, Object> user = new java.util.HashMap<>();
-                    user.put("hoTen", rs.getString("ho_ten"));
-                    user.put("email", rs.getString("email"));
-                    user.put("soDienThoai", rs.getString("so_dien_thoai"));
-                    user.put("diaChi", rs.getString("dia_chi"));
-                    user.put("gioiTinh", rs.getString("gioi_tinh"));
-                    result.put("user", user);
-                    
-                    return result;
-                }
-            }, suggestionId);
-        } catch (Exception e) {
-            return null;
-        }
     }
 }

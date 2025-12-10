@@ -1,4 +1,3 @@
-
 package com.example.demo.service;
 
 import com.example.demo.model.ActivityHistory;
@@ -19,8 +18,12 @@ import java.util.Map;
 public class RegistrationService {
     @Autowired
     private RegistrationRepository registrationRepository;
+    
     @Autowired
     private ActivityHistoryRepository historyRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     public List<Registration> getRegistrationsByUser(Long userId) {
         return registrationRepository.findByUserId(userId);
@@ -33,8 +36,8 @@ public class RegistrationService {
         registration.setSuKienId(suKienId);
         registration.setGhiChu(ghiChu);
         registration.setThoiGianDangKy(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        // Mặc định trạng thái là "ChoDuyet"
-        registration.setTrangThai("ChoDuyet");
+        // Mặc định trạng thái là "DaDuyet"
+        registration.setTrangThai("DaDuyet");
 
         // Lưu vào DB
         registrationRepository.save(registration);
@@ -80,37 +83,31 @@ public class RegistrationService {
         return registrationRepository.findByUserIdWithEvent(userId);
     }
 
-    // Thêm mới: Registrations by event
     public List<Registration> getRegistrationsByEvent(Long suKienId) {
         return registrationRepository.findByEventId(suKienId);
     }
 
-    // Thêm mới: All registrations for organizer
     public List<Registration> getAllRegistrationsForOrganizer(Long organizerId) {
         return registrationRepository.findAllForOrganizer(organizerId);
     }
 
-    // Thêm mới: Update attendance
     public void updateAttendance(Long dangKyId, boolean trangThaiDiemDanh) {
-        registrationRepository.updateAttendance(dangKyId, trangThaiDiemDanh ? "DaThamGia" : "ChuaThamGia"); 
+        registrationRepository.updateAttendance(dangKyId, trangThaiDiemDanh ? "DaThamGia" : "ChuaThamGia");
     }
 
-    // Thêm mới: Analytics stats
     public Map<String, Object> getAnalyticsStats(Long organizerId) {
         Map<String, Object> stats = new HashMap<>();
         stats.put("activeEvents", registrationRepository.countActiveEvents(organizerId));
         stats.put("totalParticipants", registrationRepository.countTotalParticipants(organizerId));
         stats.put("upcomingEvents", registrationRepository.countUpcomingEvents(organizerId));
-        stats.put("attentionEvents", registrationRepository.countAttentionEvents(organizerId)); // Ví dụ: low registration
+        stats.put("attentionEvents", registrationRepository.countAttentionEvents(organizerId));
         return stats;
     }
 
-    // Thêm phương thức mới: Lấy tất cả đăng ký (toàn hệ thống)
     public List<Registration> getAllRegistrations() {
         return registrationRepository.findAll();
     }
 
-    // Thêm vào RegistrationService
     public Registration getRegistrationById(Long id) {
         return registrationRepository.findById(id);
     }
@@ -122,5 +119,20 @@ public class RegistrationService {
     public List<Map<String, Object>> getRegistrationsOverTime(String period) {
         return registrationRepository.getRegistrationsOverTime(period);
     }
+    
+    // Phương thức mới: Gửi thông báo khi sự kiện được phê duyệt/từ chối
+    public void sendEventApprovalNotification(Long eventId, String eventName, Long organizerId, String action, String reason) {
+        String title = "";
+        String content = "";
+        
+        if ("approve".equals(action)) {
+            title = "Sự kiện được phê duyệt";
+            content = "Sự kiện '" + eventName + "' của bạn đã được phê duyệt và hiện đang hiển thị trên hệ thống.";
+        } else if ("reject".equals(action)) {
+            title = "Sự kiện bị từ chối";
+            content = "Sự kiện '" + eventName + "' của bạn đã bị từ chối. Lý do: " + reason;
+        }
+        
+        notificationService.createNotification(organizerId, title, content, "SuKien", eventId);
+    }
 }
- 

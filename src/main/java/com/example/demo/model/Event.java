@@ -14,13 +14,12 @@ public class Event {
     private Date thoiGianKetThuc;
     private String loaiSuKien;
     private String matKhauSuKienRiengTu;
-
-    private String trangThaiPheDuyet;   // NEW
-    private String trangThaiThoiGian;   // NEW
-
     private Integer soLuongToiDa;
     private Integer soLuongDaDangKy;
     private Date ngayTao;
+    private String trangThaiThoiGian; 
+    private String trangThaiPheDuyet;   
+    
 
     // Default Constructor
     public Event() {
@@ -30,8 +29,7 @@ public class Event {
     public Event(Long suKienId, String tenSuKien, String moTa, String diaDiem, String anhBia,
                  Long loaiSuKienId, Long nguoiToChucId, Date thoiGianBatDau,
                  Date thoiGianKetThuc, String loaiSuKien, String matKhauSuKienRiengTu,
-                 String trangThaiPheDuyet, String trangThaiThoiGian,
-                 Integer soLuongToiDa, Integer soLuongDaDangKy, Date ngayTao) {
+                 Integer soLuongToiDa, Integer soLuongDaDangKy, Date ngayTao, String trangThaiThoiGian,String trangThaiPheDuyet) {
 
         this.suKienId = suKienId;
         this.tenSuKien = tenSuKien;
@@ -44,12 +42,14 @@ public class Event {
         this.thoiGianKetThuc = thoiGianKetThuc;
         this.loaiSuKien = loaiSuKien;
         this.matKhauSuKienRiengTu = matKhauSuKienRiengTu;
-        this.trangThaiPheDuyet = trangThaiPheDuyet;
-        this.trangThaiThoiGian = trangThaiThoiGian;
         this.soLuongToiDa = soLuongToiDa;
         this.soLuongDaDangKy = soLuongDaDangKy;
         this.ngayTao = ngayTao;
+        this.trangThaiThoiGian = trangThaiThoiGian;
+        this.trangThaiPheDuyet = trangThaiPheDuyet;
     }
+
+
 
     // Getters and Setters
     public Long getSuKienId() {

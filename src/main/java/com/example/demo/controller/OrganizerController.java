@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Event;
 import com.example.demo.model.LoaiSuKien;
+import com.example.demo.model.Notification;
 import com.example.demo.model.Registration;
 import com.example.demo.model.User;
 import com.example.demo.service.EventService;
 import com.example.demo.service.EventSuggestionService;
 import com.example.demo.service.LoaiSuKienService;
+import com.example.demo.service.NotificationService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +47,9 @@ public class OrganizerController {
 
     @Autowired
     private EventSuggestionService eventSuggestionService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     //@Autowired
     //private FileStorageService fileStorageService; // Để handle upload anhBia
@@ -202,12 +207,18 @@ public class OrganizerController {
             // Set lại organizerId từ session để đảm bảo an toàn
             event.setNguoiToChucId(organizerId);
             
+            // Xử lý ảnh bìa: nếu có file mới thì cập nhật, nếu không thì để null
+            // Repository sẽ tự động giữ lại ảnh cũ nếu ảnh mới là null
             if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
                 String fileName = "C:/Users/longl/OneDrive/Pictures/Modern_14-15_GG_Wallpaper_preload_3840x2160.jpg";
                 event.setAnhBia(fileName);
             } else {
-                event.setAnhBia(existing.getAnhBia());
+                // Để null để repository giữ lại ảnh cũ
+                event.setAnhBia(null);
             }
+            
+            // Giữ lại trạng thái phê duyệt từ sự kiện cũ
+            event.setTrangThaiPheDuyet(existing.getTrangThaiPheDuyet());
             
             eventService.updateSuKien(event);
             return ResponseEntity.ok(new HashMap<>() {{
@@ -222,8 +233,8 @@ public class OrganizerController {
                 put("message", "Lỗi khi xử lý dữ liệu: " + e.getMessage());
             }});
         }
-    }
-
+    }   
+    
     // API delete event
     @PostMapping("/api/events/delete")
     public ResponseEntity<Map<String, Object>> deleteEvent(@RequestBody Map<String, Long> request, HttpSession session) {
@@ -296,23 +307,23 @@ public class OrganizerController {
         ));
     }
 
-    // API update attendance
-    @PostMapping("/api/attendance/update")
-    public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request, HttpSession session) {
-        Long organizerId = (Long) session.getAttribute("userId");
-        if (organizerId == null) {
-            return ResponseEntity.status(401).build();
-        }
-        Long dangKyId = Long.parseLong(request.get("dangKyId").toString());
-        boolean trangThaiDiemDanh = Boolean.parseBoolean(request.get("trangThaiDiemDanh").toString());
-        // Kiểm tra quyền (dangKyId thuộc event của organizer)
-        // Giả sử service handle
-        registrationService.updateAttendance(dangKyId, trangThaiDiemDanh);
-        return ResponseEntity.ok(new HashMap<>() {{
-            put("success", true);
-            put("message", "Cập nhật điểm danh thành công!");
-        }});
-    }
+    // // API update attendance
+    // @PostMapping("/api/attendance/update")
+    // public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request, HttpSession session) {
+    //     Long organizerId = (Long) session.getAttribute("userId");
+    //     if (organizerId == null) {
+    //         return ResponseEntity.status(401).build();
+    //     }
+    //     Long dangKyId = Long.parseLong(request.get("dangKyId").toString());
+    //     boolean trangThaiDiemDanh = Boolean.parseBoolean(request.get("trangThaiDiemDanh").toString());
+    //     // Kiểm tra quyền (dangKyId thuộc event của organizer)
+    //     // Giả sử service handle
+    //     registrationService.updateAttendance(dangKyId, trangThaiDiemDanh);
+    //     return ResponseEntity.ok(new HashMap<>() {{
+    //         put("success", true);
+    //         put("message", "Cập nhật điểm danh thành công!");
+    //     }});
+    // }
     /*
     // API analytics stats
     @GetMapping("/api/analytics/stats")
@@ -705,6 +716,106 @@ public class OrganizerController {
 
 
 
-    
+    // API lấy thông báo
+    @GetMapping("/api/notifications")
+    public ResponseEntity<List<Notification>> getNotifications(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(notificationService.getNotificationsByUser(userId));
+    }
+
+    // API đánh dấu đã đọc một thông báo
+    @PostMapping("/api/notifications/mark-as-read")
+    public ResponseEntity<Map<String, Object>> markAsRead(@RequestBody Map<String, Long> request, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        Long thongBaoId = request.get("thongBaoId");
+        notificationService.markAsRead(thongBaoId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã đánh dấu đã đọc"));
+    }
+
+    // API đánh dấu tất cả đã đọc
+    @PostMapping("/api/notifications/mark-all-read")
+    public ResponseEntity<Map<String, Object>> markAllAsRead(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        notificationService.markAllAsRead(userId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã đánh dấu tất cả là đã đọc"));
+    }
+
+    // API cập nhật điểm danh (sửa lại để tránh lỗi)
+    @PostMapping("/api/attendance/update")
+    public ResponseEntity<Map<String, Object>> updateAttendance(@RequestBody Map<String, Object> request, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        try {
+            Long dangKyId = null;
+            Boolean trangThaiDiemDanh = null;
+            
+            // Xử lý dangKyId
+            Object dangKyIdObj = request.get("dangKyId");
+            if (dangKyIdObj instanceof Number) {
+                dangKyId = ((Number) dangKyIdObj).longValue();
+            } else if (dangKyIdObj instanceof String) {
+                dangKyId = Long.parseLong((String) dangKyIdObj);
+            }
+            
+            // Xử lý trangThaiDiemDanh
+            Object trangThaiObj = request.get("trangThaiDiemDanh");
+            if (trangThaiObj instanceof Boolean) {
+                trangThaiDiemDanh = (Boolean) trangThaiObj;
+            } else if (trangThaiObj instanceof String) {
+                trangThaiDiemDanh = Boolean.parseBoolean((String) trangThaiObj);
+            } else if (trangThaiObj instanceof Number) {
+                trangThaiDiemDanh = ((Number) trangThaiObj).intValue() == 1;
+            }
+            
+            if (dangKyId == null || trangThaiDiemDanh == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Thiếu thông tin dangKyId hoặc trangThaiDiemDanh"
+                ));
+            }
+            
+            // Kiểm tra quyền (dangKyId thuộc event của organizer)
+            // Giả sử service handle
+            registrationService.updateAttendance(dangKyId, trangThaiDiemDanh);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật điểm danh thành công!"));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Lỗi khi cập nhật điểm danh: " + e.getMessage()
+            ));
+        }
+    }
+
+    // API đăng xuất
+    @PostMapping("/logout")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> logout(HttpSession session) {
+        try {
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId != null) {
+                // Ghi log đăng xuất
+                userService.logout(userId);
+            }
+            
+            session.invalidate();
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đăng xuất thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi đăng xuất"));
+        }
+    }
 
 }

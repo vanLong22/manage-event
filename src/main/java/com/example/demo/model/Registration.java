@@ -11,10 +11,10 @@ public class Registration {
     private String ghiChu;
     private String trangThaiDiemDanh;
 
-    private Event suKien;
+    // private Event suKien;
 
-    public Event getSuKien() { return suKien; }
-    public void setSuKien(Event suKien) { this.suKien = suKien; }
+    // public Event getSuKien() { return suKien; }
+    // public void setSuKien(Event suKien) { this.suKien = suKien; }
 
     private User user;
 

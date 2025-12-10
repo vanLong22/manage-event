@@ -56,8 +56,6 @@
             transition: var(--transition);
             box-shadow: var(--box-shadow);
             z-index: 100;
-
-            /* Thêm các thuộc tính sau để cố định */
             position: sticky;
             top: 0;
             height: 100vh;
@@ -203,6 +201,12 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-info:hover .dropdown-content {
+            display: block;
         }
 
         .user-avatar {
@@ -226,6 +230,35 @@
         .user-details p {
             font-size: 13px;
             color: var(--gray);
+        }
+
+        /* Dropdown menu */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            min-width: 180px;
+            box-shadow: var(--box-shadow);
+            border-radius: 8px;
+            z-index: 1000;
+            padding: 10px 0;
+        }
+
+        .dropdown-content a {
+            color: var(--dark);
+            padding: 10px 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--primary-light);
+            color: var(--primary);
         }
 
         /* Dashboard Cards */
@@ -310,11 +343,52 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .section-title {
             font-size: 20px;
             font-weight: 700;
+        }
+
+        /* Subtab Navigation */
+        .subtab-nav {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 5px;
+        }
+
+        .subtab-btn {
+            padding: 8px 20px;
+            border: none;
+            background: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray);
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: var(--transition);
+        }
+
+        .subtab-btn.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .subtab-btn:hover:not(.active) {
+            color: var(--dark);
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .subtab-content {
+            display: none;
+        }
+
+        .subtab-content.active {
+            display: block;
         }
 
         .btn {
@@ -498,11 +572,26 @@
             overflow: hidden;
             box-shadow: var(--box-shadow);
             transition: var(--transition);
+            cursor: pointer;
+            position: relative;
         }
 
         .event-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-source-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background-color: var(--primary);
+            color: white;
         }
 
         .event-image {
@@ -547,7 +636,7 @@
             border-top: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* Modal Center Fix */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -573,7 +662,6 @@
             margin: auto;
         }
 
-        
         .modal-header {
             padding: 20px 25px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -599,7 +687,6 @@
             padding: 25px;
         }
 
-        /* Ensure modal is centered on mobile */
         @media (max-width: 768px) {
             .modal {
                 padding: 10px;
@@ -748,18 +835,6 @@
             }
         }
 
-
-        .event-card {
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .event-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-
         /* Đảm bảo các nút hành động vẫn hoạt động bình thường */
         .event-card .action-buttons {
             cursor: default;
@@ -778,6 +853,22 @@
             right: 20px;
             z-index: 2000;
             pointer-events: none;
+        }
+
+        .toast {
+            background: var(--danger);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 5px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateY(-20px);
+            max-width: 300px;
+            word-wrap: break-word;
         }
 
         /* form cho chức năng chỉnh sửa sự kiện */
@@ -850,25 +941,11 @@
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="#" class="menu-link" data-target="approvals">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span>Phê duyệt sự kiện</span>
-                    </a>
-                </li>
-                <li class="menu-item">
                     <a href="#" class="menu-link" data-target="analytics">
                         <i class="fas fa-chart-bar"></i>
                         <span>Thống kê</span>
                     </a>
                 </li>
-                <!--
-                <li class="menu-item">
-                    <a href="#" class="menu-link" data-target="suggestions">
-                        <i class="fas fa-lightbulb"></i>
-                        <span>Gợi ý sự kiện</span>
-                    </a>
-                </li>
-                -->
                 <li class="menu-item">
                     <a href="#" class="menu-link" data-target="settings">
                         <i class="fas fa-cog"></i>
@@ -900,6 +977,9 @@
                         <div class="user-details">
                             <h4>Quản trị viên</h4>
                             <p>Administrator</p>
+                        </div>
+                        <div class="dropdown-content">
+                            <a href="#" id="btn-logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
                         </div>
                     </div>
                 </div>
@@ -968,11 +1048,12 @@
                             </select>
                         </div>
                         <div class="filter-group">
-                            <label for="user-status">Trạng thái</label>
-                            <select id="user-status">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="active">Đang hoạt động</option>
-                                <option value="inactive">Đã khóa</option>
+                            <label for="user-gender">Giới tính</label>
+                            <select id="user-gender">
+                                <option value="">Tất cả</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nu">Nữ</option>
+                                <option value="Khac">Khác</option>
                             </select>
                         </div>
                     </div>
@@ -986,6 +1067,7 @@
                                 <th>Email</th>
                                 <th>Số điện thoại</th>
                                 <th>Vai trò</th>
+                                <th>Giới tính</th>
                                 <th>Ngày đăng ký</th>
                                 <th>Trạng thái</th>
                                 <th>Thao tác</th>
@@ -1002,61 +1084,83 @@
             <div id="events" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Quản lý sự kiện</h3>
-                </div>
-
-                <div class="filter-section">
-                    <div class="filter-row">
-                        <div class="filter-group">
-                            <label for="event-status">Trạng thái</label>
-                            <select id="event-status">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="SapDienRa">Sắp diễn ra</option>
-                                <option value="DangDienRa">Đang diễn ra</option>
-                                <option value="DaKetThuc">Đã kết thúc</option>
-                                <option value="Huy">Đã hủy</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="event-type">Loại sự kiện</label>
-                            <select id="event-type">
-                                <option value="">Tất cả loại</option>
-                                <option value="CongKhai">Công khai</option>
-                                <option value="RiengTu">Riêng tư</option>
-                            </select>
-                        </div>
+                    <div class="subtab-nav">
+                        <button class="subtab-btn active" data-subtab="events-list">Tất cả sự kiện</button>
+                        <button class="subtab-btn" data-subtab="events-approval">Phê duyệt sự kiện</button>
                     </div>
                 </div>
 
-                <div class="table-container">
-                    <table id="events-table">
-                        <thead>
-                            <tr>
-                                <th>Tên sự kiện</th>
-                                <th>Người tổ chức</th>
-                                <th>Ngày diễn ra</th>
-                                <th>Địa điểm</th>
-                                <th>Loại sự kiện</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="events-tbody">
-                            <!-- Events data will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                <!-- Subtab: All Events -->
+                <div id="events-list" class="subtab-content active">
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="event-status">Trạng thái</label>
+                                <select id="event-status">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="SapDienRa">Sắp diễn ra</option>
+                                    <option value="DangDienRa">Đang diễn ra</option>
+                                    <option value="DaKetThuc">Đã kết thúc</option>
+                                    <option value="Huy">Đã hủy</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="event-type">Loại sự kiện</label>
+                                <select id="event-type">
+                                    <option value="">Tất cả loại</option>
+                                    <option value="CongKhai">Công khai</option>
+                                    <option value="RiengTu">Riêng tư</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- Approvals Content -->
-            <div id="approvals" class="content-section">
-                <div class="section-header">
-                    <h3 class="section-title">Phê duyệt sự kiện</h3>
-                    <div>
-                        <span class="status pending" id="pending-count">0 sự kiện chờ duyệt</span>
+                    <div class="table-container">
+                        <table id="events-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên sự kiện</th>
+                                    <th>Người tổ chức</th>
+                                    <th>Ngày diễn ra</th>
+                                    <th>Địa điểm</th>
+                                    <th>Loại sự kiện</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-tbody">
+                                <!-- Events data will be loaded here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div id="pending-events-list" class="events-grid">
-                    <!-- Pending events will be loaded here -->
+
+                <!-- Subtab: Event Approval -->
+                <div id="events-approval" class="subtab-content">
+                    <div class="filter-section">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="approval-source">Nguồn sự kiện</label>
+                                <select id="approval-source">
+                                    <option value="">Tất cả</option>
+                                    <option value="organizer">Sự kiện từ Organizer</option>
+                                    <option value="suggestion">Đề xuất từ Joiner</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="approval-status">Trạng thái</label>
+                                <select id="approval-status">
+                                    <option value="ChoDuyet">Chờ duyệt</option>
+                                    <option value="DaDuyet">Đã duyệt</option>
+                                    <option value="TuChoi">Từ chối</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="approval-events-list" class="events-grid">
+                        <!-- Approval events will be loaded here -->
+                    </div>
                 </div>
             </div>
 
@@ -1081,14 +1185,12 @@
                     </div>
                 </div>
                 
-                <!-- hiển thị biểu đồ -->
+                <!-- Charts Section -->
                 <div class="charts-section" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
-                    <!--
                     <div class="chart-card">
                         <h4>Biểu Đồ Sự Kiện Theo Loại</h4>
                         <img id="events-by-type-chart" style="width: 100%; height: auto;">
                     </div>
-                    -->
                     <div class="chart-card">
                         <h4>Biểu Đồ Người Dùng Theo Vai Trò</h4>
                         <img id="users-by-role-chart" style="width: 100%; height: auto;">
@@ -1104,40 +1206,6 @@
                     <div class="chart-card">
                         <h4>Biểu Đồ Đăng Ký Theo Thời Gian</h4>
                         <img id="registrations-line-chart" style="width: 100%; height: auto;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Suggestions Content -->
-            <div id="suggestions" class="content-section">
-                <div class="section-header">
-                    <h3 class="section-title">Quản lý gợi ý sự kiện</h3>
-                    <button class="btn btn-primary" id="btn-save-suggestion-config">
-                        <i class="fas fa-cog"></i> Lưu cấu hình
-                    </button>
-                </div>
-
-                <div class="form-group">
-                    <label for="suggestion-algorithm">Thuật toán gợi ý</label>
-                    <select id="suggestion-algorithm">
-                        <option value="collaborative">Lọc cộng tác (Collaborative Filtering)</option>
-                        <option value="content-based">Dựa trên nội dung (Content-Based)</option>
-                        <option value="hybrid">Kết hợp (Hybrid)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Yếu tố ưu tiên</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" id="factor-history" checked> Lịch sử tìm kiếm
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" id="factor-participation" checked> Sự kiện đã tham gia
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px;">
-                            <input type="checkbox" id="factor-preferences" checked> Sở thích người dùng
-                        </label>
                     </div>
                 </div>
             </div>
@@ -1271,15 +1339,28 @@
         </div>
     </div>
 
+    <!-- Suggestion Detail Modal -->
+    <div class="modal" id="suggestion-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chi tiết đề xuất sự kiện</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="suggestion-modal-content">
+                    <!-- Suggestion details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
     <script>
     // Global variables
     let currentUsers = [];
     let currentEvents = [];
-
-    // Thêm toast container vào body nếu chưa có
-    if ($('#toast-container').length == 0) {
-        $('body').append('<div class="toast-container" id="toast-container"></div>');
-    }
 
     // Hàm hiển thị thông báo toast
     function showToast(message, isSuccess = false) {
@@ -1353,9 +1434,6 @@
                 case 'events':
                     loadEvents();
                     break;
-                case 'approvals':
-                    loadPendingEvents();
-                    break;
                 case 'analytics':
                     loadAnalytics();
                     break;
@@ -1364,20 +1442,40 @@
             updatePageTitle(target);
         });
 
+        // Subtab navigation
+        $(document).on('click', '.subtab-btn', function() {
+            const $container = $(this).closest('.content-section');
+            const subtab = $(this).data('subtab');
+            
+            // Hide all subtabs
+            $container.find('.subtab-btn').removeClass('active');
+            $container.find('.subtab-content').removeClass('active');
+            
+            // Show selected subtab
+            $(this).addClass('active');
+            $container.find('#' + subtab).addClass('active');
+            
+            // Load data for subtab
+            if (subtab === 'events-approval') {
+                loadApprovalEvents();
+            }
+        });
+
         // Global search
         $('#global-search').on('input', function() {
             const searchTerm = $(this).val().toLowerCase();
             filterTables(searchTerm);
         });
 
-        // Modal functionality
+        
+        // Cập nhật sự kiện đóng modal
         $('.close-modal').click(function() {
-            $('#user-modal, #event-modal, #edit-event-modal').hide();
+            $('#user-modal, #event-modal, #edit-event-modal, #suggestion-modal').hide();
         });
 
         $(window).click(function(e) {
             if ($(e.target).hasClass('modal')) {
-                $('#user-modal, #event-modal, #edit-event-modal').hide();
+                $('#user-modal, #event-modal, #edit-event-modal, #suggestion-modal').hide();
             }
         });
 
@@ -1386,28 +1484,12 @@
             loadAllEvents();
         });
 
-        $('#btn-export-users').click(function() {
-            exportUsers();
-        });
-
-        $('#btn-export-events').click(function() {
-            exportEvents();
-        });
-
-        $('#btn-download-report').click(function() {
-            downloadReport();
-        });
-
-        $('#btn-save-suggestion-config').click(function() {
-            saveSuggestionConfig();
-        });
-
         $('#btn-save-settings').click(function() {
             saveSystemSettings();
         });
 
         // Filter events
-        $('#user-role, #user-status').change(function() {
+        $('#user-role, #user-gender').change(function() {
             loadUsers();
         });
 
@@ -1415,62 +1497,91 @@
             loadEvents();
         });
 
+        $('#approval-source, #approval-status').change(function() {
+            loadApprovalEvents();
+        });
+
         // Event delegation for dynamic content
-        $(document).on('click', '.btn-view-user', function() {
+        $(document).on('click', '.btn-view-user', function(e) {
+            e.stopPropagation();
             const userId = $(this).data('user-id');
             viewUser(userId);
         });
 
-        $(document).on('click', '.btn-toggle-user-status', function() {
+        $(document).on('click', '.btn-toggle-user-status', function(e) {
+            e.stopPropagation();
             const userId = $(this).data('user-id');
             const isActive = $(this).data('is-active');
             toggleUserStatus(userId, isActive);
         });
 
-        $(document).on('click', '.btn-approve-event', function() {
+        $(document).on('click', '.btn-view-event', function(e) {
+            e.stopPropagation();
             const eventId = $(this).data('event-id');
-            approveEvent(eventId);
+            viewEvent(eventId);
         });
 
-        $(document).on('click', '.btn-reject-event', function() {
+        $(document).on('click', '.btn-approve-event', function(e) {
+            e.stopPropagation();
             const eventId = $(this).data('event-id');
-            rejectEvent(eventId);
+            const source = $(this).data('source');
+            if (source === 'suggestion') {
+                approveSuggestion(eventId);
+            } else {
+                approveEvent(eventId, source);
+            }
         });
 
-        $(document).on('click', '.btn-delete-event', function() {
+        $(document).on('click', '.btn-reject-event', function(e) {
+            e.stopPropagation();
             const eventId = $(this).data('event-id');
-            deleteEvent(eventId);
+            const source = $(this).data('source');
+            if (source === 'suggestion') {
+                rejectSuggestion(eventId);
+            } else {
+                rejectEvent(eventId, source);
+            }
         });
-     
-        // Thêm sự kiện click cho card sự kiện
+
         $(document).on('click', '.event-card', function(e) {
-            // Ngăn chặn sự kiện khi click vào các nút hành động
+            // Ngăn sự kiện khi click vào các nút hành động
             if ($(e.target).closest('.action-btn').length == 0) {
-                const eventId = $(this).find('.btn-view-event').data('event-id') || 
-                            $(this).closest('[data-event-id]').data('event-id') ||
-                            $(this).data('event-id');
-                if (eventId) {
-                    viewEvent(eventId);
+                // Kiểm tra nếu có class no-modal (sự kiện gần đây) thì không mở modal
+                if ($(this).hasClass('no-modal')) {
+                    return;
+                }
+                
+                const eventId = $(this).data('event-id');
+                const source = $(this).data('source');
+                
+                console.log('Event card clicked:', { eventId, source });
+                
+                if (eventId && source) {
+                    if (source === 'suggestion') {
+                        viewSuggestion(eventId);
+                    } else {
+                        viewEvent(eventId);
+                    }
                 }
             }
         });
 
-        // Thêm vào hàm setupEventListeners()
-        $(document).on('click', '.btn-view-event', function(e) {
-            e.stopPropagation(); // Ngăn sự kiện nổi bọt
-            const eventId = $(this).data('event-id');
-            if (eventId) {
-                viewEvent(eventId);
+        // Đăng xuất
+        $('#btn-logout').click(function(e) {
+            e.preventDefault();
+            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                $.post('/admin/api/logout', function(response) {
+                    if (response.success) {
+                        window.location.href = '/login';
+                    } else {
+                        showToast('Lỗi đăng xuất: ' + response.message, false);
+                    }
+                }).fail(function(xhr, status, error) {
+                    console.error('Error logging out:', error);
+                    showToast('Lỗi đăng xuất: ' + error, false);
+                });
             }
         });
-
-        // Sự kiện cho nút chỉnh sửa sự kiện trong modal
-        $(document).on('click', '.btn-edit-event', function() {
-            const eventId = $(this).data('event-id');
-            openEditEventModal(eventId);
-        });
-
-
     }
 
     function updatePageTitle(section) {
@@ -1478,9 +1589,7 @@
             'dashboard': ['Tổng quan hệ thống', 'Quản lý và giám sát toàn bộ hệ thống EventHub'],
             'users': ['Quản lý người dùng', 'Quản lý tài khoản người dùng và phân quyền'],
             'events': ['Quản lý sự kiện', 'Quản lý và giám sát tất cả sự kiện'],
-            'approvals': ['Phê duyệt sự kiện', 'Xem xét và phê duyệt sự kiện mới'],
             'analytics': ['Thống kê hệ thống', 'Phân tích và báo cáo hệ thống'],
-            'suggestions': ['Gợi ý sự kiện', 'Quản lý thuật toán gợi ý sự kiện'],
             'settings': ['Cài đặt hệ thống', 'Cấu hình hệ thống và tùy chọn']
         };
         
@@ -1520,14 +1629,14 @@
 
     function loadUsers() {
         const role = $('#user-role').val();
-        const status = $('#user-status').val();
+        const gender = $('#user-gender').val();
         
-        const filters = { role: role, status: status };
+        const filters = { role: role, gender: gender };
         
         // Hiển thị loading
         $('#users-tbody').html(`
             <tr>
-                <td colspan="7" style="text-align: center; padding: 40px;">
+                <td colspan="8" style="text-align: center; padding: 40px;">
                     <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary); margin-bottom: 10px;"></i>
                     <p>Đang tải danh sách người dùng...</p>
                 </td>
@@ -1539,7 +1648,7 @@
             let html = '';
             
             if (users.length == 0) {
-                html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray);">' +
+                html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray);">' +
                     '<i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px;"></i>' +
                     '<h3>Không tìm thấy người dùng</h3>' +
                     '<p>Không có người dùng nào phù hợp với bộ lọc của bạn.</p>' +
@@ -1554,12 +1663,14 @@
                              user.vaiTro === 'Admin' ? 'Quản trị viên' :
                              user.vaiTro === 'NguoiDung' ? 'Người dùng' :
                              'Không xác định';
+                    const genderText = user.gioiTinh || 'N/A';
 
                     html += '<tr>' +
-                            '<td>' + (user.hoTen) + '</td>' +
-                            '<td>' + user.email + '</td>' +
-                            '<td>' + (user.soDienThoai) + '</td>' +
+                            '<td>' + (user.hoTen || 'N/A') + '</td>' +
+                            '<td>' + (user.email || 'N/A') + '</td>' +
+                            '<td>' + (user.soDienThoai || 'N/A') + '</td>' +
                             '<td>' + roleText + '</td>' +
+                            '<td>' + genderText + '</td>' +
                             '<td>' + registrationDate + '</td>' +
                             '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
                             '<td class="action-buttons">' +
@@ -1582,7 +1693,7 @@
             showToast('Lỗi tải danh sách người dùng: ' + error, false);
             $('#users-tbody').html(`
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
                         <h3>Lỗi tải dữ liệu</h3>
                         <p>Không thể tải danh sách người dùng.</p>
@@ -1602,7 +1713,7 @@
         // Hiển thị loading
         $('#events-tbody').html(`
             <tr>
-                <td colspan="8" style="text-align: center; padding: 40px;">
+                <td colspan="7" style="text-align: center; padding: 40px;">
                     <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary); margin-bottom: 10px;"></i>
                     <p>Đang tải danh sách sự kiện...</p>
                 </td>
@@ -1614,35 +1725,25 @@
             let html = '';
             
             if (events.length == 0) {
-                html = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray);">' +
+                html = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray);">' +
                     '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
                     '<h3>Không tìm thấy sự kiện</h3>' +
                     '<p>Không có sự kiện nào phù hợp với bộ lọc của bạn.</p>' +
                     '</td></tr>';
             } else {
                 events.forEach(function(event) {
-                    const statusClass = getEventStatusClass(event.trangThai);
-                    const statusText = getEventStatusText(event.trangThai);
+                    const statusClass = getEventStatusClass(event.trangThaiPheDuyet);
+                    const statusText = getEventStatusText(event.trangThaiPheDuyet);
                     const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                     const eventType = event.loaiSuKien == 'CongKhai' ? 'Công khai' : 'Riêng tư';
                     
-                    // Kiểm tra xem có cần cập nhật trạng thái không
-                    const needsUpdate = event.needsStatusUpdate;
-                    const realTimeStatusText = getEventStatusText(event.realTimeStatus);
-                    
                     html += '<tr class="event-row" data-event-id="' + event.suKienId + '">' +
-                        '<td>' + event.tenSuKien + '</td>' +
-                        '<td>' + event.organizerName + '</td>' +
+                        '<td>' + (event.tenSuKien || 'N/A') + '</td>' +
+                        '<td>' + (event.organizerName || 'N/A') + '</td>' +
                         '<td>' + eventDate + '</td>' +
-                        '<td>' + event.diaDiem + '</td>' +
+                        '<td>' + (event.diaDiem || 'N/A') + '</td>' +
                         '<td>' + eventType + '</td>' +
-                        '<td>' +
-                            '<span class="status ' + statusClass + '">' + statusText + '</span>' +
-                            (needsUpdate ? 
-                                '<div class="status-warning" title="Trạng thái thực tế: ' + realTimeStatusText + '">' +
-                                '<i class="fas fa-exclamation-triangle"></i>' +
-                                '</div>' : '') +
-                        '</td>' +
+                        '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
                         '<td class="action-buttons">' +
                             '<div class="action-btn btn-view-event" data-event-id="' + event.suKienId + '" title="Xem chi tiết">' +
                                 '<i class="fas fa-eye"></i>' +
@@ -1650,10 +1751,6 @@
                             '<div class="action-btn btn-edit-event" data-event-id="' + event.suKienId + '" title="Chỉnh sửa">' +
                                 '<i class="fas fa-edit"></i>' +
                             '</div>' +
-                            (needsUpdate ? 
-                                '<div class="action-btn btn-sync-status" data-event-id="' + event.suKienId + '" title="Đồng bộ trạng thái (' + realTimeStatusText + ')">' +
-                                    '<i class="fas fa-sync-alt"></i>' +
-                                '</div>' : '') +
                             '<div class="action-btn btn-delete-event" data-event-id="' + event.suKienId + '" title="Xóa">' +
                                 '<i class="fas fa-trash"></i>' +
                             '</div>' +
@@ -1667,7 +1764,7 @@
             showToast('Lỗi tải danh sách sự kiện: ' + error, false);
             $('#events-tbody').html(`
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
                         <h3>Lỗi tải dữ liệu</h3>
                         <p>Không thể tải danh sách sự kiện.</p>
@@ -1677,73 +1774,119 @@
         });
     }
 
-    // Hàm đồng bộ trạng thái
-    function syncEventStatus(eventId) {
-        $.post('/admin/api/events/' + eventId + '/sync-status', function(response) {
-            if (response.success) {
-                showToast(response.message, true);
-                loadEvents(); // Reload danh sách
-            } else {
-                showToast(response.message, false);
-            }
-        }).fail(function(xhr, status, error) {
-            console.error('Error syncing event status:', error);
-            showToast('Lỗi đồng bộ trạng thái: ' + error, false);
-        });
-    }
-
-    // Thêm event listener cho nút đồng bộ
-    $(document).on('click', '.btn-sync-status', function() {
-        const eventId = $(this).data('event-id');
-        syncEventStatus(eventId);
-    });
-
-    function loadPendingEvents() {
-        $.get('/admin/api/events/pending', function(data) {
-            $('#pending-count').text(data.length + ' sự kiện chờ duyệt');
+    // Load sự kiện chờ duyệt
+    function loadApprovalEvents() {
+        const source = $('#approval-source').val();
+        const status = $('#approval-status').val();
+        
+        // Hiển thị loading
+        $('#approval-events-list').html(`
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--primary); margin-bottom: 10px;"></i>
+                <p>Đang tải danh sách sự kiện chờ duyệt...</p>
+            </div>
+        `);
+        
+        $.get('/admin/api/events/pending', { source: source, status: status }, function(data) {
             let html = '';
             
-            if (data.length == 0) {
+            // Kiểm tra xem có dữ liệu không
+            const hasOrganizerEvents = data.organizerEvents && data.organizerEvents.length > 0;
+            const hasSuggestionEvents = data.suggestionEvents && data.suggestionEvents.length > 0;
+            
+            if (!hasOrganizerEvents && !hasSuggestionEvents) {
                 html = '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
                     '<i class="fas fa-clipboard-check" style="font-size: 48px; margin-bottom: 15px;"></i>' +
-                    '<h3>Không có sự kiện chờ duyệt</h3>' +
-                    '<p>Tất cả sự kiện đã được xử lý.</p>' +
+                    '<h3>Không có sự kiện</h3>' +
+                    '<p>Không tìm thấy sự kiện nào phù hợp với bộ lọc của bạn.</p>' +
                     '</div>';
             } else {
-                data.forEach(function(event) {
-                    const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
-                    
-                    html += '<div class="event-card" data-event-id="' + event.suKienId + '">' +
-                        '<div class="event-image">' +
-                            '<i class="fas fa-calendar-alt"></i>' +
-                        '</div>' +
-                        '<div class="event-content">' +
-                            '<h4 class="event-title">' + event.tenSuKien + '</h4>' +
-                            '<div class="event-meta">' +
-                                '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
-                                '<span><i class="fas fa-map-marker-alt"></i> ' + event.diaDiem + '</span>' +
-                            '</div>' +
-                            '<p>' + (event.moTa ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : 'Không có mô tả') + '</p>' +
-                            '<div class="event-footer">' +
-                                '<div class="action-buttons">' +
-                                    '<div class="action-btn btn-approve-event" data-event-id="' + event.suKienId + '" title="Phê duyệt">' +
-                                        '<i class="fas fa-check"></i>' +
-                                    '</div>' +
-                                    '<div class="action-btn btn-reject-event" data-event-id="' + event.suKienId + '" title="Từ chối">' +
-                                        '<i class="fas fa-times"></i>' +
-                                    '</div>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>';
-                });
+                // Hiển thị sự kiện từ organizer
+                if (hasOrganizerEvents) {
+                    data.organizerEvents.forEach(function(event) {
+                        html += createApprovalEventCard(event, 'organizer');
+                    });
+                }
+                
+                // Hiển thị đề xuất từ joiner
+                if (hasSuggestionEvents) {
+                    data.suggestionEvents.forEach(function(event) {
+                        html += createApprovalEventCard(event, 'suggestion');
+                    });
+                }
             }
-            $('#pending-events-list').html(html);
+            
+            $('#approval-events-list').html(html);
         }).fail(function(xhr, status, error) {
-            console.error('Error loading pending events:', error);
+            console.error('Error loading approval events:', error);
             showToast('Lỗi tải sự kiện chờ duyệt: ' + error, false);
+            $('#approval-events-list').html(`
+                <div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--danger);">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <h3>Lỗi tải dữ liệu</h3>
+                    <p>Không thể tải danh sách sự kiện chờ duyệt.</p>
+                </div>
+            `);
         });
     }
+
+    function createApprovalEventCard(event, source) {
+        const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 
+                        (event.thoiGianDuKien ? new Date(event.thoiGianDuKien).toLocaleDateString('vi-VN') : 'N/A');
+        const sourceText = source === 'organizer' ? 'Từ Organizer' : 'Từ Joiner';
+        const organizerName = source === 'organizer' ? event.organizerName : 
+                            (event.joinerName || event.user?.hoTen || 'N/A');
+        const eventName = source === 'organizer' ? event.tenSuKien : event.tieuDe;
+        const eventDescription = source === 'organizer' ? event.moTa : event.moTaNhuCau;
+        const statusText = getApprovalStatusText(event.trangThai || event.trangThaiPheDuyet);
+        const statusClass = getApprovalStatusClass(event.trangThai || event.trangThaiPheDuyet);
+        
+        // QUAN TRỌNG: Sửa cách lấy eventId
+        const eventId = source === 'organizer' ? event.suKienId : (event.dangSuKienId || event.suKienId);
+        
+        return '<div class="event-card" data-event-id="' + eventId + '" data-source="' + source + '">' +
+            '<div class="event-source-badge" style="background-color: ' + 
+                (source === 'organizer' ? 'var(--primary)' : 'var(--secondary)') + '">' + 
+                sourceText + '</div>' +
+            '<div class="event-image">' +
+                '<i class="fas ' + (source === 'organizer' ? 'fa-calendar-alt' : 'fa-lightbulb') + '"></i>' +
+            '</div>' +
+            '<div class="event-content">' +
+                '<h4 class="event-title">' + (eventName || 'N/A') + '</h4>' +
+                '<div class="event-meta">' +
+                    '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
+                    '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'N/A') + '</span>' +
+                '</div>' +
+                '<p><strong>Người gửi:</strong> ' + organizerName + '</p>' +
+                '<p><strong>Trạng thái:</strong> <span class="status ' + statusClass + '">' + statusText + '</span></p>' +
+                '<p>' + ((eventDescription) ? 
+                    (eventDescription.length > 100 ? eventDescription.substring(0, 100) + '...' : eventDescription) : 
+                    'Không có mô tả') + '</p>' +
+                '<div class="event-footer">' +
+                    '<div class="action-buttons">' +
+                        (statusText === 'Chờ duyệt' ? 
+                            '<div class="action-btn btn-approve-event" data-event-id="' + eventId + '" data-source="' + source + '" title="Phê duyệt">' +
+                                '<i class="fas fa-check"></i>' +
+                            '</div>' +
+                            '<div class="action-btn btn-reject-event" data-event-id="' + eventId + '" data-source="' + source + '" title="Từ chối">' +
+                                '<i class="fas fa-times"></i>' +
+                            '</div>' : ''
+                        ) +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    $(document).on('click', '.btn-approve-suggestion', function() {
+        const suggestionId = $(this).data('suggestion-id');
+        approveEvent(suggestionId, 'suggestion');
+    });
+
+    $(document).on('click', '.btn-reject-suggestion', function() {
+        const suggestionId = $(this).data('suggestion-id');
+        rejectEvent(suggestionId, 'suggestion');
+    });
 
     function displayRecentEvents(events) {
         let html = '';
@@ -1756,11 +1899,12 @@
                 '</div>';
         } else {
             events.forEach(function(event) {
-                const statusClass = getEventStatusClass(event.trangThai);
-                const statusText = getEventStatusText(event.trangThai);
+                const statusClass = getEventStatusClass(event.trangThaiPheDuyet || event.trangThai);
+                const statusText = getEventStatusText(event.trangThaiPheDuyet || event.trangThai);
                 const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                 
-                html += '<div class="event-card" data-event-id="' + event.suKienId + '">' +
+                // Thêm class để phân biệt với sự kiện có thể click
+                html += '<div class="event-card no-modal" data-event-id="' + event.suKienId + '">' +
                     '<div class="event-image">' +
                         '<i class="fas fa-calendar-alt"></i>' +
                     '</div>' +
@@ -1828,6 +1972,9 @@
             
             '<div class="form-group" style="margin-top: 20px;">' +
                 '<button class="btn ' + (user.trangThai == 1 ? 'btn-danger' : 'btn-success') + ' btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 1) + '" style="margin-left: 10px;">' +
+                '<i class="fas ' + (user.trangThai == 0 ? 'fa-unlock' : 'fa-lock') + '"></i> ' + 
+                (user.trangThai == 1 ? 'Khóa tài khoản' : 'Mở khóa tài khoản') +
+                '</button>' +
             '</div>';
             
             $('#user-modal-content').html(html);
@@ -1844,8 +1991,8 @@
             const startDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleString('vi-VN') : 'N/A';
             const endDate = event.thoiGianKetThuc ? new Date(event.thoiGianKetThuc).toLocaleString('vi-VN') : 'N/A';
             const eventType = event.loaiSuKien == 'CongKhai' ? 'Công khai' : 'Riêng tư';
-            const statusClass = getEventStatusClass(event.trangThai);
-            const statusText = getEventStatusText(event.trangThai);
+            const statusClass = getEventStatusClass(event.trangThaiPheDuyet || event.trangThai);
+            const statusText = getEventStatusText(event.trangThaiPheDuyet || event.trangThai);
             
             let html = '';
             html += '<div style="margin-bottom: 20px;">' +
@@ -1915,27 +2062,16 @@
         });
     }
 
-
-    // Thêm event delegation cho các nút trong modal
-    $(document).on('click', '.btn-approve-event', function() {
-        const eventId = $(this).data('event-id');
-        $('#event-modal').hide();
-        approveEvent(eventId);
-    });
-
-    $(document).on('click', '.btn-reject-event', function() {
-        const eventId = $(this).data('event-id');
-        $('#event-modal').hide();
-        rejectEvent(eventId);
-    });
-
     // Utility Functions - Thêm status class cho các trạng thái còn thiếu
     function getEventStatusClass(status) {
         const classes = {
             'SapDienRa': 'pending',
             'DangDienRa': 'active',
-            'DaKetThuc': 'completed',
-            'Huy': 'cancelled'
+            'DaKetThuc': 'pending',
+            'Huy': 'cancelled',
+            'ChoDuyet': 'pending',
+            'DaDuyet': 'approved',
+            'TuChoi': 'cancelled'
         };
         return classes[status] || 'pending';
     }
@@ -1945,7 +2081,28 @@
             'SapDienRa': 'Sắp diễn ra',
             'DangDienRa': 'Đang diễn ra',
             'DaKetThuc': 'Đã kết thúc',
-            'Huy': 'Đã hủy'
+            'Huy': 'Đã hủy',
+            'ChoDuyet': 'Chờ duyệt',
+            'DaDuyet': 'Đã duyệt',
+            'TuChoi': 'Từ chối'
+        };
+        return texts[status] || status;
+    }
+
+    function getApprovalStatusClass(status) {
+        const classes = {
+            'CHO_DUYET': 'pending',
+            'DaDuyet': 'approved',
+            'TuChoi': 'cancelled'
+        };
+        return classes[status] || 'pending';
+    }
+
+    function getApprovalStatusText(status) {
+        const texts = {
+            'CHO_DUYET': 'Chờ duyệt',
+            'DaDuyet': 'Đã duyệt',
+            'TuChoi': 'Từ chối'
         };
         return texts[status] || status;
     }
@@ -1976,32 +2133,6 @@
                     console.error('Error updating user status:', error);
                     showToast('Lỗi cập nhật trạng thái người dùng: ' + error, false);
                 }
-            });
-        }
-    }
-
-    function approveEvent(eventId) {
-        if (confirm('Bạn có chắc chắn muốn phê duyệt sự kiện này?')) {
-            $.post('/admin/api/events/' + eventId + '/approve', function() {
-                showToast('Đã phê duyệt sự kiện thành công', true);
-                loadPendingEvents();
-                loadDashboardData();
-            }).fail(function(xhr, status, error) {
-                console.error('Error approving event:', error);
-                showToast('Lỗi phê duyệt sự kiện: ' + error, false);
-            });
-        }
-    }
-
-    function rejectEvent(eventId) {
-        if (confirm('Bạn có chắc chắn muốn từ chối sự kiện này?')) {
-            $.post('/admin/api/events/' + eventId + '/reject', function() {
-                showToast('Đã từ chối sự kiện thành công', true);
-                loadPendingEvents();
-                loadDashboardData();
-            }).fail(function(xhr, status, error) {
-                console.error('Error rejecting event:', error);
-                showToast('Lỗi từ chối sự kiện: ' + error, false);
             });
         }
     }
@@ -2069,7 +2200,7 @@
         $(`#events-tbody tr[data-event-id="${deletedEventId}"]`).remove();
         
         // 3. Xóa sự kiện khỏi danh sách chờ duyệt
-        $(`#pending-events-list [data-event-id="${deletedEventId}"]`).remove();
+        $(`#approval-events-list [data-event-id="${deletedEventId}"]`).remove();
         
         // 4. Cập nhật counter trên dashboard
         updateDashboardCounters();
@@ -2077,8 +2208,8 @@
 
     // Hàm tạo card sự kiện
     function createEventCard(event) {
-        const statusClass = getEventStatusClass(event.trangThai);
-        const statusText = getEventStatusText(event.trangThai);
+        const statusClass = getEventStatusClass(event.trangThaiPheDuyet || event.trangThai);
+        const statusText = getEventStatusText(event.trangThaiPheDuyet || event.trangThai);
         const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
         
         return `
@@ -2130,27 +2261,6 @@
         // Có thể cần cập nhật các counter khác tùy thuộc vào trạng thái của sự kiện bị xóa
     }
 
-    // Utility Functions
-    function getEventStatusClass(status) {
-        const classes = {
-            'SapDienRa': 'pending',
-            'DangDienRa': 'approved',
-            'DaKetThuc': 'completed',
-            'Huy': 'cancelled'
-        };
-        return classes[status] || 'pending';
-    }
-
-    function getEventStatusText(status) {
-        const texts = {
-            'SapDienRa': 'Sắp diễn ra',
-            'DangDienRa': 'Đang diễn ra',
-            'DaKetThuc': 'Đã kết thúc',
-            'Huy': 'Đã hủy'
-        };
-        return texts[status] || status;
-    }
-
     function filterTables(searchTerm) {
         // Filter users table
         $('#users-tbody tr').each(function() {
@@ -2166,41 +2276,6 @@
     }
 
     // Export and other functions
-    function exportUsers() {
-        window.open('/admin/api/users/export', '_blank');
-    }
-
-    function exportEvents() {
-        window.open('/admin/api/events/export', '_blank');
-    }
-
-    function downloadReport() {
-        window.open('/admin/api/analytics/report', '_blank');
-    }
-
-    function saveSuggestionConfig() {
-        const algorithm = $('#suggestion-algorithm').val();
-        const factors = {
-            history: $('#factor-history').is(':checked'),
-            participation: $('#factor-participation').is(':checked'),
-            preferences: $('#factor-preferences').is(':checked')
-        };
-
-        $.ajax({
-            url: '/admin/api/suggestions/config',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ algorithm: algorithm, factors: factors }),
-            success: function() {
-                showToast('Đã lưu cấu hình gợi ý', true);
-            },
-            error: function(xhr, status, error) {
-                console.error('Error saving suggestion config:', error);
-                showToast('Lỗi lưu cấu hình: ' + error, false);
-            }
-        });
-    }
-
     function saveSystemSettings() {
         const systemName = $('#system-name').val();
         const systemDescription = $('#system-description').val();
@@ -2230,52 +2305,31 @@
 
     function loadAnalytics(period) {
         // Gọi API để lấy số liệu tổng quan  
-        $.get('/admin/api/analytics/stats?period=' + period, function(stats) {
+        $.get('/admin/api/analytics/stats?period=' + (period || 'month'), function(stats) {
             $('#stat-total-users').text(stats.totalUsers);
             $('#stat-active-events').text(stats.activeEvents);
             $('#stat-pending-events').text(stats.pendingEvents);
-        }).fail(function(xhr, status, error) {
-            console.error('Error loading analytics:', error);
-            showToast('Lỗi tải dữ liệu thống kê: ' + error, false);
-        });
-
-        // Gọi API để lấy biểu đồ, có thể với period (mặc định là 'month' nếu không có)
-        period = period || 'month';
-        $.get('/admin/api/analytics/stats?period=' + period, function(data) {
+            
             // Các stats khác từ prompt
-            if (data.eventsByTypeChart) {
-                $('#events-by-type-chart').attr('src', 'data:image/png;base64,' + data.eventsByTypeChart);
+            if (stats.eventsByTypeChart) {
+                $('#events-by-type-chart').attr('src', 'data:image/png;base64,' + stats.eventsByTypeChart);
             }
-            if (data.usersByRoleChart) {
-                $('#users-by-role-chart').attr('src', 'data:image/png;base64,' + data.usersByRoleChart);
+            if (stats.usersByRoleChart) {
+                $('#users-by-role-chart').attr('src', 'data:image/png;base64,' + stats.usersByRoleChart);
             }
-            if (data.genderPieChart) {
-                $('#gender-pie-chart').attr('src', 'data:image/png;base64,' + data.genderPieChart);
+            if (stats.genderPieChart) {
+                $('#gender-pie-chart').attr('src', 'data:image/png;base64,' + stats.genderPieChart);
             }
-            if (data.requestStatusPieChart) {
-                $('#request-status-pie-chart').attr('src', 'data:image/png;base64,' + data.requestStatusPieChart);
+            if (stats.requestStatusPieChart) {
+                $('#request-status-pie-chart').attr('src', 'data:image/png;base64,' + stats.requestStatusPieChart);
             }
-            if (data.registrationsLineChart) {
-                $('#registrations-line-chart').attr('src', 'data:image/png;base64,' + data.registrationsLineChart);
+            if (stats.registrationsLineChart) {
+                $('#registrations-line-chart').attr('src', 'data:image/png;base64,' + stats.registrationsLineChart);
             }
         }).fail(function(xhr, status, error) {
             console.error('Error loading chart data:', error);
             showToast('Lỗi tải biểu đồ: ' + error, false);
         });
-    }
-
-    // Function mới: Render chart với fallback
-    function renderChart(chartId, base64Data) {
-        const imgElem = $('#' + chartId);
-        const placeholderElem = $('#' + chartId + 'Placeholder');
-        if (base64Data && base64Data.length > 0) {
-            imgElem.attr('src', 'data:image/png;base64,' + base64Data);
-            imgElem.show();
-            placeholderElem.hide();
-        } else {
-            imgElem.hide();
-            placeholderElem.text('Không thể tải biểu đồ (lỗi generation)').show();
-        }
     }
 
     // chỉnh sửa sự kiên --------------------------------------------------------------
@@ -2299,8 +2353,7 @@
             $('#edit-event-start').val(startDate);
             $('#edit-event-end').val(endDate);
             $('#edit-event-location').val(event.diaDiem);
-            $('#edit-event-type').val(event.loaiSuKien);
-            $('#edit-event-status').val(event.trangThai);
+            $('#edit-event-status').val(event.trangThai || event.trangThaiPheDuyet);
             $('#edit-event-max-attendees').val(event.soLuongToiDa);
             $('#edit-event-current-attendees').val(event.soLuongDaDangKy);
             
@@ -2326,7 +2379,7 @@
         $('#edit-event-modal').hide();
     });
 
-    // Hàm lưu thay đổi sự kiện
+    // Hàm lưu thay đổi sự kiện (chỉ gửi các trường có thay đổi)
     function saveEventChanges(eventId) {
         const formData = {
             tenSuKien: $('#edit-event-name').val(),
@@ -2334,7 +2387,6 @@
             thoiGianBatDau: $('#edit-event-start').val(),
             thoiGianKetThuc: $('#edit-event-end').val(),
             diaDiem: $('#edit-event-location').val(),
-            loaiSuKien: $('#edit-event-type').val(),
             trangThai: $('#edit-event-status').val(),
             soLuongToiDa: $('#edit-event-max-attendees').val()
         };
@@ -2360,31 +2412,387 @@
             return;
         }
         
+        // Lấy thông tin sự kiện hiện tại để so sánh
+        $.get('/admin/api/events/' + eventId, function(currentEvent) {
+            const updatedFields = {};
+            
+            // Chỉ thêm các trường có thay đổi vào request
+            if (formData.tenSuKien !== currentEvent.tenSuKien) {
+                updatedFields.tenSuKien = formData.tenSuKien;
+            }
+            
+            if (formData.moTa !== currentEvent.moTa) {
+                updatedFields.moTa = formData.moTa;
+            }
+            
+            if (formData.diaDiem !== currentEvent.diaDiem) {
+                updatedFields.diaDiem = formData.diaDiem;
+            }
+            
+            if (formData.trangThai !== currentEvent.trangThai) {
+                updatedFields.trangThai = formData.trangThai;
+            }
+            
+            if (parseInt(formData.soLuongToiDa) !== currentEvent.soLuongToiDa) {
+                updatedFields.soLuongToiDa = formData.soLuongToiDa;
+            }
+            
+            // Kiểm tra thời gian thay đổi
+            const currentStart = new Date(currentEvent.thoiGianBatDau).toISOString().slice(0, 16);
+            const currentEnd = new Date(currentEvent.thoiGianKetThuc).toISOString().slice(0, 16);
+            
+            if (formData.thoiGianBatDau !== currentStart) {
+                updatedFields.thoiGianBatDau = formData.thoiGianBatDau;
+            }
+            
+            if (formData.thoiGianKetThuc !== currentEnd) {
+                updatedFields.thoiGianKetThuc = formData.thoiGianKetThuc;
+            }
+            
+            // Nếu không có trường nào thay đổi
+            if (Object.keys(updatedFields).length === 0) {
+                showToast('Không có thay đổi nào để cập nhật', false);
+                return;
+            }
+            
+            // Thêm eventId vào dữ liệu
+            updatedFields.suKienId = eventId;
+            
+            $.ajax({
+                url: '/admin/api/events/' + eventId,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(updatedFields),
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Đã cập nhật sự kiện thành công', true);
+                        // Đóng modal
+                        $('#edit-event-modal').hide();
+                        // Reload dữ liệu
+                        loadEvents();
+                        loadDashboardData();
+                    } else {
+                        showToast(response.message || 'Lỗi cập nhật sự kiện', false);
+                        $('#edit-event-form').find('button[type="submit"]').html('<i class="fas fa-save"></i> Lưu thay đổi').prop('disabled', false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error updating event:', error);
+                    showToast('Lỗi cập nhật sự kiện: ' + error, false);
+                    $('#edit-event-form').find('button[type="submit"]').html('<i class="fas fa-save"></i> Lưu thay đổi').prop('disabled', false);
+                }
+            });
+        }).fail(function(xhr, status, error) {
+            console.error('Error loading current event:', error);
+            showToast('Lỗi tải thông tin sự kiện hiện tại', false);
+        });
+    }   
+    
+    function viewSuggestion(suggestionId) {
+        if (!suggestionId || suggestionId === 'undefined') {
+            console.error('Invalid suggestion ID:', suggestionId);
+            showToast('Lỗi: Không tìm thấy ID đề xuất', false);
+            return;
+        }
+        
+        console.log('Loading suggestion:', suggestionId);
+        
+        $.get('/admin/api/suggestions/' + suggestionId, function(suggestion) {
+            if (!suggestion) {
+                showToast('Không tìm thấy thông tin đề xuất', false);
+                return;
+            }
+            
+            console.log('Suggestion data:', suggestion);
+            
+            // Định dạng ngày tháng
+            const formatDate = (dateString) => {
+                if (!dateString) return 'N/A';
+                return new Date(dateString).toLocaleDateString('vi-VN');
+            };
+            
+            const formatDateTime = (dateString) => {
+                if (!dateString) return 'N/A';
+                return new Date(dateString).toLocaleString('vi-VN');
+            };
+            
+            let html = '';
+            html += '<div style="margin-bottom: 20px;">' +
+                '<h4 style="margin-bottom: 10px;">' + suggestion.tieuDe + '</h4>' +
+                '<p><strong>Mô tả nhu cầu:</strong> ' + (suggestion.moTaNhuCau || 'Không có') + '</p>' +
+            '</div>';
+            
+            // Thông tin chi tiết
+            html += '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Người đề xuất:</label>' +
+                    '<p>' + (suggestion.user?.hoTen || 'N/A') + '</p>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Loại sự kiện:</label>' +
+                    '<p>' + (suggestion.loaiSuKienTen || 'N/A') + '</p>' +
+                '</div>' +
+            '</div>';
+            
+            html += '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Địa điểm:</label>' +
+                    '<p>' + suggestion.diaDiem + '</p>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Thời gian dự kiến:</label>' +
+                    '<p>' + formatDateTime(suggestion.thoiGianDuKien) + '</p>' +
+                '</div>' +
+            '</div>';
+            
+            html += '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Số lượng khách:</label>' +
+                    '<p>' + suggestion.soLuongKhach + '</p>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Giá cả ước lượng:</label>' +
+                    '<p>' + suggestion.giaCaLong + '</p>' +
+                '</div>' +
+            '</div>';
+            
+            html += '<div class="form-group">' +
+                '<label>Thông tin liên lạc:</label>' +
+                '<p>' + suggestion.thongTinLienLac + '</p>' +
+            '</div>';
+            
+            html += '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Trạng thái:</label>' +
+                    '<p><span class="status ' + getApprovalStatusClass(suggestion.trangThai) + '">' + getApprovalStatusText(suggestion.trangThai) + '</span></p>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Trạng thái phê duyệt:</label>' +
+                    '<p><span class="status ' + getApprovalStatusClass(suggestion.trangThaiPheDuyet) + '">' + getApprovalStatusText(suggestion.trangThaiPheDuyet) + '</span></p>' +
+                '</div>' +
+            '</div>';
+            
+            html += '<div class="form-row">' +
+                '<div class="form-group">' +
+                    '<label>Thời gian tạo:</label>' +
+                    '<p>' + formatDateTime(suggestion.thoiGianTao) + '</p>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Thời gian phản hồi:</label>' +
+                    '<p>' + formatDateTime(suggestion.thoiGianPhanHoi) + '</p>' +
+                '</div>' +
+            '</div>';
+            
+            // Nếu đang chờ duyệt, hiển thị nút chấp nhận và từ chối
+            if (suggestion.trangThaiPheDuyet === 'ChoDuyet') {
+                html += '<div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
+                    '<button class="btn btn-success btn-approve-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                        '<i class="fas fa-check"></i> Chấp nhận' +
+                    '</button>' +
+                    '<button class="btn btn-danger btn-reject-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                        '<i class="fas fa-times"></i> Từ chối' +
+                    '</button>' +
+                '</div>';
+            }
+            
+            $('#suggestion-modal-content').html(html);
+            $('#suggestion-modal').show();
+            
+        }).fail(function(xhr, status, error) {
+            console.error('Error loading suggestion details:', error, xhr);
+            showToast('Lỗi tải thông tin đề xuất: ' + error, false);
+        });
+    }// Hàm phê duyệt đề xuất từ joiner
+
+
+    function approveEvent(eventId, source) {
+        // Không yêu cầu nhập lý do
         $.ajax({
-            url: '/admin/api/events/' + eventId,
-            method: 'PUT',
+            url: '/admin/api/events/' + eventId + '/approve',
+            method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify(formData),
+            data: JSON.stringify({ 
+                source: source, 
+                reason: '' // Gửi lý do rỗng
+            }),
             success: function(response) {
                 if (response.success) {
-                    showToast('Đã cập nhật sự kiện thành công', true);
-                    // Đóng modal
-                    $('#edit-event-modal').hide();
+                    showToast('Đã phê duyệt thành công', true);
+                    // Đóng modal nếu đang mở
+                    $('#event-modal').hide();
+                    $('#suggestion-modal').hide();
                     // Reload dữ liệu
-                    loadEvents();
+                    if (source === 'suggestion') {
+                        loadApprovalEvents();
+                    } else {
+                        loadEvents();
+                    }
                     loadDashboardData();
                 } else {
-                    showToast(response.message || 'Lỗi cập nhật sự kiện', false);
-                    $('#edit-event-form').find('button[type="submit"]').html('<i class="fas fa-save"></i> Lưu thay đổi').prop('disabled', false);
+                    showToast('Lỗi: ' + response.message, false);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Error updating event:', error);
-                showToast('Lỗi cập nhật sự kiện: ' + error, false);
-                $('#edit-event-form').find('button[type="submit"]').html('<i class="fas fa-save"></i> Lưu thay đổi').prop('disabled', false);
+                console.error('Error approving event:', error);
+                showToast('Lỗi phê duyệt: ' + error, false);
             }
         });
     }
+
+    function rejectEvent(eventId, source) {
+        // Không yêu cầu nhập lý do
+        $.ajax({
+            url: '/admin/api/events/' + eventId + '/reject',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 
+                source: source, 
+                reason: '' // Gửi lý do rỗng
+            }),
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đã từ chối thành công', true);
+                    // Đóng modal nếu đang mở
+                    $('#event-modal').hide();
+                    $('#suggestion-modal').hide();
+                    // Reload dữ liệu
+                    if (source === 'suggestion') {
+                        loadApprovalEvents();
+                    } else {
+                        loadEvents();
+                    }
+                    loadDashboardData();
+                } else {
+                    showToast('Lỗi: ' + response.message, false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error rejecting event:', error);
+                showToast('Lỗi từ chối: ' + error, false);
+            }
+        });
+    }
+
+    function approveSuggestion(suggestionId) {
+        // Không yêu cầu nhập lý do
+        $.ajax({
+            url: '/admin/api/suggestions/' + suggestionId + '/approve',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ reason: '' }), // Gửi lý do rỗng
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đã phê duyệt đề xuất thành công', true);
+                    // Đóng modal
+                    $('#suggestion-modal').hide();
+                    // Reload dữ liệu
+                    loadApprovalEvents();
+                    loadDashboardData();
+                } else {
+                    showToast('Lỗi: ' + response.message, false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error approving suggestion:', error);
+                showToast('Lỗi phê duyệt: ' + error, false);
+            }
+        });
+    }
+
+    function rejectSuggestion(suggestionId) {
+        // Không yêu cầu nhập lý do
+        $.ajax({
+            url: '/admin/api/suggestions/' + suggestionId + '/reject',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ reason: '' }), // Gửi lý do rỗng
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đã từ chối đề xuất thành công', true);
+                    // Đóng modal
+                    $('#suggestion-modal').hide();
+                    // Reload dữ liệu
+                    loadApprovalEvents();
+                    loadDashboardData();
+                } else {
+                    showToast('Lỗi: ' + response.message, false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error rejecting suggestion:', error);
+                showToast('Lỗi từ chối: ' + error, false);
+            }
+        });
+    }
+    // Cập nhật sự kiện click cho nút xem chi tiết sự kiện đề xuất
+    $(document).on('click', '.btn-view-suggestion', function(e) {
+        e.stopPropagation();
+        const suggestionId = $(this).data('suggestion-id');
+        viewSuggestion(suggestionId);
+    });
+
+    // Cập nhật sự kiện cho card sự kiện đề xuất (cho phép click vào toàn bộ card)
+    $(document).on('click', '.event-card[data-source="suggestion"]', function(e) {
+        // Ngăn sự kiện khi click vào các nút hành động
+        if ($(e.target).closest('.action-btn').length === 0 && 
+            !$(e.target).hasClass('btn-approve-event') && 
+            !$(e.target).hasClass('btn-reject-event')) {
+            const suggestionId = $(this).data('event-id');
+            if (suggestionId) {
+                viewSuggestion(suggestionId);
+            }
+        }
+    });
+
+
+    $(document).on('click', '.btn-edit-event', function(e) {
+        e.stopPropagation();
+        const eventId = $(this).data('event-id');
+        openEditEventModal(eventId);
+    });
+
+    $(document).on('click', '.btn-delete-event', function(e) {
+        e.stopPropagation();
+        const eventId = $(this).data('event-id');
+        deleteEvent(eventId);
+    });
+
+    $(document).on('click', '.btn-approve-suggestion', function(e) {
+        e.stopPropagation();
+        const suggestionId = $(this).data('suggestion-id');
+        approveSuggestion(suggestionId);
+    });
+
+    $(document).on('click', '.btn-reject-suggestion', function(e) {
+        e.stopPropagation();
+        const suggestionId = $(this).data('suggestion-id');
+        rejectSuggestion(suggestionId);
+    });
+
+    // Cập nhật lại sự kiện cho các nút hành động để ngăn chặn mở modal
+    $(document).on('click', '.action-btn', function(e) {
+        e.stopPropagation();
+    });
+
+    // Cập nhật sự kiện cho event card một lần nữa
+    $(document).on('click', '.event-card:not(.no-modal)', function(e) {
+        // Chỉ mở modal khi click vào phần không phải nút
+        if ($(e.target).closest('.action-btn').length === 0) {
+            const eventId = $(this).data('event-id');
+            const source = $(this).data('source');
+            
+            if (eventId && source) {
+                if (source === 'suggestion') {
+                    viewSuggestion(eventId);
+                } else {
+                    viewEvent(eventId);
+                }
+            }
+        }
+    });
+
+    
+
 </script>
 </body>
 </html>

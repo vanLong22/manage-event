@@ -22,11 +22,11 @@ public class SuKienRepository {
 
     public void save(Event suKien) {
         String sql = "INSERT INTO su_ken (ten_su_ken, mo_ta, dia_diem, anh_bia, nguoi_to_chuc_id, " +
-                     "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_ken, trang_thai, so_luong_toi_da, ngay_tao) " +
+                     "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_ken, trang_thai_thoi_gian, so_luong_toi_da, ngay_tao) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, suKien.getTenSuKien(), suKien.getMoTa(), suKien.getDiaDiem(), 
                 suKien.getAnhBia(), suKien.getNguoiToChucId(), suKien.getThoiGianBatDau(), 
-                suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getTrangThai(), 
+                suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getTrangThaiThoiGian(), 
                 suKien.getSoLuongToiDa(), suKien.getNgayTao());
     }
 

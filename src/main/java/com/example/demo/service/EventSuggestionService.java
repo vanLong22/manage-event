@@ -8,6 +8,7 @@ import com.example.demo.repository.EventSuggestionRepository;
 import com.example.demo.repository.NotificationRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,13 @@ public class EventSuggestionService {
 
     @Autowired EventSuggestionRepository eventSuggestionRepository;
 
+    // Scheduled task: Tự động cập nhật trạng thái thành "Huy" mỗi ngày lúc 00:00
+    @Scheduled(cron = "0 0 0 * * ?") // Chạy mỗi ngày lúc 00:00
+    public void autoUpdateSuggestionStatus() {
+        suggestionRepository.autoUpdateStatusForUpcomingEvents();
+        System.out.println("Đã tự động cập nhật trạng thái đề xuất sự kiện sắp diễn ra thành 'Huy'");
+    }
+
     // Lấy danh sách đề xuất theo người dùng
     public List<EventSuggestion> getSuggestionsByUser(Long userId) {
         return suggestionRepository.findByUserId(userId);
@@ -40,6 +48,7 @@ public class EventSuggestionService {
     public void submitSuggestion(EventSuggestion suggestion) {
         suggestion.setThoiGianTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
         suggestion.setTrangThai("ChoDuyet");
+        suggestion.setTrangThaiPheDuyet("ChoDuyet"); // Thêm trạng thái phê duyệt
 
         suggestionRepository.save(suggestion);
 
@@ -56,6 +65,7 @@ public class EventSuggestionService {
     public Long submitSuggestionAndReturnId(EventSuggestion suggestion) {
         suggestion.setThoiGianTao(new Date());
         suggestion.setTrangThai("CHO_DUYET");
+        suggestion.setTrangThaiPheDuyet("ChoDuyet"); // Thêm trạng thái phê duyệt
         Long id = suggestionRepository.saveAndReturnId(suggestion);
 
         // Lưu lịch sử
@@ -95,6 +105,15 @@ public class EventSuggestionService {
 
     // Cập nhật đề xuất
     public boolean updateSuggestion(EventSuggestion suggestion) {
+        // Lấy đề xuất cũ để giữ lại trạng thái phê duyệt
+        EventSuggestion existingSuggestion = suggestionRepository.findById(suggestion.getDangSuKienId());
+        if (existingSuggestion != null) {
+            // Giữ lại trạng thái phê duyệt cũ nếu không có mới
+            if (suggestion.getTrangThaiPheDuyet() == null) {
+                suggestion.setTrangThaiPheDuyet(existingSuggestion.getTrangThaiPheDuyet());
+            }
+        }
+        
         boolean result = suggestionRepository.updateSuggestion(suggestion);
         if (result) {
             ActivityHistory history = new ActivityHistory();
@@ -120,6 +139,20 @@ public class EventSuggestionService {
         }
         return result;
     }
+    
+    // Cập nhật trạng thái phê duyệt đề xuất
+    public boolean updateSuggestionApprovalStatus(Long suggestionId, String trangThaiPheDuyet, Long adminId) {
+        boolean result = suggestionRepository.updateSuggestionApprovalStatus(suggestionId, trangThaiPheDuyet);
+        if (result) {
+            ActivityHistory history = new ActivityHistory();
+            history.setNguoiDungId(adminId);
+            history.setLoaiHoatDong("CapNhatTrangThaiPheDuyet");
+            history.setChiTiet("Cập nhật trạng thái phê duyệt đề xuất ID: " + suggestionId + " -> " + trangThaiPheDuyet);
+            history.setThoiGian(new Date());
+            historyRepository.save(history);
+        }
+        return result;
+    }
 
     // Lấy danh sách đề xuất theo trạng thái
     public List<EventSuggestion> getSuggestionsByStatus(String status) {
@@ -127,12 +160,10 @@ public class EventSuggestionService {
     }
 
 
-    // Lấy danh sách đề xuất với các bộ lọc
-    public List<Map<String, Object>> getSuggestionsWithFilters(Integer loaiSuKienId, String diaDiem, String soLuongKhachRange, String trangThai) {
-        return eventSuggestionRepository.findSuggestionsWithFilters(loaiSuKienId, diaDiem, soLuongKhachRange, trangThai);
-    }
-
     public Map<String, Object> getSuggestionDetail(Long suggestionId) {
+        // Tự động cập nhật trạng thái trước khi lấy chi tiết
+        suggestionRepository.autoUpdateStatusForUpcomingEvents();
+        
         return eventSuggestionRepository.findSuggestionDetailById(suggestionId);
     }
 
@@ -142,8 +173,12 @@ public class EventSuggestionService {
             if (suggestionDetail == null) return false;
 
             String newStatus = "accept".equals(action) ? "DaDuyet" : "TuChoi";
+            String newApprovalStatus = "accept".equals(action) ? "DaDuyet" : "TuChoi";
+            
             boolean updateSuccess = eventSuggestionRepository.updateSuggestionStatus(dangSuKienId, newStatus);
-            if (!updateSuccess) return false;
+            boolean updateApprovalSuccess = eventSuggestionRepository.updateSuggestionApprovalStatus(dangSuKienId, newApprovalStatus);
+            
+            if (!updateSuccess || !updateApprovalSuccess) return false;
 
             sendSuggestionNotification(dangSuKienId, action, message, suggestionDetail, organizerId);
             return true;
@@ -162,6 +197,9 @@ public class EventSuggestionService {
             if (suggestion.getTrangThai() == null) {
                 suggestion.setTrangThai("CHO_DUYET");
             }
+            if (suggestion.getTrangThaiPheDuyet() == null) {
+                suggestion.setTrangThaiPheDuyet("ChoDuyet");
+            }
 
             eventSuggestionRepository.save(suggestion);
             return true;
@@ -173,11 +211,15 @@ public class EventSuggestionService {
     }
 
     public Map<String, Integer> getSuggestionStats() {
+        // Cập nhật trạng thái trước khi thống kê
+        suggestionRepository.autoUpdateStatusForUpcomingEvents();
+        
         return Map.of(
             "total", eventSuggestionRepository.findSuggestionsWithFilters(null, null, null, null).size(),
             "pending", eventSuggestionRepository.findByStatus("CHO_DUYET").size(),
             "approved", eventSuggestionRepository.findByStatus("DaDuyet").size(),
-            "rejected", eventSuggestionRepository.findByStatus("TuChoi").size()
+            "rejected", eventSuggestionRepository.findByStatus("TuChoi").size(),
+            "cancelled", eventSuggestionRepository.findByStatus("Huy").size()
         );
     }
 
@@ -224,5 +266,21 @@ public class EventSuggestionService {
             e.printStackTrace();
         }
     }
+
+    // Phương thức mới: Lấy đề xuất với bộ lọc trạng thái cụ thể
+    public List<Map<String, Object>> getSuggestionsWithFilters(Integer loaiSuKienId, String diaDiem, 
+            String soLuongKhachRange, String trangThai) {
+        // Tự động cập nhật trạng thái trước khi lọc
+        suggestionRepository.autoUpdateStatusForUpcomingEvents();
+        
+        return eventSuggestionRepository.findSuggestionsWithFilters(loaiSuKienId, diaDiem, 
+                soLuongKhachRange, trangThai);
+    }
+
+    // Phương thức mới: Lấy đề xuất theo trạng thái (đơn giản hóa)
+    public List<EventSuggestion> getSuggestionsByApprovalStatus(String trangThaiPheDuyet) {
+        return suggestionRepository.findByApprovalStatus(trangThaiPheDuyet);
+    }
+     
 
 }

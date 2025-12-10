@@ -22,7 +22,6 @@ public class RegistrationRepository {
     private JdbcTemplate jdbcTemplate;
 
     public List<Registration> findByUserId(Long userId) {
-        System.out.println("Id người dùng tham gia sự kiện:" + userId);
         return jdbcTemplate.query("SELECT * FROM dang_ky_su_kien WHERE nguoi_dung_id = ?", 
             new BeanPropertyRowMapper<>(Registration.class), userId);
     }
@@ -35,7 +34,7 @@ public class RegistrationRepository {
             registration.getNguoiDungId(),
             registration.getSuKienId(),
             registration.getThoiGianDangKy(),
-            "DaDuyet" // tự động duyệt luôn
+            "DaDuyet"
         );
 
         // 2️⃣ Tăng số lượng người tham gia trong bảng su_kien
@@ -64,7 +63,7 @@ public class RegistrationRepository {
     public List<Registration> findByUserIdWithEvent(Long userId) {
         String sql = """
             SELECT dk.*, sk.ten_su_kien, sk.dia_diem, sk.thoi_gian_bat_dau, sk.thoi_gian_ket_thuc,
-                sk.anh_bia, sk.mo_ta, sk.trang_thai, sk.so_luong_da_dang_ky, sk.so_luong_toi_da
+                sk.anh_bia, sk.mo_ta, sk.trang_thai_thoigian, sk.trang_thai_phe_duyet, sk.so_luong_da_dang_ky, sk.so_luong_toi_da
             FROM dang_ky_su_kien dk
             JOIN su_kien sk ON dk.su_kien_id = sk.su_kien_id
             WHERE dk.nguoi_dung_id = ?
@@ -86,11 +85,12 @@ public class RegistrationRepository {
             event.setThoiGianKetThuc(rs.getTimestamp("thoi_gian_ket_thuc"));
             event.setAnhBia(rs.getString("anh_bia"));
             event.setMoTa(rs.getString("mo_ta"));
-            event.setTrangThai(rs.getString("trang_thai"));
+            event.setTrangThaiThoiGian(rs.getString("trang_thai_thoigian"));
+            event.setTrangThaiPheDuyet(rs.getString("trang_thai_phe_duyet"));
             event.setSoLuongDaDangKy(rs.getInt("so_luong_da_dang_ky"));
             event.setSoLuongToiDa(rs.getInt("so_luong_toi_da"));
 
-            reg.setSuKien(event);
+            reg.setEvent(event);
             return reg;
         }, userId);
     }
@@ -104,7 +104,9 @@ public class RegistrationRepository {
                 nd.gioi_tinh AS userGioiTinh,
                 nd.dia_chi AS userDiaChi,
                 nd.so_dien_thoai AS userSoDienThoai,
-                sk.ten_su_kien AS tenSuKien
+                sk.ten_su_kien AS tenSuKien,
+                sk.trang_thai_thoigian AS trangThaiThoiGian,
+                sk.trang_thai_phe_duyet AS trangThaiPheDuyet
             FROM dang_ky_su_kien dk
             JOIN nguoi_dung nd ON dk.nguoi_dung_id = nd.nguoi_dung_id
             JOIN su_kien sk ON dk.su_kien_id = sk.su_kien_id
@@ -131,25 +133,11 @@ public class RegistrationRepository {
 
                 Event event = new Event();
                 event.setTenSuKien(rs.getString("tenSuKien"));
+                event.setTrangThaiThoiGian(rs.getString("trangThaiThoiGian"));
+                event.setTrangThaiPheDuyet(rs.getString("trangThaiPheDuyet"));
 
                 reg.setEvent(event);
                 reg.setUser(user);
-
-                // ✅ Print toàn bộ thông tin (cập nhật thêm tên sự kiện)
-                System.out.println("Đăng ký ID: " + reg.getDangKyId());
-                System.out.println("Người dùng ID: " + reg.getNguoiDungId());
-                System.out.println("Sự kiện ID: " + reg.getSuKienId());
-                System.out.println("Tên sự kiện: " + event.getTenSuKien());
-                System.out.println("Thời gian đăng ký: " + reg.getThoiGianDangKy());
-                System.out.println("Trạng thái: " + reg.getTrangThai());
-                System.out.println("Trạng thái điểm danh: " + reg.getTrangThaiDiemDanh());
-
-                System.out.println("Họ tên người dùng: " + user.getHoTen());
-                System.out.println("Email người dùng: " + user.getEmail());
-                System.out.println("Số điện thoại người dùng: " + user.getSoDienThoai());
-                System.out.println("Giới tính người dùng: " + user.getGioiTinh());
-                System.out.println("Địa chỉ người dùng: " + user.getDiaChi());
-                System.out.println("--------------------------------------------------");
 
                 return reg;
             }
@@ -174,7 +162,7 @@ public class RegistrationRepository {
 
     // Thêm mới: Count active events for organizer
     public int countActiveEvents(Long organizerId) {
-        String sql = "SELECT COUNT(*) FROM su_kien WHERE nguoi_to_chuc_id = ? AND trang_thai = 'DangDienRa'";
+        String sql = "SELECT COUNT(*) FROM su_kien WHERE nguoi_to_chuc_id = ? AND trang_thai_thoigian = 'DangDienRa'";
         return jdbcTemplate.queryForObject(sql, Integer.class, organizerId);
     }
 
@@ -241,4 +229,3 @@ public class RegistrationRepository {
         return jdbcTemplate.queryForList(sql);
     }
 }
- 

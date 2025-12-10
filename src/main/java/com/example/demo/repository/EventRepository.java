@@ -38,7 +38,6 @@ public class EventRepository {
     }
 
     public List<Event> findByUserId(Long userId) {
-        System.out.println("su kiện của người dùng đăng ký là   : " +userId);
         return jdbcTemplate.query("SELECT sk.* FROM su_kien sk INNER JOIN dang_ky_su_kien dk ON sk.su_kien_id = dk.su_kien_id WHERE dk.nguoi_dung_id = ?", 
             new BeanPropertyRowMapper<>(Event.class), userId);
     }
@@ -136,6 +135,9 @@ public class EventRepository {
         // Tính toán trạng thái thời gian dựa trên ngày hiện tại
         String trangThaiThoiGian = calculateTimeStatus(suKien.getThoiGianBatDau(), suKien.getThoiGianKetThuc());
         
+        // Trạng thái phê duyệt mặc định khi tạo mới
+        String trangThaiPheDuyet = "ChoDuyet";
+        
         String sql = "INSERT INTO su_kien (ten_su_kien, mo_ta, dia_diem, anh_bia, loai_su_kien_id, nguoi_to_chuc_id, " +
                      "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_kien, mat_khau_su_kien_rieng_tu, " +
                      "trang_thai_thoigian, trang_thai_phe_duyet, so_luong_toi_da, so_luong_da_dang_ky, ngay_tao) " +
@@ -153,7 +155,7 @@ public class EventRepository {
             suKien.getLoaiSuKien(), 
             suKien.getMatKhauSuKienRiengTu(), 
             trangThaiThoiGian, // Trạng thái thời gian đã tính toán
-            "ChoDuyet", // Trạng thái phê duyệt mặc định
+            trangThaiPheDuyet, // Trạng thái phê duyệt mặc định
             suKien.getSoLuongToiDa(), 
             0, 
             suKien.getNgayTao()
@@ -265,19 +267,37 @@ public class EventRepository {
             throw new RuntimeException("Event not found");
         }
         
-        // Tính toán trạng thái thời gian mới
+        // Tính toán trạng thái thời gian mới dựa trên thời gian mới
         String trangThaiThoiGian = calculateTimeStatus(suKien.getThoiGianBatDau(), suKien.getThoiGianKetThuc());
         
         // Giữ lại ảnh bìa cũ nếu không có ảnh mới
-        String anhBia = suKien.getAnhBia() != null ? suKien.getAnhBia() : existingEvent.getAnhBia();
+        String anhBia = suKien.getAnhBia() != null && !suKien.getAnhBia().isEmpty() 
+            ? suKien.getAnhBia() 
+            : existingEvent.getAnhBia();
         
-        // Giữ lại trạng thái phê duyệt cũ
-        String trangThaiPheDuyet = existingEvent.getTrangThaiPheDuyet() != null ? 
-                                  existingEvent.getTrangThaiPheDuyet() : "ChoDuyet";
+        // Giữ lại trạng thái phê duyệt cũ nếu không có mới
+        String trangThaiPheDuyet = suKien.getTrangThaiPheDuyet() != null 
+            ? suKien.getTrangThaiPheDuyet() 
+            : existingEvent.getTrangThaiPheDuyet();
         
-        String sql = "UPDATE su_kien SET ten_su_kien = ?, mo_ta = ?, dia_diem = ?, anh_bia = ?, " +
-                     "thoi_gian_bat_dau = ?, thoi_gian_ket_thuc = ?, loai_su_kien = ?, " +
-                     "trang_thai_thoigian = ?, trang_thai_phe_duyet = ?, so_luong_toi_da = ? " +
+        // Giữ lại mật khẩu sự kiện riêng tư cũ nếu không có mới
+        String matKhauSuKienRiengTu = suKien.getMatKhauSuKienRiengTu() != null 
+            ? suKien.getMatKhauSuKienRiengTu() 
+            : existingEvent.getMatKhauSuKienRiengTu();
+        
+        String sql = "UPDATE su_kien SET " +
+                     "ten_su_kien = ?, " +
+                     "mo_ta = ?, " +
+                     "dia_diem = ?, " +
+                     "anh_bia = ?, " +
+                     "thoi_gian_bat_dau = ?, " +
+                     "thoi_gian_ket_thuc = ?, " +
+                     "loai_su_kien = ?, " +
+                     "mat_khau_su_kien_rieng_tu = ?, " +
+                     "trang_thai_thoigian = ?, " +
+                     "trang_thai_phe_duyet = ?, " +
+                     "so_luong_toi_da = ?, " +
+                     "loai_su_kien_id = ? " +
                      "WHERE su_kien_id = ?";
                      
         jdbcTemplate.update(sql, 
@@ -288,9 +308,11 @@ public class EventRepository {
             suKien.getThoiGianBatDau(), 
             suKien.getThoiGianKetThuc(), 
             suKien.getLoaiSuKien(), 
+            matKhauSuKienRiengTu,
             trangThaiThoiGian,
             trangThaiPheDuyet,
             suKien.getSoLuongToiDa(), 
+            suKien.getLoaiSuKienId(),
             suKien.getSuKienId()
         );
     }
@@ -306,6 +328,18 @@ public class EventRepository {
             """;
         return jdbcTemplate.queryForList(sql, organizerId);
     }
+
+    public List<Map<String, Object>> countEventsByType() {
+        String sql = """
+            SELECT l.ten_loai, COUNT(s.su_kien_id) AS count
+            FROM su_kien s
+            JOIN loai_su_kien l ON s.loai_su_kien_id = l.loai_su_kien_id
+            GROUP BY l.ten_loai
+            """;
+
+        return jdbcTemplate.queryForList(sql);
+    }
+
 
     public List<Event> getEventsByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {

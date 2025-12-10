@@ -5,6 +5,7 @@ import com.example.demo.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -13,37 +14,30 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    // Lấy danh sách thông báo theo người dùng
     public List<Notification> getNotificationsByUser(Long userId) {
         return notificationRepository.findByUserId(userId);
     }
 
-    // Lấy thông báo theo ID
     public Notification getNotificationById(Long id) {
         return notificationRepository.findById(id);
     }
 
-    // Đánh dấu 1 thông báo là đã đọc
     public void markAsRead(Long thongBaoId) {
         notificationRepository.markAsRead(thongBaoId);
     }
 
-    // Đánh dấu tất cả thông báo của 1 người dùng là đã đọc
     public void markAllAsRead(Long userId) {
         notificationRepository.markAllAsRead(userId);
     }
 
-    // Xóa thông báo của người dùng
     public boolean deleteNotification(Long notificationId, Long userId) {
         return notificationRepository.deleteNotification(notificationId, userId);
     }
 
-    // Cập nhật trạng thái thông báo (ví dụ: "Đã gửi", "Thất bại", "Đang xử lý")
     public boolean updateNotificationStatus(Long notificationId, String status) {
         return notificationRepository.updateNotificationStatus(notificationId, status);
     }
 
-    // Đếm số thông báo chưa đọc
     public int countUnreadNotifications(Long userId) {
         return notificationRepository.countUnreadNotifications(userId);
     }
@@ -55,12 +49,10 @@ public class NotificationService {
             throw new RuntimeException("Không tìm thấy thông báo với ID: " + notificationId);
         }
 
-        // Kiểm tra quyền sở hữu
         if (!notification.getNguoiDungId().equals(userId)) {
             throw new RuntimeException("Bạn không có quyền xử lý thông báo này!");
         }
 
-        // Xử lý hành động
         switch (action.toLowerCase()) {
             case "read":
                 markAsRead(notificationId);
@@ -82,7 +74,28 @@ public class NotificationService {
                 throw new RuntimeException("Hành động không hợp lệ: " + action);
         }
     }
-
     
-
+    // Phương thức mới: Tạo thông báo
+    public void createNotification(Long userId, String title, String content, String type, Long eventId) {
+        Notification notification = new Notification();
+        notification.setNguoiDungId(userId);
+        notification.setTieuDe(title);
+        notification.setNoiDung(content);
+        notification.setLoaiThongBao(type);
+        notification.setSuKienId(eventId);
+        notification.setDaDoc(0L);
+        notification.setThoiGian(new Date());
+        
+        notificationRepository.save(notification);
+    }
+    
+    // Phương thức mới: Lấy thông báo gần đây (giới hạn số lượng)
+    public List<Notification> getRecentNotifications(Long userId, int limit) {
+        return notificationRepository.findRecentByUserId(userId, limit);
+    }
+    
+    // Phương thức mới: Lấy thông báo theo loại
+    public List<Notification> getNotificationsByType(String loaiThongBao, Long userId) {
+        return notificationRepository.findByTypeAndUserId(loaiThongBao, userId);
+    }
 }

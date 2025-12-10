@@ -22,7 +22,7 @@ public class SuKienService {
 
     public void createSuKien(Event suKien) {
         suKien.setNgayTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        suKien.setTrangThai("PENDING");
+        suKien.setTrangThaiThoiGian("PENDING");
         suKienRepository.save(suKien);
     }
 

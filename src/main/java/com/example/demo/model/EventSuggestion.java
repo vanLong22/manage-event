@@ -16,6 +16,7 @@ public class EventSuggestion {
     private String trangThai; // ChoDuyet, DaDuyet, TuChoi
     private Date thoiGianTao;
     private Date thoiGianPhanHoi;
+    private String trangThaiPheDuyet;
 
     public EventSuggestion() {
     }
@@ -36,6 +37,25 @@ public class EventSuggestion {
         this.trangThai = trangThai;
         this.thoiGianTao = thoiGianTao;
         this.thoiGianPhanHoi = thoiGianPhanHoi;
+    }
+
+    public EventSuggestion(Long dangSuKienId, Long nguoiDungId, String tieuDe, String moTaNhuCau, Integer loaiSuKienId,
+                      String diaDiem, Date thoiGianDuKien, Integer soLuongKhach, String giaCaLong,
+                      String thongTinLienLac, String trangThai, Date thoiGianTao, Date thoiGianPhanHoi, String trangThaiPheDuyet) {
+        this.dangSuKienId = dangSuKienId;
+        this.nguoiDungId = nguoiDungId;
+        this.tieuDe = tieuDe;
+        this.moTaNhuCau = moTaNhuCau;
+        this.loaiSuKienId = loaiSuKienId;
+        this.diaDiem = diaDiem;
+        this.thoiGianDuKien = thoiGianDuKien;
+        this.soLuongKhach = soLuongKhach;
+        this.giaCaLong = giaCaLong;
+        this.thongTinLienLac = thongTinLienLac;
+        this.trangThai = trangThai;
+        this.thoiGianTao = thoiGianTao;
+        this.thoiGianPhanHoi = thoiGianPhanHoi;
+        this.trangThaiPheDuyet = trangThaiPheDuyet;
     }
 
     // --- Getters and Setters ---
@@ -142,4 +162,14 @@ public class EventSuggestion {
     public void setThoiGianPhanHoi(Date thoiGianPhanHoi) {
         this.thoiGianPhanHoi = thoiGianPhanHoi;
     }
+
+    public String getTrangThaiPheDuyet() {
+        return trangThaiPheDuyet;
+    }
+
+    public void setTrangThaiPheDuyet(String trangThaiPheDuyet) {
+        this.trangThaiPheDuyet = trangThaiPheDuyet;
+    }
+
+
 }

@@ -22,33 +22,26 @@ public class UserService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // Đăng ký người dùng mới
     public User register(User user) {
-        // Kiểm tra username đã tồn tại
         if (userRepository.findByUsername(user.getTenDangNhap()) != null) {
             throw new RuntimeException("Tên đăng nhập đã tồn tại!");
         }
 
-        // Kiểm tra email đã tồn tại
         if (isEmailExists(user.getEmail())) {
             throw new RuntimeException("Email đã được sử dụng!");
         }
 
-        // Kiểm tra số điện thoại đã tồn tại
         if (isPhoneExists(user.getSoDienThoai())) {
             throw new RuntimeException("Số điện thoại đã được sử dụng!");
         }
 
-        // Thiết lập ngày tạo và trạng thái mặc định (1 - Hoạt động)
         user.setNgayTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        user.setTrangThai(1); // 1: Hoạt động, 0: Bị khóa
+        user.setTrangThai(1);
 
-        // Lưu vào DB
         userRepository.save(user);
         return user;
     }
 
-    // Tìm người dùng theo tên đăng nhập
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
@@ -60,14 +53,12 @@ public class UserService {
     public User login(String tenDangNhap, String matKhau) {
         User user = userRepository.findByTenDangNhapAndMatKhau(tenDangNhap, matKhau);
         
-        // Kiểm tra trạng thái tài khoản
         if (user != null) {
             if (user.getTrangThai() == 0) {
                 throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
             } else if (user.getTrangThai() == 2) {
                 throw new RuntimeException("Tài khoản của bạn đang tạm ngừng hoạt động.");
             }
-            // Trạng thái 1: Hoạt động - cho phép đăng nhập
         }
         
         return user;
@@ -81,7 +72,6 @@ public class UserService {
         userRepository.update(user);
     }
 
-    // Xóa người dùng theo ID (soft delete - cập nhật trạng thái)
     public void delete(Long id) {
         String sql = "UPDATE nguoi_dung SET trang_thai = 0 WHERE nguoi_dung_id = ?";
         int rowsAffected = jdbcTemplate.update(sql, id);
@@ -90,7 +80,6 @@ public class UserService {
         }
     }
 
-    // Khóa/Mở khóa người dùng
     public void toggleUserStatus(Long id, Integer status) {
         String sql = "UPDATE nguoi_dung SET trang_thai = ? WHERE nguoi_dung_id = ?";
         int rowsAffected = jdbcTemplate.update(sql, status, id);
@@ -99,26 +88,23 @@ public class UserService {
         }
     }
 
-    // Lấy tất cả người dùng
     public List<User> findAll() {
         String sql = "SELECT * FROM nguoi_dung";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class));
     }
 
-    // Lấy người dùng theo trạng thái
-    public List<User> findByStatus(Integer status) {
-        String sql = "SELECT * FROM nguoi_dung WHERE trang_thai = ?";
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class), status);
+    // Phương thức mới: Lọc người dùng theo giới tính
+    public List<User> findByGender(String gender) {
+        String sql = "SELECT * FROM nguoi_dung WHERE gioi_tinh = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(User.class), gender);
     }
 
-    // Kiểm tra email đã tồn tại
     public boolean isEmailExists(String email) {
         String sql = "SELECT COUNT(*) FROM nguoi_dung WHERE email = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
         return count != null && count > 0;
     }
 
-    // Kiểm tra số điện thoại đã tồn tại
     public boolean isPhoneExists(String soDienThoai) {
         if (soDienThoai == null || soDienThoai.trim().isEmpty()) {
             return false;
@@ -128,7 +114,6 @@ public class UserService {
         return count != null && count > 0;
     }
 
-    // Tìm người dùng theo ID
     public User findById(Long id) {
         String sql = "SELECT * FROM nguoi_dung WHERE nguoi_dung_id = ?";
         try {
@@ -164,7 +149,6 @@ public class UserService {
         return userRepository.getGenderDistribution();
     }
 
-    // Lấy số lượng người dùng theo trạng thái
     public Map<String, Object> getUserStatusStats() {
         String sql = "SELECT " +
                      "SUM(CASE WHEN trang_thai = 1 THEN 1 ELSE 0 END) as active, " +
@@ -175,74 +159,76 @@ public class UserService {
         return jdbcTemplate.queryForMap(sql);
     }
 
-    // Phương thức cập nhật thông tin user
     public boolean updateUserInfo(User user) {
-    try {
-        if (user == null || user.getNguoiDungId() == null) {
-            throw new RuntimeException("Thông tin người dùng không hợp lệ!");
+        try {
+            if (user == null || user.getNguoiDungId() == null) {
+                throw new RuntimeException("Thông tin người dùng không hợp lệ!");
+            }
+            
+            User existingUser = userRepository.findById(user.getNguoiDungId());
+            if (existingUser == null) {
+                throw new RuntimeException("Không tìm thấy người dùng!");
+            }
+            
+            if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+                throw new RuntimeException("Email không được để trống!");
+            }
+            
+            String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+            if (!user.getEmail().matches(emailRegex)) {
+                throw new RuntimeException("Email không hợp lệ!");
+            }
+            
+            if (!existingUser.getEmail().equals(user.getEmail()) && isEmailExists(user.getEmail())) {
+                throw new RuntimeException("Email đã được sử dụng bởi tài khoản khác!");
+            }
+            
+            if (user.getSoDienThoai() == null || user.getSoDienThoai().trim().isEmpty()) {
+                throw new RuntimeException("Số điện thoại không được để trống!");
+            }
+            
+            String phoneRegex = "^[0-9]{10,11}$";
+            if (!user.getSoDienThoai().matches(phoneRegex)) {
+                throw new RuntimeException("Số điện thoại không hợp lệ!");
+            }
+            
+            if (!existingUser.getSoDienThoai().equals(user.getSoDienThoai()) && isPhoneExists(user.getSoDienThoai())) {
+                throw new RuntimeException("Số điện thoại đã được sử dụng bởi tài khoản khác!");
+            }
+            
+            if (user.getHoTen() == null || user.getHoTen().trim().isEmpty()) {
+                throw new RuntimeException("Họ tên không được để trống!");
+            }
+            
+            existingUser.setHoTen(user.getHoTen());
+            existingUser.setEmail(user.getEmail());
+            existingUser.setSoDienThoai(user.getSoDienThoai());
+            existingUser.setDiaChi(user.getDiaChi());
+            
+            boolean updated = userRepository.updateInfo(existingUser);
+            
+            if (updated) {
+                System.out.println("Cập nhật thông tin user ID: " + user.getNguoiDungId());
+            }
+            
+            return updated;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         }
-        
-        // Lấy user hiện tại
-        User existingUser = userRepository.findById(user.getNguoiDungId());
-        if (existingUser == null) {
-            throw new RuntimeException("Không tìm thấy người dùng!");
-        }
-        
-        // Validate email
-        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
-            throw new RuntimeException("Email không được để trống!");
-        }
-        
-        // Kiểm tra email format
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        if (!user.getEmail().matches(emailRegex)) {
-            throw new RuntimeException("Email không hợp lệ!");
-        }
-        
-        // Kiểm tra email đã tồn tại chưa (trừ email của chính user này)
-        if (!existingUser.getEmail().equals(user.getEmail()) && isEmailExists(user.getEmail())) {
-            throw new RuntimeException("Email đã được sử dụng bởi tài khoản khác!");
-        }
-        
-        // Validate số điện thoại
-        if (user.getSoDienThoai() == null || user.getSoDienThoai().trim().isEmpty()) {
-            throw new RuntimeException("Số điện thoại không được để trống!");
-        }
-        
-        // Kiểm tra định dạng số điện thoại
-        String phoneRegex = "^[0-9]{10,11}$";
-        if (!user.getSoDienThoai().matches(phoneRegex)) {
-            throw new RuntimeException("Số điện thoại không hợp lệ!");
-        }
-        
-        // Kiểm tra số điện thoại
-        if (!existingUser.getSoDienThoai().equals(user.getSoDienThoai()) && isPhoneExists(user.getSoDienThoai())) {
-            throw new RuntimeException("Số điện thoại đã được sử dụng bởi tài khoản khác!");
-        }
-        
-        // Validate họ tên
-        if (user.getHoTen() == null || user.getHoTen().trim().isEmpty()) {
-            throw new RuntimeException("Họ tên không được để trống!");
-        }
-        
-        // Cập nhật thông tin
-        existingUser.setHoTen(user.getHoTen());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setSoDienThoai(user.getSoDienThoai());
-        existingUser.setDiaChi(user.getDiaChi());
-        
-        // Lưu vào database
-        boolean updated = userRepository.updateInfo(existingUser);
-        
-        if (updated) {
-            // Ghi log hoạt động
-            System.out.println("Cập nhật thông tin user ID: " + user.getNguoiDungId());
-        }
-        
-        return updated;
-    } catch (Exception e) {
-        e.printStackTrace();
-        throw new RuntimeException(e.getMessage());
     }
-} 
+    
+    // Phương thức mới: Đăng xuất
+    public void logout(Long userId) {
+        try {
+            // Ghi log lịch sử đăng xuất
+            String sql = "INSERT INTO lich_su_hoat_dong (nguoi_dung_id, loai_hoat_dong, chi_tiet, thoi_gian) " +
+                         "VALUES (?, 'DangXuat', 'Người dùng đã đăng xuất', NOW())";
+            jdbcTemplate.update(sql, userId);
+            
+            System.out.println("Người dùng ID " + userId + " đã đăng xuất");
+        } catch (Exception e) {
+            System.err.println("Lỗi khi ghi log đăng xuất: " + e.getMessage());
+        }
+    }
 }

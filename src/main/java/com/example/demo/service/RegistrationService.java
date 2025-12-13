@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.model.ActivityHistory;
+import com.example.demo.model.Event;
 import com.example.demo.model.Registration;
 import com.example.demo.repository.ActivityHistoryRepository;
 import com.example.demo.repository.RegistrationRepository;
@@ -25,6 +26,9 @@ public class RegistrationService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private EventService eventService;
+
     public List<Registration> getRegistrationsByUser(Long userId) {
         return registrationRepository.findByUserId(userId);
     }
@@ -42,30 +46,33 @@ public class RegistrationService {
         // Lưu vào DB
         registrationRepository.save(registration);
 
+        // lấy tên sự kiện từ mã sự kiện
+        Event eventInfor = eventService.getEventById(suKienId);
+
         // Ghi log lịch sử hoạt động
         ActivityHistory history = new ActivityHistory();
         history.setNguoiDungId(userId);
         history.setLoaiHoatDong("DangKy");
         history.setSuKienId(suKienId);
-        history.setChiTiet("Đăng ký sự kiện: " + suKienId + 
+        history.setChiTiet("Đăng ký sự kiện: " + eventInfor.getTenSuKien() + 
                           (ghiChu != null && !ghiChu.isEmpty() ? " - Ghi chú: " + ghiChu : ""));
         history.setThoiGian(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
         historyRepository.save(history);
     }
 
-    public void cancelRegistration(Long dangKyId, Long userId) {
-        registrationRepository.cancel(dangKyId);
+    // public void cancelRegistration(Long dangKyId, Long userId) {
+    //     registrationRepository.cancel(dangKyId);
 
-        // Log lịch sử
-        ActivityHistory history = new ActivityHistory();
-        history.setNguoiDungId(userId);
-        history.setLoaiHoatDong("HUY_DANG_KY");
-        history.setChiTiet("Hủy đăng ký ID: " + dangKyId);
-        history.setThoiGian(
-            Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
-        );
-        historyRepository.save(history);
-    }
+    //     // Log lịch sử
+    //     ActivityHistory history = new ActivityHistory();
+    //     history.setNguoiDungId(userId);
+    //     history.setLoaiHoatDong("HuyDangKy");
+    //     history.setChiTiet("Hủy đăng ký ID: " + dangKyId);
+    //     history.setThoiGian(
+    //         Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
+    //     );
+    //     historyRepository.save(history);
+    // }
 
     public int countAttendedEvents(Long userId) {
         return registrationRepository.countByUserIdAndStatus(userId, "DaDuyet");
@@ -134,5 +141,46 @@ public class RegistrationService {
         }
         
         notificationService.createNotification(organizerId, title, content, "SuKien", eventId);
+    }
+
+
+    // Phương thức hiện tại cần sửa đổi
+    public void cancelRegistration(Long dangKyId, Long userId) {
+        // Kiểm tra đăng ký tồn tại và thuộc về user
+        Registration registration = registrationRepository.findById(dangKyId);
+        if (registration == null) {
+            throw new RuntimeException("Không tìm thấy đăng ký");
+        }
+        
+        if (!registration.getNguoiDungId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền hủy đăng ký này");
+        }
+        
+        // Lấy thông tin sự kiện để kiểm tra
+        Event event = eventService.getEventById(registration.getSuKienId());
+        if (event != null) {
+            // Kiểm tra nếu sự kiện đã bắt đầu thì không cho hủy
+            Date now = new Date();
+            if (event.getThoiGianBatDau() != null && event.getThoiGianBatDau().before(now)) {
+                throw new RuntimeException("Không thể hủy đăng ký sự kiện đã bắt đầu");
+            }
+        }
+        
+        // Hủy đăng ký
+        registrationRepository.cancel(dangKyId);
+        
+        // Giảm số lượng đăng ký trong sự kiện
+        registrationRepository.decreaseEventRegistrationCount(registration.getSuKienId());
+
+        // Log lịch sử
+        ActivityHistory history = new ActivityHistory();
+        history.setNguoiDungId(userId);
+        history.setLoaiHoatDong("HUY_DANG_KY");
+        history.setSuKienId(registration.getSuKienId());
+        history.setChiTiet("Hủy đăng ký ID: " + dangKyId + " cho sự kiện ID: " + registration.getSuKienId());
+        history.setThoiGian(
+            Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
+        );
+        historyRepository.save(history);
     }
 }

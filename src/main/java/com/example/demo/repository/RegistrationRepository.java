@@ -42,10 +42,6 @@ public class RegistrationRepository {
         jdbcTemplate.update(updateSql, registration.getSuKienId());
     }
 
-    public void cancel(Long dangKyId) {
-        jdbcTemplate.update("DELETE FROM dang_ky_su_kien WHERE dang_ky_su_kien_id = ?", dangKyId);
-    }
-
     public int countByUserIdAndStatus(Long userId, String status) {
         String sql = "SELECT COUNT(*) FROM dang_ky_su_kien WHERE nguoi_dung_id = ? AND trang_thai = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, userId, status);
@@ -227,5 +223,20 @@ public class RegistrationRepository {
         }
         String sql = "SELECT DATE(thoi_gian_dang_ky) AS ngay, COUNT(dang_ky_su_kien_id) AS count FROM dang_ky_su_kien GROUP BY " + groupBy + " ORDER BY ngay";
         return jdbcTemplate.queryForList(sql);
+    }
+
+    // Thêm phương thức này vào RegistrationRepository
+    @Transactional
+    public void decreaseEventRegistrationCount(Long suKienId) {
+        String sql = "UPDATE su_kien SET so_luong_da_dang_ky = so_luong_da_dang_ky - 1 WHERE su_kien_id = ? AND so_luong_da_dang_ky > 0";
+        jdbcTemplate.update(sql, suKienId);
+    }
+
+    // Sửa phương thức cancel hiện tại để đảm bảo tính toàn vẹn
+    @Transactional
+    public void cancel(Long dangKyId) {
+        // Cập nhật trạng thái thay vì xóa
+        String updateSql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
+        jdbcTemplate.update(updateSql, dangKyId);
     }
 }

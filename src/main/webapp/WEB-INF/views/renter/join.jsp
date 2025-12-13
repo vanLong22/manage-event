@@ -12,7 +12,7 @@
     <title>EventHub - Người tham gia sự kiện</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
+    <style> 
         :root {
             --primary: #4CAF50;
             --primary-light: #E8F5E9;
@@ -26,6 +26,7 @@
             --border-radius: 12px;
             --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             --transition: all 0.3s ease;
+            --border-color: rgba(0, 0, 0, 0.05);
         }
 
         * {
@@ -55,8 +56,6 @@
             transition: var(--transition);
             box-shadow: var(--box-shadow);
             z-index: 100;
-            
-            /* Thêm các thuộc tính sau để cố định */
             position: sticky;
             top: 0;
             height: 100vh;
@@ -126,7 +125,7 @@
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .header-title h2 {
@@ -146,39 +145,94 @@
             gap: 15px;
         }
 
-        .search-box {
+        /* Search */
+        .search-container {
             position: relative;
+            width: 300px;
         }
 
-        .search-box input {
-            padding: 10px 15px 10px 40px;
+        #search-input {
+            width: 100%;
+            padding: 10px 40px 10px 36px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            width: 250px;
             font-size: 14px;
             transition: var(--transition);
         }
 
-        .search-box input:focus {
+        #search-input:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
         }
 
-        .search-box i {
+        #search-suggestions {
             position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray);
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        .notification {
+        .suggestion-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: #f8f9fa;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .suggestion-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .no-results {
+            padding: 16px;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* User & Notification */
+        .notification-dropdown-wrapper {
+            position: relative;
+        }
+
+        .notification-trigger {
             position: relative;
             cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
         }
 
-        .notification i {
+        .notification-trigger:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .notification-trigger i {
             font-size: 20px;
             color: var(--dark);
         }
@@ -198,10 +252,8 @@
             justify-content: center;
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .user-info-dropdown {
+            position: relative;
         }
 
         .user-avatar {
@@ -215,16 +267,231 @@
             color: white;
             font-weight: bold;
             font-size: 18px;
+            cursor: pointer;
         }
 
-        .user-details h4 {
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 250px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .user-dropdown.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .user-dropdown-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .user-dropdown-header h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .user-dropdown-header p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--gray);
+        }
+
+        .user-dropdown-menu {
+            padding: 10px 0;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            color: #555;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            gap: 10px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: var(--primary);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 380px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification-dropdown-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-dropdown-header h4 {
+            margin: 0;
             font-size: 16px;
             font-weight: 600;
         }
 
-        .user-details p {
+        .btn-mark-all-read {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-mark-all-read:hover {
+            text-decoration: underline;
+        }
+
+        .notification-dropdown-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-dropdown-item {
+            display: flex;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f8f9fa;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .notification-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-dropdown-item.unread {
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+
+        .notification-dropdown-item .notification-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .notification-dropdown-item .notification-icon.event {
+            background-color: var(--primary);
+        }
+
+        .notification-dropdown-item .notification-icon.system {
+            background-color: var(--warning);
+        }
+
+        .notification-dropdown-item .notification-content {
+            flex: 1;
+        }
+
+        .notification-dropdown-item .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--dark);
+        }
+
+        .notification-dropdown-item p {
+            margin: 0 0 5px 0;
+            color: #666;
             font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .notification-dropdown-item .notification-time {
+            font-size: 11px;
             color: var(--gray);
+        }
+
+        .no-notifications {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gray);
+        }
+
+        .no-notifications i {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .notification-dropdown-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #f0f0f0;
+            text-align: center;
+        }
+
+        .view-all-notifications {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .view-all-notifications:hover {
+            text-decoration: underline;
+        }
+
+        .dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 999;
+            display: none;
         }
 
         /* Dashboard Cards */
@@ -316,6 +583,7 @@
             font-weight: 700;
         }
 
+        /* Buttons */
         .btn {
             padding: 10px 20px;
             border-radius: 8px;
@@ -362,6 +630,16 @@
             background-color: var(--primary-light);
         }
 
+        .btn-outline.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
         /* Tables */
         .table-container {
             overflow-x: auto;
@@ -375,7 +653,7 @@
         th, td {
             padding: 14px 16px;
             text-align: left;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--border-color);
         }
 
         th {
@@ -395,17 +673,17 @@
             font-weight: 600;
         }
 
-        .status.approved {
+        .status.approved, .status.daduyet {
             background-color: rgba(76, 175, 80, 0.15);
             color: var(--success);
         }
 
-        .status.pending {
+        .status.pending, .status.choduyet {
             background-color: rgba(255, 193, 7, 0.15);
             color: var(--warning);
         }
 
-        .status.cancelled {
+        .status.cancelled, .status.tuchoi {
             background-color: rgba(244, 67, 54, 0.15);
             color: var(--danger);
         }
@@ -441,6 +719,7 @@
         .form-row {
             display: flex;
             gap: 20px;
+            margin-bottom: 20px;
         }
 
         .form-row .form-group {
@@ -474,6 +753,35 @@
             resize: vertical;
         }
 
+        #event-code-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            animation: slideDown 0.3s ease;
+        }
+
+        #event-code {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background-color: #fff;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        #event-code:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            outline: none;
+        }
+
         /* Event Cards */
         .events-grid {
             display: grid;
@@ -487,6 +795,7 @@
             overflow: hidden;
             box-shadow: var(--box-shadow);
             transition: var(--transition);
+            cursor: pointer;
         }
 
         .event-card:hover {
@@ -496,12 +805,18 @@
 
         .event-image {
             height: 160px;
-            background-color: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-size: 40px;
+            overflow: hidden;
+        }
+
+        .event-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .event-card:hover .event-image img {
+            transform: scale(1.05);
         }
 
         .event-content {
@@ -533,7 +848,56 @@
             align-items: center;
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .filter-results-info {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: var(--primary-light);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .btn-clear-filters {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-clear-filters:hover {
+            text-decoration: underline;
         }
 
         /* Modal */
@@ -558,11 +922,23 @@
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: modalSlideUp 0.3s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .modal-header {
             padding: 20px 25px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -585,83 +961,541 @@
             padding: 25px;
         }
 
-        /* Filter Section */
-        .filter-section {
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Sidebar chi tiết sự kiện */
+        .sidebar-detail {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100vh;
             background: white;
-            border-radius: var(--border-radius);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            z-index: 1050;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar-detail.open {
+            right: 0;
+        }
+
+        .sidebar-detail-header {
             padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: var(--box-shadow);
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, var(--primary) 0%, #62ea69 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .filter-row {
+        .sidebar-detail-header h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+
+        .sidebar-detail-content {
+            padding: 20px;
+        }
+
+        /* Phần đánh giá */
+        .rating-section {
+            margin-bottom: 20px;
+        }
+
+        .rating-overview {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
         }
 
-        .filter-group {
+        .average-rating {
+            text-align: center;
+        }
+
+        .rating-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 3px;
+        }
+
+        .star {
+            font-size: 18px;
+            color: #ddd;
+            cursor: pointer;
+        }
+
+        .star.active {
+            color: #ffc107;
+        }
+
+        .star.hover {
+            color: #ffdb58;
+        }
+
+        .rating-distribution {
             flex: 1;
-            min-width: 180px;
         }
 
-        /* Notification List */
-        .notification-list {
-            list-style: none;
-        }
-
-        .notification-item {
-            padding: 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        .rating-bar {
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
+            align-items: center;
+            margin-bottom: 5px;
         }
 
-        .notification-item:last-child {
+        .rating-label {
+            width: 60px;
+            font-size: 14px;
+        }
+
+        .rating-progress {
+            flex: 1;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .rating-progress-fill {
+            height: 100%;
+            background: #ffc107;
+        }
+
+        .form-rating {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Phần bình luận */
+        .comments-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .comment-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .comment-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .comment-item:last-child {
             border-bottom: none;
         }
 
-        .notification-icon {
+        .comment-avatar {
             width: 40px;
             height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .comment-text {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .comment-action-btn {
+            background: none;
+            border: none;
+            color: var(--gray);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .comment-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Timeline cho lịch sử hoạt động */
+        .activity-timeline {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+
+        .activity-timeline::before {
+            content: '';
+            position: absolute;
+            left: 50px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary-light);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .timeline-dot {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 16px;
+            font-size: 18px;
+            z-index: 2;
             flex-shrink: 0;
+            margin-right: 20px;
         }
 
-        .notification-icon.info {
-            background-color: var(--primary);
+        .timeline-dot.dangsukien {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .notification-icon.warning {
-            background-color: var(--warning);
+        .timeline-dot.dangky {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
-        .notification-icon.success {
-            background-color: var(--success);
+        .timeline-dot.huy_dang_ky {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
-        .notification-content {
+        .timeline-dot.capnhatsukien {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .timeline-dot.binhluan {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .timeline-dot.danhgia {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .timeline-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            flex: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-content:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .timeline-header h4 {
+            margin: 0;
+            color: var(--dark);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .timeline-time {
+            font-size: 13px;
+            color: var(--gray);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+        }
+
+        .timeline-body p {
+            margin: 0;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .timeline-body .event-name {
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .timeline-body .event-name:hover {
+            text-decoration: underline;
+        }
+
+        .timeline-body small {
+            font-size: 14px;
+            color: var(--gray);
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Suggestion limits alert */
+        .suggestion-limits-alert {
+            background: #fff8e1;
+            border: 2px solid #ffd54f;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .alert-content {
+            padding: 0;
+        }
+
+        .alert-header {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            padding: 15px 20px;
+            border-bottom: 1px solid #ffd54f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alert-header h4 {
+            margin: 0;
+            color: #5d4037;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-alert {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #5d4037;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+
+        .close-alert:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        .alert-body {
+            padding: 20px;
+        }
+
+        .limit-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed #ffd54f;
+        }
+
+        .limit-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .limit-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .limit-icon.info {
+            background-color: #bbdefb;
+            color: #1976d2;
+        }
+
+        .limit-icon.warning {
+            background-color: #ffecb3;
+            color: #ff8f00;
+        }
+
+        .limit-icon.success {
+            background-color: #c8e6c9;
+            color: #388e3c;
+        }
+
+        .limit-icon.error {
+            background-color: #ffcdd2;
+            color: #d32f2f;
+        }
+
+        .limit-content {
             flex: 1;
         }
 
-        .notification-title {
+        .limit-title {
             font-weight: 600;
-            margin-bottom: 5px;
+            color: #5d4037;
+            margin-bottom: 4px;
         }
 
-        .notification-time {
+        .limit-desc {
+            color: #795548;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .limit-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #ffd54f;
             font-size: 12px;
-            color: var(--gray);
+            font-weight: 600;
         }
 
-        .notification-unread {
-            background-color: rgba(76, 175, 80, 0.05);
+        .stat-item .value {
+            color: var(--primary);
+        }
+
+        .limit-progress {
+            margin-top: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Notification toast */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--box-shadow);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-toast.success {
+            background-color: var(--success);
+        }
+
+        .notification-toast.error {
+            background-color: var(--danger);
         }
 
         /* Responsive */
@@ -688,10 +1522,6 @@
             
             .menu-link {
                 white-space: nowrap;
-            }
-            
-            .search-box input {
-                width: 200px;
             }
         }
 
@@ -720,149 +1550,13 @@
                 justify-content: space-between;
             }
             
-            .search-box input {
+            .search-container {
                 width: 100%;
             }
             
             .filter-row {
                 flex-direction: column;
                 gap: 10px;
-            }
-        }
-
-        .search-container {
-            position: relative;
-            width: 300px;
-        }
-
-        #search-input {
-            width: 100%;
-            padding: 10px 40px 10px 36px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        #search-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .suggestion-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .suggestion-item:hover {
-            background: #f8f9fa;
-        }
-
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-
-        .suggestion-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 4px;
-        }
-
-        .suggestion-meta {
-            font-size: 12px;
-            color: #7f8c8d;
-        }
-
-        .no-results {
-            padding: 16px;
-            text-align: center;
-            color: #999;
-            font-style: italic;
-        }
-
-        /* Tùy chỉnh thêm cho phần tìm kiếm */
-        .search-container {
-            position: relative;
-            width: 300px;
-        }
-
-        #search-input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        /* Cải thiện hiển thị ảnh sự kiện */
-        .event-image {
-            height: 160px;
-            overflow: hidden;
-        }
-
-        .event-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .event-card:hover .event-image img {
-            transform: scale(1.05);
-        }
-
-        /* Cải thiện phần thông báo */
-        .notification-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-mark-read, .btn-delete-notification {
-            background: none;
-            border: none;
-            color: var(--gray);
-            cursor: pointer;
-            font-size: 14px;
-            transition: color 0.2s;
-        }
-
-        .btn-mark-read:hover {
-            color: var(--success);
-        }
-
-        .btn-delete-notification:hover {
-            color: var(--danger);
-        }
-
-        /* Hiệu ứng cho các phần tử tương tác */
-        .menu-link, .action-btn, .btn, .event-card, .card {
-            transition: all 0.3s ease;
-        }
-
-        .menu-link:hover, .action-btn:hover, .btn:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Tùy chỉnh responsive */
-        @media (max-width: 768px) {
-            .search-container {
-                width: 100%;
-            }
-            
-            .notification-actions {
-                flex-direction: column;
             }
             
             .section-header {
@@ -876,438 +1570,40 @@
                 gap: 10px;
                 flex-wrap: wrap;
             }
-        }
-
-        /* CSS cho form đề xuất */
-        .form-row {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-        }
-
-        /* CSS cho chi tiết đề xuất */
-        .suggestion-detail {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .detail-row {
-            display: flex;
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .detail-row label {
-            font-weight: 600;
-            min-width: 150px;
-            color: var(--dark);
-        }
-
-        .detail-row span {
-            flex: 1;
-            color: var(--gray);
-        }
-
-        /* Notification toast */
-        .notification-toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: var(--box-shadow);
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification-toast.success {
-            background-color: var(--success);
-        }
-
-        .notification-toast.error {
-            background-color: var(--danger);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .form-row {
-                flex-direction: column;
-                gap: 0;
+            
+            .sidebar-detail {
+                width: 100%;
+                right: -100%;
             }
             
-            .detail-row {
+            .notification-dropdown {
+                width: 90%;
+                right: 5%;
+            }
+            
+            .activity-timeline::before {
+                left: 25px;
+            }
+            
+            .timeline-dot {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+                margin-right: 15px;
+            }
+            
+            .timeline-header {
                 flex-direction: column;
+                align-items: flex-start;
                 gap: 5px;
             }
             
-            .detail-row label {
-                min-width: auto;
+            .timeline-time {
+                align-items: flex-start;
             }
-        }
-
-        /* Status styles */
-        .status.choduyet { background-color: #fff3cd; color: #856404; }
-        .status.daduyet { background-color: #d1edff; color: #004085; }
-        .status.tuchoi { background-color: #f8d7da; color: #721c24; }
-
-        /* Filter active state */
-        .btn-outline.active {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        /* Modal footer */
-        .modal-footer {
-            padding: 15px 20px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        /* Detail rows */
-        .detail-row {
-            display: flex;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .detail-row label {
-            font-weight: 600;
-            min-width: 150px;
-            color: #555;
-        }
-
-        .detail-row span {
-            flex: 1;
-            color: #333;
-        }
-
-        /* Modal chi tiết sự kiện - CẢI THIỆN */
-        .event-detail-modal {
-            max-width: 700px;
-        }
-
-        .event-detail-header {
-            padding: 25px 30px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .event-detail-header h3 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .event-detail-body {
-            padding: 0;
-        }
-
-        .event-detail-hero {
-            position: relative;
-            height: 300px;
-            overflow: hidden;
-        }
-
-        .event-detail-hero img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .event-detail-hero-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.7));
-            padding: 30px;
-            color: white;
-        }
-
-        .event-detail-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0 0 10px 0;
-            line-height: 1.2;
-        }
-
-        .event-detail-meta {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-
-        .event-detail-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-
-        .event-detail-meta-item i {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-
-        .event-detail-content {
-            padding: 30px;
-        }
-
-        .event-detail-section {
-            margin-bottom: 25px;
-        }
-
-        .event-detail-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .event-detail-section h4 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .event-detail-section h4 i {
-            color: var(--primary);
-        }
-
-        .event-detail-description {
-            line-height: 1.7;
-            color: #555;
-            font-size: 15px;
-            white-space: pre-wrap;
-        }
-
-        .event-detail-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .event-detail-stat {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            border-left: 4px solid var(--primary);
-        }
-
-        .event-detail-stat-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 5px;
-        }
-
-        .event-detail-stat-label {
-            font-size: 12px;
-            color: var(--gray);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .event-detail-tags {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .event-detail-tag {
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .event-detail-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            padding: 20px 30px;
-            border-top: 1px solid #f0f0f0;
-            background: #fafbfc;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .event-detail-modal {
-                margin: 20px;
-                width: calc(100% - 40px);
-            }
-            
-            .event-detail-hero {
-                height: 200px;
-            }
-            
-            .event-detail-title {
-                font-size: 22px;
-            }
-            
-            .event-detail-meta {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .event-detail-content {
-                padding: 20px;
-            }
-            
-            .event-detail-stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .event-detail-actions {
-                flex-direction: column;
-            }
-            
-            .event-detail-actions .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        /* Animation cho modal */
-        @keyframes modalSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .modal-content {
-            animation: modalSlideUp 0.3s ease;
-        }
-
-        /* CSS cho trường mã sự kiện riêng tư */
-        #event-code-group {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid var(--primary);
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        #event-code-group label {
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            display: block;
-            font-size: 15px;
-        }
-
-        #event-code {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s ease;
-            background-color: #fff;
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        #event-code:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-            outline: none;
-        }
-
-        #event-code-group small {
-            display: block;
-            margin-top: 8px;
-            color: #7f8c8d;
-            font-size: 13px;
-            line-height: 1.4;
-        }
-
-        /* Hiệu ứng khi hiển thị */
-        #event-code-group.show {
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Trạng thái lỗi */
-        #event-code.error {
-            border-color: var(--danger);
-            background-color: #fff5f5;
-        }
-
-        #event-code.success {
-            border-color: var(--success);
-            background-color: #f0fff4;
-        }
-
-        /* Icon cho trường mã */
-        .code-input-container {
-            position: relative;
-        }
-
-        .code-input-container i {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--gray);
-        }
-
-        .code-input-container:focus-within i {
-            color: var(--primary);
         }
     </style>
-
-
 </head>
-
 <body>
     <!-- Thêm vào phần header hoặc bất kỳ đâu trong HTML -->
     <input type="hidden" id="currentUserId" value="${user.nguoiDungId}">
@@ -1336,12 +1632,6 @@
                     <a href="#" class="menu-link" data-target="myEvents">
                         <i class="fas fa-ticket-alt"></i>
                         <span>Sự kiện của tôi</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" class="menu-link" data-target="notifications">
-                        <i class="fas fa-bell"></i>
-                        <span>Thông báo</span>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -1379,21 +1669,87 @@
                         <input type="text" id="search-input" placeholder="Tìm kiếm sự kiện...">
                         <div id="search-suggestions" class="search-suggestions"></div>
                     </div>
-                    <div class="notification">
-                        <i class="fas fa-bell"></i>
-                        <div class="notification-badge" id="notification-count">
-                            <c:out value="${unreadNotificationCount}" default="0"/>
+                    
+                    <!-- Thay đổi phần notification thành dropdown -->
+                    <div class="notification-dropdown-wrapper">
+                        <div class="notification-trigger" id="notification-trigger">
+                            <i class="fas fa-bell"></i>
+                            <div class="notification-badge" id="notification-count">
+                                <c:out value="${unreadNotificationCount}" default="0"/>
+                            </div>
+                        </div>
+                        <div class="notification-dropdown" id="notification-dropdown">
+                            <div class="notification-dropdown-header">
+                                <h4>Thông báo mới</h4>
+                                <button class="btn-mark-all-read" id="mark-all-read-dropdown">
+                                    <i class="fas fa-check-double"></i> Đánh dấu tất cả đã đọc
+                                </button>
+                            </div>
+                            <div class="notification-dropdown-list" id="notification-dropdown-list">
+                                <c:choose>
+                                    <c:when test="${not empty notifications}">
+                                        <c:forEach var="notification" items="${notifications}" begin="0" end="4">
+                                            <div class="notification-dropdown-item ${notification.daDoc.intValue() == 0 ? 'unread' : ''}" 
+                                                data-notification-id="${notification.thongBaoId}">
+                                                <div class="notification-icon ${notification.loaiThongBao}">
+                                                    <c:choose>
+                                                        <c:when test="${notification.loaiThongBao == 'event'}">
+                                                            <i class="fas fa-calendar-alt"></i>
+                                                        </c:when>
+                                                        <c:when test="${notification.loaiThongBao == 'system'}">
+                                                            <i class="fas fa-cog"></i>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <i class="fas fa-bell"></i>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </div>
+                                                <div class="notification-content">
+                                                    <div class="notification-title">${notification.tieuDe}</div>
+                                                    <p>${fn:substring(notification.noiDung, 0, 80)}${fn:length(notification.noiDung) > 80 ? '...' : ''}</p>
+                                                    <div class="notification-time">
+                                                        <fmt:formatDate value="${notification.thoiGian}" pattern="dd/MM HH:mm"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </c:forEach>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="no-notifications">
+                                            <i class="fas fa-bell-slash"></i>
+                                            <p>Không có thông báo mới</p>
+                                        </div>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <div class="notification-dropdown-footer">
+                                <a href="#" class="view-all-notifications" id="view-all-notifications-dropdown">
+                                    <i class="fas fa-list"></i> Xem tất cả thông báo
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <div class="user-info">
-                        <div class="user-avatar" id="user-avatar">
+                    
+                    <!-- User info với dropdown logout -->
+                    <div class="user-info-dropdown">
+                        <div class="user-avatar" id="user-avatar-dropdown">
                             <c:if test="${not empty user.hoTen}">
                                 <c:out value="${fn:substring(user.hoTen, 0, 1)}${fn:substring(user.hoTen, fn:indexOf(user.hoTen, ' ') + 1, fn:indexOf(user.hoTen, ' ') + 2)}"/>
                             </c:if>
                         </div>
-                        <div class="user-details">
-                            <h4 id="user-name"><c:out value="${user.hoTen}"/></h4>
-                            <p id="user-role">Người tham gia</p>
+                        <div class="user-dropdown" id="user-dropdown">
+                            <div class="user-dropdown-header">
+                                <h4><c:out value="${user.hoTen}"/></h4>
+                                <p><c:out value="${user.email}"/></p>
+                            </div>
+                            <div class="user-dropdown-menu">
+                                <a href="#" class="dropdown-item" data-target="account">
+                                    <i class="fas fa-user-cog"></i> Tài khoản
+                                </a>
+                                <a href="#" class="dropdown-item" id="logout-dropdown">
+                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1432,7 +1788,7 @@
                     </div>
                 </div>
 
-                <!-- ================== SỰ KIỆN GỢI Ý TỪ MÔ HÌNH ML ================== -->
+                <!-- == SỰ KIỆN GỢI Ý TỪ MÔ HÌNH ML == -->
                 <div class="section-header">
                     <h3 class="section-title">Sự kiện gợi ý cho bạn</h3>
                     <!--
@@ -1466,13 +1822,14 @@
                                         <div class="event-meta">
                                             <span><i class="far fa-calendar"></i> 
                                                 <fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/>
+                                                
                                             </span>
                                             <span><i class="fas fa-map-marker-alt"></i> <c:out value="${event.diaDiem}"/></span>
                                         </div>
                                         <p class="event-description"><c:out value="${fn:substring(event.moTa, 0, 100)}${fn:length(event.moTa) > 100 ? '...' : ''}"/></p>
                                         <div class="event-footer">
-                                            <span class="status ${fn:toLowerCase(event.trangThai)}">
-                                                <c:out value="${event.trangThai}"/>
+                                            <span class="status ${fn:toLowerCase(event.trangThaiThoiGian)}">
+                                                <c:out value="${event.trangThaiThoiGian}"/>
                                             </span>
                                             <span><i class="fas fa-users"></i> 
                                                 <c:out value="${event.soLuongDaDangKy}"/>/<c:out value="${event.soLuongToiDa}"/>
@@ -1491,7 +1848,7 @@
                         </c:otherwise>
                     </c:choose>
                 </div>
-                <!-- ================== KẾT THÚC PHẦN GỢI Ý AI ================== -->
+                <!-- == KẾT THÚC PHẦN GỢI Ý AI == -->
             </div>
 
             <!-- Events Content -->
@@ -1606,6 +1963,68 @@
                 </div>
             </div>
 
+            <!-- Sidebar chi tiết sự kiện với bình luận -->
+            <div class="sidebar-detail" id="event-detail-sidebar">
+                <div class="sidebar-detail-header">
+                    <h3>Chi tiết sự kiện</h3>
+                    <button class="close-sidebar">&times;</button>
+                </div>
+                
+                <div class="sidebar-detail-content">
+                    <div id="sidebar-event-content">
+                        <!-- Nội dung sự kiện sẽ được load ở đây -->
+                    </div>
+                    
+                    <!-- Phần đánh giá -->
+                    <div class="rating-section">
+                        <div class="event-detail-section">
+                            <h4><i class="fas fa-star"></i> Đánh giá</h4>
+                            <div id="rating-overview" class="rating-overview">
+                                <!-- Tổng quan đánh giá -->
+                            </div>
+                            
+                            <!-- Form đánh giá của user -->
+                            <div id="user-rating-form" style="display: none;">
+                                <div class="form-rating">
+                                    <label>Đánh giá của bạn:</label>
+                                    <div class="rating-stars" id="rating-input">
+                                        <span class="star" data-value="1"><i class="fas fa-star"></i></span>
+                                        <span class="star" data-value="2"><i class="fas fa-star"></i></span>
+                                        <span class="star" data-value="3"><i class="fas fa-star"></i></span>
+                                        <span class="star" data-value="4"><i class="fas fa-star"></i></span>
+                                        <span class="star" data-value="5"><i class="fas fa-star"></i></span>
+                                    </div>
+                                    <span id="rating-text">Chưa đánh giá</span>
+                                </div>
+                                <button class="btn btn-primary btn-sm" id="submit-rating">Gửi đánh giá</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Phần bình luận -->
+                    <div class="comments-section">
+                        <div class="event-detail-section">
+                            <h4><i class="fas fa-comments"></i> Bình luận</h4>
+                            <div class="comment-list" id="comment-list">
+                                <!-- Danh sách bình luận -->
+                            </div>
+                            
+                            <!-- Form bình luận -->
+                            <div class="comment-form">
+                                <div class="form-group">
+                                    <textarea id="new-comment" placeholder="Viết bình luận của bạn..." rows="3" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd;"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <button class="btn btn-primary" id="submit-comment">
+                                        <i class="fas fa-paper-plane"></i> Gửi bình luận
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- My Events Content -->
             <div id="myEvents" class="content-section">
                 <div class="section-header">
@@ -1626,11 +2045,11 @@
                         <tbody>
                             <c:forEach var="registration" items="${myEvents}">
                                 <tr>
-                                    <td><c:out value="${registration.suKien.tenSuKien}"/></td>
+                                    <td><c:out value="${registration.event.tenSuKien}"/></td>
                                     <td>
-                                        <fmt:formatDate value="${registration.suKien.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/>
+                                        <fmt:formatDate value="${registration.event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/>
                                     </td>
-                                    <td><c:out value="${registration.suKien.diaDiem}"/></td>
+                                    <td><c:out value="${registration.event.diaDiem}"/></td>
                                     <td>
                                         <span class="status ${fn:toLowerCase(registration.trangThai)}">
                                             <c:choose>
@@ -1758,6 +2177,22 @@
             <div id="suggestions" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Đề xuất sự kiện</h3>
+                    <button class="btn btn-outline" id="check-suggestion-limits">
+                        <i class="fas fa-info-circle"></i> Kiểm tra giới hạn
+                    </button>
+                </div>
+
+                <!-- Thông tin lưu ý -->
+                <div class="suggestion-limits-alert" id="suggestion-limits-alert" style="display: none;">
+                    <div class="alert-content">
+                        <div class="alert-header">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Thông tin lưu ý khi đề xuất</h4>
+                            <button class="close-alert">&times;</button>
+                        </div>
+                        <div class="alert-body" id="limits-info">
+                            <!-- Nội dung sẽ được load bằng JavaScript -->
+                        </div>
+                    </div>
                 </div>
 
                 <form id="suggestion-form">
@@ -1898,38 +2333,94 @@
             <div id="history" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Lịch sử hoạt động</h3>
+                    <div class="filter-buttons">
+                        <button class="btn btn-outline btn-sm active" data-filter="all">Tất cả</button>
+                        <button class="btn btn-outline btn-sm" data-filter="dangky">Đăng ký</button>
+                        <button class="btn btn-outline btn-sm" data-filter="sukien">Sự kiện</button>
+                        <button class="btn btn-outline btn-sm" data-filter="de-xuat">Đề xuất</button>
+                    </div>
                 </div>
 
-                <div class="table-container">
-                    <table id="history-table">
-                        <thead>
-                            <tr>
-                                <th>Hoạt động</th>
-                                <th>Chi tiết</th>
-                                <th>Thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <c:forEach var="history" items="${histories}">
-                                <tr>
-                                    <td>
+                <div class="activity-timeline" id="activity-timeline">
+                    <c:forEach var="history" items="${histories}">
+                        <div class="timeline-item ${history.loaiHoatDong.toLowerCase()}" data-type="${history.loaiHoatDong}">
+                            <div class="timeline-dot ${history.loaiHoatDong.toLowerCase()}">
+                                <c:choose>
+                                    <c:when test="${history.loaiHoatDong == 'DangSuKien'}">
+                                        <i class="fas fa-lightbulb"></i>
+                                    </c:when>
+                                    <c:when test="${history.loaiHoatDong == 'DangKy'}">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </c:when>
+                                    <c:when test="${history.loaiHoatDong == 'HuyDangKy'}">
+                                        <i class="fas fa-times-circle"></i>
+                                    </c:when>
+                                    <c:when test="${history.loaiHoatDong == 'CapNhatSuKien'}">
+                                        <i class="fas fa-edit"></i>
+                                    </c:when>
+                                    <c:when test="${history.loaiHoatDong == 'BinhLuan'}">
+                                        <i class="fas fa-comment"></i>
+                                    </c:when>
+                                    <c:when test="${history.loaiHoatDong == 'DanhGia'}">
+                                        <i class="fas fa-star"></i>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <i class="fas fa-history"></i>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <h4>
                                         <c:choose>
-                                            <c:when test="${history.loaiHoatDong == 'DangSuKien'}">Đăng sự kiện</c:when>
-                                            <c:when test="${history.loaiHoatDong == 'DangKy'}">Đăng ký</c:when>
-                                            <c:when test="${history.loaiHoatDong == 'HuyDangKy'}">Hủy đăng ký</c:when>
-                                            <c:when test="${history.loaiHoatDong == 'CapNhat'}">Cập nhật</c:when>
-                                            <c:otherwise>Khác</c:otherwise>
+                                            <c:when test="${history.loaiHoatDong == 'DangSuKien'}">
+                                                Đã đề xuất sự kiện
+                                            </c:when>
+                                            <c:when test="${history.loaiHoatDong == 'DangKy'}">
+                                                Đã đăng ký sự kiện
+                                            </c:when>
+                                            <c:when test="${history.loaiHoatDong == 'HuyDangKy'}">
+                                                Đã hủy đăng ký
+                                            </c:when>
+                                            <c:when test="${history.loaiHoatDong == 'CapNhatSuKien'}">
+                                                Đã cập nhật sự kiện
+                                            </c:when>
+                                            <c:when test="${history.loaiHoatDong == 'BinhLuan'}">
+                                                Đã bình luận
+                                            </c:when>
+                                            <c:when test="${history.loaiHoatDong == 'DanhGia'}">
+                                                Đã đánh giá
+                                            </c:when>
+                                            <c:otherwise>
+                                                Hoạt động khác
+                                            </c:otherwise>
                                         </c:choose>
-                                    </td>
-                                    <td><c:out value="${history.chiTiet}"/></td>
-                                    <td>
-                                        <fmt:formatDate value="${history.thoiGian}" pattern="dd/MM/yyyy HH:mm"/>
-                                    <td>
-                                    </td>
-                                </tr>
-                            </c:forEach>
-                        </tbody>
-                    </table>
+                                    </h4>
+                                    <span class="timeline-time">
+                                        <fmt:formatDate value="${history.thoiGian}" pattern="HH:mm"/>
+                                        <fmt:formatDate value="${history.thoiGian}" pattern="dd/MM/yyyy"/>
+                                    </span>
+                                </div>
+                                <div class="timeline-body">
+                                    <p>
+                                        <c:choose>
+                                            <c:when test="${history.suKienId != null}">
+                                                <!-- Thêm JavaScript để load tên sự kiện -->
+                                                <span class="event-name" data-event-id="${history.suKienId}">
+                                                    <i class="fas fa-spinner fa-spin"></i> Đang tải tên sự kiện...
+                                                </span>
+                                                <br>
+                                                <small>${history.chiTiet}</small>
+                                            </c:when>
+                                            <c:otherwise>
+                                                ${history.chiTiet}
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </c:forEach>
                 </div>
             </div>
 
@@ -2170,7 +2661,7 @@
     <script>
     $(document).ready(function() {
         // Thêm toast container vào body nếu chưa có
-        if ($('#toast-container').length === 0) {
+        if ($('#toast-container').length == 0) {
             $('body').append('<div class="toast-container" id="toast-container"></div>');
         }
 
@@ -2259,15 +2750,23 @@
             }
         });
 
-        // Modal functionality
+        // Đóng sidebar khi đóng modal
         $('.close-modal').click(function() {
             $('.modal').css('display', 'none');
+            $('#event-detail-sidebar').removeClass('open');
         });
 
+        // Cũng đóng sidebar khi click ra ngoài modal
         $(window).click(function(e) {
             if ($(e.target).hasClass('modal')) {
                 $('.modal').css('display', 'none');
+                $('#event-detail-sidebar').removeClass('open');
             }
+        });
+
+        // Đóng sidebar khi click nút đóng sidebar
+        $('.close-sidebar').click(function() {
+            $('#event-detail-sidebar').removeClass('open');
         });
 
         // Search functionality với gợi ý
@@ -2369,7 +2868,7 @@
                         'DaKetThuc': 'Đã kết thúc'
                     };
                     
-                    const trangThaiText = statusMap[event.trangThai] || event.trangThai || 'Không xác định';
+                    const trangThaiText = statusMap[event.trangThaiThoiGian] || event.trangThaiThoiGian || 'Không xác định';
 
                     const html = 
                         '<div class="event-image" style="margin-bottom: 20px;">' +
@@ -2377,7 +2876,7 @@
                         '</div>' +
                         '<h4 style="margin-bottom: 15px; color: #2c3e50;">' + event.tenSuKien + '</h4>' +
                         '<div class="event-meta" style="margin-bottom: 15px; color: #7f8c8d; display: flex; flex-direction: column; gap: 8px;">' +
-                            '<span><i class="far fa-calendar"></i> ' + formatDate(event.thoiGianBatDau) + '</span>' +
+                            '<span><i class="far fa-calendar"></i> ' + (event.thoiGianBatDau) + '</span>' +
                             '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'Chưa xác định') + '</span>' +
                             '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + ' người</span>' +
                         '</div>' +
@@ -2385,7 +2884,7 @@
                         '<div style="display: flex; gap: 20px; margin-bottom: 20px;">' +
                             '<div>' +
                                 '<label style="font-weight: 600; color: #555;">Trạng thái:</label>' +
-                                '<span class="status ' + (event.trangThai ? event.trangThai.toLowerCase() : '') + '" style="margin-left: 8px;">' + trangThaiText + '</span>' +
+                                '<span class="status ' + (event.trangThaiThoiGian ? event.trangThaiThoiGian.toLowerCase() : '') + '" style="margin-left: 8px;">' + trangThaiText + '</span>' +
                             '</div>' +
                             '<div>' +
                                 '<label style="font-weight: 600; color: #555;">Loại sự kiện:</label>' +
@@ -2499,6 +2998,7 @@
             e.stopPropagation();
             const dangKyId = $(this).data('registration-id');
             const eventName = $(this).closest('tr').find('td:first').text();
+            const $row = $(this).closest('tr');
             
             if (confirm('Bạn có chắc muốn hủy đăng ký sự kiện "' + eventName + '"?')) {
                 $.ajax({
@@ -2509,18 +3009,53 @@
                     success: function(res) {
                         if (res.success) {
                             showToast(res.message, true);
-                            loadMyEvents();
+                            
+                            // Hiệu ứng mờ dần và xóa hàng
+                            $row.fadeOut(500, function() {
+                                $(this).remove();
+                                
+                                // Kiểm tra nếu không còn sự kiện nào
+                                if ($('#my-events-table tbody tr').length === 0) {
+                                    $('#my-events-table tbody').html(
+                                        '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--gray);">' +
+                                        '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                                        '<h3>Chưa có sự kiện nào</h3>' +
+                                        '<p>Bạn chưa đăng ký tham gia sự kiện nào.</p>' +
+                                        '</td></tr>'
+                                    );
+                                }
+                                
+                                // Cập nhật thống kê
+                                updateDashboardStats();
+                            });
                         } else {
                             showToast(res.message, false);
                         }
                     },
-                    error: function() {
-                        showToast('Hủy đăng ký thất bại', false);
+                    error: function(xhr, status, error) {
+                        let errorMessage = 'Hủy đăng ký thất bại';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        showToast(errorMessage, false);
                     }
                 });
             }
         });
 
+        // Hàm cập nhật thống kê dashboard
+        function updateDashboardStats() {
+            const userId = $('#currentUserId').val();
+            if (!userId) return;
+            
+            $.get('/participant/api/dashboard-stats', function(stats) {
+                if (stats) {
+                    $('#events-attended').text(stats.eventsAttended || 0);
+                    $('#upcoming-events').text(stats.upcomingEvents || 0);
+                    $('#pending-events').text(stats.pendingEvents || 0);
+                }
+            });
+        }
         // Xem chi tiết đề xuất sự kiện
         $(document).on('click', '.btn-view-suggestion', function(e) {
             e.stopPropagation();
@@ -2569,7 +3104,7 @@
                             '</div>' +
                             '<div class="detail-row">' +
                                 '<label><strong>Thời gian dự kiến:</strong></label>' +
-                                '<span>' + formatDate(suggestion.thoiGianDuKien) + '</span>' +
+                                '<span>' + (suggestion.thoiGianDuKien) + '</span>' +
                             '</div>' +
                             '<div class="detail-row">' +
                                 '<label><strong>Số lượng khách:</strong></label>' +
@@ -2591,14 +3126,14 @@
                             '</div>' +
                             '<div class="detail-row">' +
                                 '<label><strong>Ngày gửi:</strong></label>' +
-                                '<span>' + formatDate(suggestion.thoiGianTao) + '</span>' +
+                                '<span>' + (suggestion.thoiGianTao) + '</span>' +
                             '</div>';
 
                     if (suggestion.thoiGianPhanHoi) {
                         html += 
                             '<div class="detail-row">' +
                                 '<label><strong>Thời gian phản hồi:</strong></label>' +
-                                '<span>' + formatDate(suggestion.thoiGianPhanHoi) + '</span>' +
+                                '<span>' + (suggestion.thoiGianPhanHoi) + '</span>' +
                             '</div>';
                     }
 
@@ -2804,7 +3339,7 @@
                                 '<div style="flex: 1;">' +
                                     '<h4 style="margin: 0 0 5px 0; color: var(--dark);">' + (notification.tieuDe || 'Không có tiêu đề') + '</h4>' +
                                     '<span style="color: var(--gray); font-size: 14px;">' + 
-                                        formatDate(notification.thoiGian) + 
+                                        (notification.thoiGian) + 
                                     '</span>' +
                                 '</div>' +
                             '</div>' +
@@ -3160,7 +3695,7 @@
         function displayFilteredEvents(events) {
             let html = '';
             
-            if (events.length === 0) {
+            if (events.length == 0) {
                 html = '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
                     '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
                     '<h3>Không tìm thấy sự kiện</h3>' +
@@ -3193,8 +3728,8 @@
                             '</div>' +
                             '<p class="event-description">' + description + '</p>' +
                             '<div class="event-footer">' +
-                                '<span class="status ' + (event.trangThai ? event.trangThai.toLowerCase().replace(' ', '-') : '') + '">' + 
-                                    event.trangThai + 
+                                '<span class="status ' + (event.trangThaiThoiGian ? event.trangThaiThoiGian.toLowerCase().replace(' ', '-') : '') + '">' + 
+                                    event.trangThaiThoiGian + 
                                 '</span>' +
                                 '<button class="btn btn-primary btn-sm btn-join-event" ' +
                                         'data-event-id="' + event.suKienId + '" ' +
@@ -3341,7 +3876,7 @@
             
             // Enter để áp dụng lọc
             $('#filter-keyword, #filter-location').keypress(function(e) {
-                if (e.which === 13) {
+                if (e.which == 13) {
                     applyEventFilters();
                 }
             });
@@ -3527,7 +4062,7 @@
             
             // Cập nhật thanh độ mạnh
             strengthBar.removeClass('weak medium strong');
-            if (password.length === 0) {
+            if (password.length == 0) {
                 // Ẩn thanh khi không có mật khẩu
                 strengthBar.css('opacity', '0');
             } else {
@@ -3720,7 +4255,7 @@ $('#account-form').submit(function(e) {
             
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMessage = xhr.responseJSON.message;
-            } else if (xhr.status === 401) {
+            } else if (xhr.status == 401) {
                 errorMessage = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
                 setTimeout(() => {
                     window.location.href = '/login';
@@ -3932,6 +4467,757 @@ const accountFormStyles = `
 
 // Thêm CSS vào document
 $(accountFormStyles).appendTo('head');
+
+
+// Xử lý đăng xuất
+$('#logout-btn').click(function(e) {
+    e.preventDefault();
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        $.ajax({
+            url: '/participant/api/logout',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đăng xuất thành công!', true);
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                } else {
+                    showToast('Đăng xuất thất bại: ' + response.message, false);
+                }
+            },
+            error: function() {
+                showToast('Lỗi kết nối khi đăng xuất', false);
+            }
+        });
+    }
+});
+
+
+
+// Biến lưu trữ sự kiện hiện tại
+let currentEventId = null;
+let userRating = 0;
+
+// Mở sidebar chi tiết sự kiện
+function openEventDetailSidebar(eventId) {
+    currentEventId = eventId;
+    
+    // Load chi tiết sự kiện
+    $.get('/participant/api/events/' + eventId)
+        .done(function(event) {
+            if (!event) {
+                showToast('Không tìm thấy thông tin sự kiện', false);
+                return;
+            }
+            
+            const formatDate = (dateStr) => {
+                if (!dateStr) return 'Chưa xác định';
+                try {
+                    const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return 'Chưa xác định';
+                    return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+                } catch (e) {
+                    return 'Chưa xác định';
+                }
+            };
+            
+            const statusMap = {
+                'DangDienRa': 'Đang diễn ra',
+                'SapDienRa': 'Sắp diễn ra', 
+                'DaKetThuc': 'Đã kết thúc'
+            };
+            
+            const trangThaiText = statusMap[event.trangThaiThoiGian] || event.trangThaiThoiGian || 'Không xác định';
+            
+            var html =
+    '<div class="event-detail-section">' +
+        '<div class="event-image" style="margin-bottom: 15px;">' +
+            '<img src="' + (event.anhBia ? event.anhBia : '/default-image.jpg') + '" ' +
+                 'alt="' + (event.tenSuKien ? event.tenSuKien : 'Sự kiện') + '" ' +
+                 'style="width:100%; height:200px; object-fit: cover; border-radius:8px;">' +
+        '</div>' +
+
+        '<h4 style="margin-bottom: 10px; color: #2c3e50;">' +
+            (event.tenSuKien ? event.tenSuKien : '') +
+        '</h4>' +
+
+        '<div class="event-meta" ' +
+             'style="margin-bottom: 15px; color: #7f8c8d; display: flex; flex-direction: column; gap: 8px;">' +
+
+            '<span><i class="far fa-calendar"></i> ' +
+                (event.thoiGianBatDau ? event.thoiGianBatDau : '') +
+            '</span>' +
+
+            '<span><i class="fas fa-map-marker-alt"></i> ' +
+                (event.diaDiem ? event.diaDiem : '') +
+            '</span>' +
+
+            '<span><i class="fas fa-users"></i> ' +
+                (event.soLuongDaDangKy ? event.soLuongDaDangKy : 0) +
+                '/' +
+                (event.soLuongToiDa ? event.soLuongToiDa : 0) +
+                ' người</span>' +
+
+            '<span><i class="fas fa-tag"></i> ' +
+                (event.loaiSuKien === 'RiengTu' ? 'Riêng tư' : 'Công khai') +
+            '</span>' +
+        '</div>' +
+
+        '<p style="line-height: 1.6; white-space: pre-wrap;">' +
+            (event.moTa ? event.moTa : '') +
+        '</p>' +
+    '</div>';
+
+            
+            $('#sidebar-event-content').html(html);
+            
+            // Load đánh giá
+            loadEventRatings(eventId);
+            
+            // Load bình luận
+            loadEventComments(eventId);
+            
+            // Hiển thị sidebar
+            $('#event-detail-sidebar').addClass('open');
+        })
+        .fail(function() {
+            showToast('Không tải được thông tin sự kiện', false);
+        });
+}
+
+// Load đánh giá
+function loadEventRatings(eventId) {
+    $.get('/participant/api/events/' + eventId + '/ratings')
+        .done(function(ratings) {
+            updateRatingUI(ratings);
+        })
+        .fail(function() {
+            console.log('Không tải được đánh giá');
+        });
+}
+
+// Load bình luận
+function loadEventComments(eventId) {
+    $.get('/participant/api/events/' + eventId + '/comments')
+        .done(function(response) {
+            console.log('📦 Response từ API:', response);
+
+            if (response.success) {
+                renderComments(response.comments); // ✅ đúng mảng
+            } else {
+                console.log('❌ API lỗi:', response.message);
+            }
+        })
+        .fail(function() {
+            console.log('Không tải được bình luận');
+        });
+}
+
+
+// Cập nhật UI đánh giá
+function updateRatingUI(ratings) {
+
+    var average = ratings.average ? ratings.average : 0;
+    var total = ratings.total ? ratings.total : 0;
+    var userHasRated = ratings.userRating && ratings.userRating > 0;
+    var distribution = ratings.distribution ? ratings.distribution : [0,0,0,0,0];
+
+    /* =======================
+       Sao trung bình
+    ======================= */
+    var starsHtml = '';
+    for (var i = 1; i <= 5; i++) {
+        starsHtml +=
+            '<span class="star ' + (i <= Math.round(average) ? 'active' : '') + '">' +
+                '<i class="fas fa-star"></i>' +
+            '</span>';
+    }
+
+    /* =======================
+       Phân phối đánh giá
+    ======================= */
+    var distributionHtml = '';
+    for (var j = 5; j >= 1; j--) {
+        var count = distribution[j - 1] ? distribution[j - 1] : 0;
+        var percentage = total > 0 ? (count / total * 100) : 0;
+
+        distributionHtml +=
+            '<div class="rating-bar">' +
+                '<div class="rating-label">' + j + ' sao</div>' +
+                '<div class="rating-progress">' +
+                    '<div class="rating-progress-fill" style="width: ' + percentage + '%"></div>' +
+                '</div>' +
+                '<div style="width: 40px; text-align: right; font-size: 12px;">' +
+                    count +
+                '</div>' +
+            '</div>';
+    }
+
+    /* =======================
+       Render tổng quan
+    ======================= */
+    $('#rating-overview').html(
+        '<div class="average-rating">' +
+            '<div class="rating-number">' + average.toFixed(1) + '</div>' +
+            '<div class="rating-stars">' +
+                starsHtml +
+            '</div>' +
+            '<div style="font-size: 12px; color: var(--gray); margin-top: 5px;">' +
+                total + ' đánh giá' +
+            '</div>' +
+        '</div>' +
+        '<div class="rating-distribution">' +
+            distributionHtml +
+        '</div>'
+    );
+
+    /* =======================
+       Form đánh giá user
+    ======================= */
+    if (userHasRated) {
+        userRating = ratings.userRating;
+        updateRatingInput();
+    }
+
+    $('#user-rating-form').show();
+}
+
+
+// Cập nhật input đánh giá
+function updateRatingInput() {
+    $('#rating-input .star').each(function() {
+        const value = $(this).data('value');
+        $(this).toggleClass('active', value <= userRating);
+    });
+    $('#rating-text').text(userRating > 0 ? `${userRating} sao` : 'Chưa đánh giá');
+}
+
+// Xử lý click đóng sidebar
+$('.close-sidebar').click(function() {
+    $('#event-detail-sidebar').removeClass('open');
+});
+
+// Xử lý click sao đánh giá
+$(document).on('mouseenter', '#rating-input .star', function() {
+    const value = $(this).data('value');
+    $('#rating-input .star').each(function() {
+        const starValue = $(this).data('value');
+        $(this).toggleClass('hover', starValue <= value);
+    });
+});
+
+$(document).on('mouseleave', '#rating-input', function() {
+    $('#rating-input .star').removeClass('hover');
+    updateRatingInput();
+});
+
+$(document).on('click', '#rating-input .star', function() {
+    userRating = $(this).data('value');
+    updateRatingInput();
+});
+
+// Gửi đánh giá
+$('#submit-rating').click(function() {
+    if (!userRating) {
+        showToast('Vui lòng chọn số sao đánh giá', false);
+        return;
+    }
+    
+    $.ajax({
+        url: '/participant/api/events/' + currentEventId + '/rate',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ rating: userRating }),
+        success: function(response) {
+            if (response.success) {
+                showToast('Đánh giá thành công!', true);
+                loadEventRatings(currentEventId);
+            } else {
+                showToast('Đánh giá thất bại: ' + response.message, false);
+            }
+        },
+        error: function() {
+            showToast('Lỗi khi gửi đánh giá', false);
+        }
+    });
+});
+
+// Gửi bình luận
+$('#submit-comment').click(function() {
+    const commentText = $('#new-comment').val().trim();
+    
+    if (!commentText) {
+        showToast('Vui lòng nhập nội dung bình luận', false);
+        return;
+    }
+    
+    if (commentText.length > 500) {
+        showToast('Bình luận không được vượt quá 500 ký tự', false);
+        return;
+    }
+    
+    $.ajax({
+        url: '/participant/api/events/' + currentEventId + '/comment',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ content: commentText }),
+        success: function(response) {
+            if (response.success) {
+                showToast('Bình luận đã được gửi!', true);
+                $('#new-comment').val('');
+                loadEventComments(currentEventId);
+            } else {
+                showToast('Gửi bình luận thất bại: ' + response.message, false);
+            }
+        },
+        error: function() {
+            showToast('Lỗi khi gửi bình luận', false);
+        }
+    });
+});
+
+// Render bình luận
+function renderComments(comments) {
+    console.log('📌 renderComments:', comments);
+
+    const $commentList = $('#comment-list');
+    $commentList.empty();
+
+    /* =======================
+       Không có bình luận
+    ======================= */
+    if (!Array.isArray(comments) || comments.length === 0) {
+        $commentList.html(
+            '<div class="limit-item">' +
+                '<div class="limit-icon error">' +
+                    '<i class="fas fa-comment-slash"></i>' +
+                '</div>' +
+                '<div class="limit-content">' +
+                    '<div class="limit-title">Bình luận</div>' +
+                    '<div class="limit-desc">' +
+                        'Chưa có bình luận nào' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        );
+        return;
+    }
+
+    let html = '';
+
+    /* =======================
+       Danh sách bình luận
+    ======================= */
+    comments.forEach(function (comment) {
+
+        var userName = 'Người dùng';
+        if (comment.user && comment.user.hoTen) {
+            userName = comment.user.hoTen;
+        }
+
+        var content = comment.noiDung ? comment.noiDung : '';
+
+        var time = '';
+        if (comment.thoiGianTao) {
+            time = new Date(comment.thoiGianTao).toLocaleString('vi-VN');
+        }
+
+        html +=
+            '<div class="limit-item">' +
+                '<div class="limit-icon success">' +
+                    '<i class="fas fa-comment"></i>' +
+                '</div>' +
+                '<div class="limit-content">' +
+                    '<div class="limit-title">' +
+                        userName +
+                    '</div>' +
+                    '<div class="limit-desc">' +
+                        content +
+                        '<br>' +
+                        '<small style="color:#888">' + time + '</small>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    });
+
+    $commentList.html(html);
+}
+
+
+
+// Sửa các nút xem chi tiết sự kiện để mở sidebar
+$(document).on('click', '.btn-view-event, .event-card', function(e) {
+    if ($(e.target).closest('.btn-join-event').length) {
+        return;
+    }
+    const eventId = $(this).data('event-id');
+    openEventDetailSidebar(eventId);
+});
+
+
+// Trong phần JavaScript, thêm hàm để load tên sự kiện
+function loadEventNamesForHistory() {
+    $('.event-name').each(function() {
+        const $element = $(this);
+        const eventId = $element.data('event-id');
+        
+        if (eventId) {
+            $.get('/participant/api/events/' + eventId + '/name')
+                .done(function(event) {
+                    if (event && event.tenSuKien) {
+                        $element.html(`
+                            <i class="fas fa-calendar-alt"></i>
+                            ${event.tenSuKien}
+                        `);
+                        $element.attr('title', 'Click để xem chi tiết sự kiện');
+                        $element.click(function(e) {
+                            e.preventDefault();
+                            viewEventDetail(eventId);
+                        });
+                    }
+                })
+                .fail(function() {
+                    $element.html('<i class="fas fa-calendar-times"></i> Không tìm thấy sự kiện');
+                });
+        }
+    });
+}
+
+// Gọi hàm khi vào trang lịch sử
+$('.menu-link[data-target="history"]').click(function() {
+    setTimeout(loadEventNamesForHistory, 500);
+});
+
+// Filter lịch sử
+$('.filter-buttons button').click(function() {
+    const filter = $(this).data('filter');
+    $('.filter-buttons button').removeClass('active');
+    $(this).addClass('active');
+    
+    if (filter === 'all') {
+        $('.timeline-item').show();
+    } else {
+        $('.timeline-item').hide();
+        $('.timeline-item[data-type*="' + filter + '"]').show();
+    }
+});
+
+
+// Notification dropdown
+$('#notification-trigger').click(function(e) {
+    e.stopPropagation();
+    $('#notification-dropdown').toggleClass('show');
+    $('#user-dropdown').removeClass('show');
+    
+    // Tạo overlay nếu chưa có
+    if ($('.dropdown-overlay').length === 0) {
+        $('body').append('<div class="dropdown-overlay"></div>');
+    }
+    $('.dropdown-overlay').show();
+});
+
+// User dropdown
+$('#user-avatar-dropdown').click(function(e) {
+    e.stopPropagation();
+    $('#user-dropdown').toggleClass('show');
+    $('#notification-dropdown').removeClass('show');
+    
+    if ($('.dropdown-overlay').length === 0) {
+        $('body').append('<div class="dropdown-overlay"></div>');
+    }
+    $('.dropdown-overlay').show();
+});
+
+// Close dropdowns when clicking outside
+$(document).on('click', '.dropdown-overlay', function() {
+    $('#notification-dropdown').removeClass('show');
+    $('#user-dropdown').removeClass('show');
+    $('.dropdown-overlay').hide();
+});
+
+// Mark all as read in dropdown
+$('#mark-all-read-dropdown').click(function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    $.post('/participant/api/notifications/mark-all-read')
+        .done(function() {
+            showToast('Đã đánh dấu tất cả thông báo đã đọc!', true);
+            $('#notification-count').text('0');
+            $('.notification-dropdown-item').removeClass('unread');
+        })
+        .fail(function() {
+            showToast('Đánh dấu đã đọc thất bại!', false);
+        });
+});
+
+// View all notifications
+$('#view-all-notifications-dropdown').click(function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Chuyển đến trang dashboard và mở modal thông báo
+    $('.menu-link[data-target="dashboard"]').click();
+    $('#notification-dropdown').removeClass('show');
+    $('.dropdown-overlay').hide();
+});
+
+// Logout from dropdown
+$('#logout-dropdown').click(function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        $.ajax({
+            url: '/participant/api/logout',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đăng xuất thành công!', true);
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                } else {
+                    showToast('Đăng xuất thất bại: ' + response.message, false);
+                }
+            },
+            error: function() {
+                showToast('Lỗi kết nối khi đăng xuất', false);
+            }
+        });
+    }
+});
+
+// Navigate to account from dropdown
+$('.dropdown-item[data-target="account"]').click(function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    $('.menu-link[data-target="account"]').click();
+    $('#user-dropdown').removeClass('show');
+    $('.dropdown-overlay').hide();
+});
+
+
+
+// Check suggestion limits
+$('#check-suggestion-limits').click(function(e) {
+    e.preventDefault();
+    
+    $.get('/participant/api/suggestions/check-limit')
+        .done(function(response) {
+            if (response.success) {
+                const data = response.data;
+                displaySuggestionLimits(data);
+            } else {
+                showToast('Không thể kiểm tra giới hạn: ' + response.message, false);
+            }
+        })
+        .fail(function() {
+            showToast('Lỗi kết nối khi kiểm tra giới hạn', false);
+        });
+});
+
+function displaySuggestionLimits(data) {
+    const $alert = $('#suggestion-limits-alert');
+    const $content = $('#limits-info');
+
+    let html = '';
+
+    /* =======================
+       Giới hạn chờ duyệt
+    ======================= */
+    const pendingCount = data.pendingCount || 0;
+    const maxPending = data.maxPending || 3;
+    const pendingPercentage = (pendingCount / maxPending) * 100;
+    const pendingStatus = pendingCount < maxPending ? 'Có thể gửi' : 'Đã đạt giới hạn';
+
+    html +=
+        '<div class="limit-item">' +
+            '<div class="limit-icon ' + (pendingCount < maxPending ? 'success' : 'error') + '">' +
+                '<i class="fas fa-clock"></i>' +
+            '</div>' +
+            '<div class="limit-content">' +
+                '<div class="limit-title">Giới hạn đề xuất đang chờ duyệt</div>' +
+                '<div class="limit-desc">' +
+                    'Bạn có thể gửi tối đa ' + maxPending + ' đề xuất đang chờ duyệt cùng lúc. ' +
+                    'Hiện tại: ' + pendingCount + '/' + maxPending + ' đề xuất đang chờ.' +
+                '</div>' +
+                '<div class="limit-progress">' +
+                    '<div class="progress-label">' +
+                        '<span>' + pendingStatus + '</span>' +
+                        '<span>' + pendingCount + '/' + maxPending + '</span>' +
+                    '</div>' +
+                    '<div class="progress-bar">' +
+                        '<div class="progress-fill" style="width: ' + pendingPercentage + '%"></div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    /* =======================
+       Giới hạn thời gian
+    ======================= */
+    if (data.lastSuggestionDate) {
+        const lastDate = new Date(data.lastSuggestionDate);
+        const now = new Date();
+        const hoursDiff = Math.floor((now - lastDate) / (1000 * 60 * 60));
+        const canSubmitTime = hoursDiff >= 24;
+
+        html +=
+            '<div class="limit-item">' +
+                '<div class="limit-icon ' + (canSubmitTime ? 'success' : 'warning') + '">' +
+                    '<i class="fas fa-hourglass-half"></i>' +
+                '</div>' +
+                '<div class="limit-content">' +
+                    '<div class="limit-title">Thời gian giữa các đề xuất</div>' +
+                    '<div class="limit-desc">' +
+                        'Cần chờ ít nhất 24 giờ sau đề xuất trước để gửi đề xuất mới. ' +
+                        (canSubmitTime
+                            ? 'Bạn có thể gửi đề xuất mới.'
+                            : 'Cần chờ thêm ' + (24 - hoursDiff) + ' giờ nữa.'
+                        ) +
+                    '</div>' +
+                    '<div class="limit-stats">' +
+                        '<div class="stat-item">' +
+                            '<span class="label">Lần cuối:</span>' +
+                            '<span class="value">' + lastDate.toLocaleDateString('vi-VN') + '</span>' +
+                        '</div>' +
+                        '<div class="stat-item">' +
+                            '<span class="label">Đã qua:</span>' +
+                            '<span class="value">' + hoursDiff + ' giờ</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }
+
+    /* =======================
+       Giới hạn hàng tháng
+    ======================= */
+    const monthlyCount = data.monthlyCount || 0;
+    const maxMonthly = 10;
+    const monthlyPercentage = (monthlyCount / maxMonthly) * 100;
+
+    html +=
+        '<div class="limit-item">' +
+            '<div class="limit-icon ' + (monthlyCount < maxMonthly ? 'success' : 'error') + '">' +
+                '<i class="fas fa-calendar-alt"></i>' +
+            '</div>' +
+            '<div class="limit-content">' +
+                '<div class="limit-title">Giới hạn đề xuất hàng tháng</div>' +
+                '<div class="limit-desc">' +
+                    'Bạn có thể gửi tối đa ' + maxMonthly + ' đề xuất trong một tháng. ' +
+                    'Tháng này: ' + monthlyCount + '/' + maxMonthly + ' đề xuất.' +
+                '</div>' +
+                '<div class="limit-progress">' +
+                    '<div class="progress-label">' +
+                        '<span>' +
+                            (monthlyCount < maxMonthly
+                                ? 'Còn ' + (maxMonthly - monthlyCount) + ' đề xuất'
+                                : 'Đã đạt giới hạn'
+                            ) +
+                        '</span>' +
+                        '<span>' + monthlyCount + '/' + maxMonthly + '</span>' +
+                    '</div>' +
+                    '<div class="progress-bar">' +
+                        '<div class="progress-fill" style="width: ' + monthlyPercentage + '%"></div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    /* =======================
+       Thông báo lỗi
+    ======================= */
+    if (data.errors && data.errors.length > 0) {
+        html +=
+            '<div class="limit-item">' +
+                '<div class="limit-icon error">' +
+                    '<i class="fas fa-exclamation-circle"></i>' +
+                '</div>' +
+                '<div class="limit-content">' +
+                    '<div class="limit-title">Cảnh báo</div>' +
+                    '<div class="limit-desc">' +
+                        data.errors.join('<br>') +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }
+
+    /* =======================
+       Tóm tắt
+    ======================= */
+    const canSubmit = data.canSubmit === true;
+
+    html +=
+        '<div class="limit-item" style="background: ' + (canSubmit ? '#e8f5e9' : '#ffebee') +
+        '; padding: 15px; border-radius: 8px; margin-top: 15px;">' +
+            '<div class="limit-icon ' + (canSubmit ? 'success' : 'error') + '">' +
+                '<i class="fas ' + (canSubmit ? 'fa-check-circle' : 'fa-times-circle') + '"></i>' +
+            '</div>' +
+            '<div class="limit-content">' +
+                '<div class="limit-title">' +
+                    (canSubmit ? 'CÓ THỂ GỬI ĐỀ XUẤT' : 'KHÔNG THỂ GỬI ĐỀ XUẤT') +
+                '</div>' +
+                '<div class="limit-desc">' +
+                    (canSubmit
+                        ? 'Bạn đủ điều kiện để gửi đề xuất sự kiện mới.'
+                        : 'Bạn không đủ điều kiện để gửi đề xuất mới. Vui lòng kiểm tra các giới hạn trên.'
+                    ) +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    $content.html(html);
+    $alert.show();
+}
+
+
+// Close alert
+$('.close-alert').click(function() {
+    $('#suggestion-limits-alert').hide();
+});
+
+// Tự động kiểm tra khi vào trang suggestions
+$('.menu-link[data-target="suggestions"]').click(function() {
+    setTimeout(function() {
+        $.get('/participant/api/suggestions/check-limit')
+            .done(function(response) {
+                if (response.success && !response.data.canSubmit) {
+                    displaySuggestionLimits(response.data);
+                }
+            });
+    }, 500);
+});
+
+// Logout from dropdown (đã thêm ở phần 2)
+$('#logout-dropdown').click(function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        $.ajax({
+            url: '/participant/api/logout',
+            type: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    showToast('Đăng xuất thành công!', true);
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                } else {
+                    showToast('Đăng xuất thất bại: ' + response.message, false);
+                }
+            },
+            error: function() {
+                showToast('Lỗi kết nối khi đăng xuất', false);
+            }
+        });
+    }
+});
+
     });    
     </script>
 </body>

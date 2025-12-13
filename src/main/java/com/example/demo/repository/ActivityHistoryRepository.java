@@ -47,7 +47,7 @@ public class ActivityHistoryRepository {
         jdbcTemplate.update(sql, daysToKeep);
     }
     
-    // Phương thức mới: Ghi log đăng xuất
+    //Ghi log đăng xuất
     public void logLogout(Long userId) {
         String sql = "INSERT INTO lich_su_hoat_dong (nguoi_dung_id, loai_hoat_dong, chi_tiet, thoi_gian) " +
                      "VALUES (?, 'DangXuat', 'Người dùng đã đăng xuất', NOW())";

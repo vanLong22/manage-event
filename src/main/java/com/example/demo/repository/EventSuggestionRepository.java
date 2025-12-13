@@ -249,7 +249,7 @@ public class EventSuggestionRepository {
             "FROM dang_su_kien ds " +
             "LEFT JOIN nguoi_dung nd ON ds.nguoi_dung_id = nd.nguoi_dung_id " +
             "LEFT JOIN loai_su_kien lsk ON ds.loai_su_kien_id = lsk.loai_su_kien_id " +
-            "WHERE ds.trang_thai_phe_duyet IS NOT NULL"
+            "WHERE ds.trang_thai_phe_duyet = 'DaDuyet'"
         );
 
         // Lọc theo trạng thái phê duyệt

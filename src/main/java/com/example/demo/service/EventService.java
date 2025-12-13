@@ -2,7 +2,9 @@ package com.example.demo.service;
 
 import com.example.demo.model.Event;
 import com.example.demo.model.User;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.EventRepository;
+import com.example.demo.repository.RatingRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -30,6 +32,12 @@ public class EventService {
     
     @Autowired
     private EventSuggestionService eventSuggestionService;
+    
+    @Autowired
+    private RatingRepository ratingRepository;
+    
+    @Autowired
+    private CommentRepository commentRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -283,4 +291,50 @@ public class EventService {
             .filter(event -> "ChoDuyet".equals(event.getTrangThaiPheDuyet()))
             .collect(Collectors.toList());
     }
+
+
+    // Lấy chi tiết sự kiện với thông tin đầy đủ
+    public Map<String, Object> getEventDetail(Long eventId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Event event = eventRepository.findById(eventId);
+            if (event == null) {
+                result.put("success", false);
+                result.put("message", "Sự kiện không tồn tại");
+                return result;
+            }
+            
+            // Lấy thông tin đánh giá
+            Double averageRating = ratingRepository.getAverageRating(eventId);
+            Integer totalRatings = ratingRepository.getTotalRatings(eventId);
+            Integer totalComments = commentRepository.getTotalComments(eventId);
+            
+            Map<String, Object> eventDetail = new HashMap<>();
+            eventDetail.put("suKienId", event.getSuKienId());
+            eventDetail.put("tenSuKien", event.getTenSuKien());
+            eventDetail.put("moTa", event.getMoTa());
+            eventDetail.put("diaDiem", event.getDiaDiem());
+            eventDetail.put("anhBia", event.getAnhBia());
+            eventDetail.put("thoiGianBatDau", event.getThoiGianBatDau());
+            eventDetail.put("thoiGianKetThuc", event.getThoiGianKetThuc());
+            eventDetail.put("loaiSuKien", event.getLoaiSuKien());
+            eventDetail.put("trangThaiThoiGian", event.getTrangThaiThoiGian());
+            eventDetail.put("soLuongToiDa", event.getSoLuongToiDa());
+            eventDetail.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
+            eventDetail.put("averageRating", averageRating != null ? averageRating : 0);
+            eventDetail.put("totalRatings", totalRatings != null ? totalRatings : 0);
+            eventDetail.put("totalComments", totalComments != null ? totalComments : 0);
+            
+            result.put("success", true);
+            result.put("data", eventDetail);
+            
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "Lỗi khi lấy thông tin sự kiện: " + e.getMessage());
+        }
+        
+        return result;
+    }
+
 }

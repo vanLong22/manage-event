@@ -39,6 +39,12 @@ public class ParticipantController {
     @Autowired
     private LoaiSuKienService loaiSuKienService;
 
+    @Autowired
+    private RatingService ratingService;
+    
+    @Autowired
+    private CommentService commentService;
+
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String PYTHON_API_URL = "http://127.0.0.1:5000/suggest"; // Thay bằng IP server nếu deploy
 
@@ -149,20 +155,20 @@ public class ParticipantController {
     }
     
     // API: Hủy đăng ký
-    @PostMapping("/api/cancel-registration")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> cancelRegistration(@RequestBody Map<String, Long> payload, HttpSession session) {
-        Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) return ResponseEntity.status(401).body(Map.of("success", false));
+    // @PostMapping("/api/cancel-registration")
+    // @ResponseBody
+    // public ResponseEntity<Map<String, Object>> cancelRegistration(@RequestBody Map<String, Long> payload, HttpSession session) {
+    //     Long userId = (Long) session.getAttribute("userId");
+    //     if (userId == null) return ResponseEntity.status(401).body(Map.of("success", false));
 
-        Long dangKyId = payload.get("dangKyId");
-        try {
-            registrationService.cancelRegistration(dangKyId, userId);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Hủy thành công!"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
+    //     Long dangKyId = payload.get("dangKyId");
+    //     try {
+    //         registrationService.cancelRegistration(dangKyId, userId);
+    //         return ResponseEntity.ok(Map.of("success", true, "message", "Hủy thành công!"));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+    //     }
+    // }
 
 
     // AJAX: Load sự kiện nổi bật
@@ -230,12 +236,28 @@ public class ParticipantController {
     @PostMapping("/api/suggestions")
     public ResponseEntity<Map<String, Object>> submitSuggestion(@RequestBody EventSuggestion suggestion, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        
+        // Kiểm tra tổng hợp
+        Map<String, Object> validation = suggestionService.validateSuggestionSubmission(userId, suggestion);
+        if (!(Boolean) validation.get("isValid")) {
+            List<String> errors = (List<String>) validation.get("errors");
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "message", String.join(", ", errors),
+                "validation", validation
+            ));
+        }
+        
         suggestion.setNguoiDungId(userId);
         suggestionService.submitSuggestion(suggestion);
-        return ResponseEntity.ok(Map.of("success", true, "message", "Đề xuất đã gửi!"));
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true, 
+            "message", "Đề xuất đã gửi thành công!",
+            "validation", validation
+        ));
     }
-
-    
 
     // AJAX: Load đề xuất đã gửi
     @GetMapping("/api/suggestions")
@@ -589,4 +611,160 @@ public class ParticipantController {
         return List.of(); // trả về rỗng nếu lỗi
     }
 
+    @PostMapping("/api/logout")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> logout(HttpSession session) {
+        try {
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId != null) {
+                userService.logout(userId);
+            }
+            
+            session.invalidate();
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đăng xuất thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi đăng xuất"));
+        }
+    }
+
+
+    // -----------------------=======================
+
+    
+    // API: Lấy chi tiết sự kiện cho sidebar
+    @GetMapping("/api/events/{id}/detail")
+    public ResponseEntity<Map<String, Object>> getInfoEvent(@PathVariable Long id) {
+        try {
+            Map<String, Object> result = eventService.getEventDetail(id);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("success", false, "message", "Lỗi server: " + e.getMessage()));
+        }
+    }
+    
+    // API: Lấy thông tin đánh giá
+    @GetMapping("/api/events/{id}/ratings")
+    public ResponseEntity<Map<String, Object>> getEventRatings(@PathVariable Long id, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        Map<String, Object> ratingInfo = ratingService.getEventRatingInfo(id, userId);
+        return ResponseEntity.ok(ratingInfo);
+    }
+    
+    // API: Đánh giá sự kiện
+    @PostMapping("/api/events/{id}/rate")
+    public ResponseEntity<Map<String, Object>> rateEvent(@PathVariable Long id, 
+                                                        @RequestBody Map<String, Object> request,
+                                                        HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
+        
+        Integer rating = (Integer) request.get("rating");
+        String comment = (String) request.get("comment");
+        
+        Map<String, Object> result = ratingService.rateEvent(id, userId, rating, comment);
+        return ResponseEntity.ok(result);
+    }
+    
+    // API: Lấy bình luận
+    @GetMapping("/api/events/{id}/comments")
+    public ResponseEntity<Map<String, Object>> getEventComments(@PathVariable Long id,
+                                                               @RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "10") int limit) {
+        Map<String, Object> result = commentService.getEventComments(id, page, limit);
+        return ResponseEntity.ok(result);
+    }
+    
+    // API: Thêm bình luận
+    @PostMapping("/api/events/{id}/comment")
+    public ResponseEntity<Map<String, Object>> addComment(@PathVariable Long id,
+                                                         @RequestBody Map<String, String> request,
+                                                         HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
+        
+        String content = request.get("content");
+        Map<String, Object> result = commentService.addComment(id, userId, content);
+        return ResponseEntity.ok(result);
+    }
+    
+    @GetMapping("/api/events/{id}/name")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getEventName(@PathVariable Long id) {
+        try {
+            Event event = eventService.getEventById(id);
+            if (event != null) {
+                return ResponseEntity.ok(Map.of(
+                    "tenSuKien", event.getTenSuKien(),
+                    "suKienId", event.getSuKienId().toString()
+                ));
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+        // Thêm vào ParticipantController
+    @GetMapping("/api/suggestions/check-limit")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> checkSuggestionLimit(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
+        
+        try {
+            Map<String, Object> limitInfo = suggestionService.checkSuggestionLimits(userId);
+            return ResponseEntity.ok(Map.of("success", true, "data", limitInfo));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("success", false, "message", "Lỗi server: " + e.getMessage()));
+        }
+    }
+
+
+    // API: Hủy đăng ký - Cải tiến
+    @PostMapping("/api/cancel-registration")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> cancelRegistration(@RequestBody Map<String, Long> payload, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                "success", false, 
+                "message", "Bạn cần đăng nhập để thực hiện thao tác này"
+            ));
+        }
+
+        Long dangKyId = payload.get("dangKyId");
+        if (dangKyId == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "message", "Thiếu thông tin đăng ký"
+            ));
+        }
+
+        try {
+            registrationService.cancelRegistration(dangKyId, userId);
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "message", "Hủy đăng ký thành công!"
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false, 
+                "message", "Lỗi hệ thống khi hủy đăng ký"
+            ));
+        }
+    }
 }

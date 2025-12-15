@@ -28,19 +28,37 @@ public class RegistrationRepository {
 
     @Transactional
     public void save(Registration registration) {
-        // 1️⃣ Thêm bản ghi đăng ký sự kiện
-        String insertSql = "INSERT INTO dang_ky_su_kien (nguoi_dung_id, su_kien_id, thoi_gian_dang_ky, trang_thai) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(insertSql,
+
+        // 1️⃣ Kiểm tra & tăng số lượng tham gia (atomic)
+        String updateSql =
+            "UPDATE su_kien " +
+            "SET so_luong_da_dang_ky = so_luong_da_dang_ky + 1 " +
+            "WHERE su_kien_id = ? " +
+            "AND so_luong_da_dang_ky < so_luong_toi_da";
+
+        int updatedRows = jdbcTemplate.update(updateSql, registration.getSuKienId());
+
+        // ❌ Không còn chỗ
+        if (updatedRows == 0) {
+            throw new RuntimeException("Sự kiện đã đủ số lượng tham gia");
+        }
+
+        // 2️⃣ Thêm bản ghi đăng ký
+        String insertSql =
+            "INSERT INTO dang_ky_su_kien " +
+            "(nguoi_dung_id, su_kien_id, thoi_gian_dang_ky, trang_thai, ghi_chu) " +
+            "VALUES (?, ?, ?, ?, ?)";
+
+        jdbcTemplate.update(
+            insertSql,
             registration.getNguoiDungId(),
             registration.getSuKienId(),
             registration.getThoiGianDangKy(),
-            "DaDuyet"
+            registration.getTrangThai(),
+            registration.getGhiChu()
         );
-
-        // 2️⃣ Tăng số lượng người tham gia trong bảng su_kien
-        String updateSql = "UPDATE su_kien SET so_luong_da_dang_ky = so_luong_da_dang_ky + 1 WHERE su_kien_id = ?";
-        jdbcTemplate.update(updateSql, registration.getSuKienId());
     }
+
 
     public int countByUserIdAndStatus(Long userId, String status) {
         String sql = "SELECT COUNT(*) FROM dang_ky_su_kien WHERE nguoi_dung_id = ? AND trang_thai = ?";
@@ -63,6 +81,7 @@ public class RegistrationRepository {
             FROM dang_ky_su_kien dk
             JOIN su_kien sk ON dk.su_kien_id = sk.su_kien_id
             WHERE dk.nguoi_dung_id = ?
+            AND dk.trang_thai != 'DaHuy'
             ORDER BY dk.thoi_gian_dang_ky DESC
             """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -232,11 +251,10 @@ public class RegistrationRepository {
         jdbcTemplate.update(sql, suKienId);
     }
 
-    // Sửa phương thức cancel hiện tại để đảm bảo tính toàn vẹn
-    @Transactional
+
     public void cancel(Long dangKyId) {
         // Cập nhật trạng thái thay vì xóa
-        String updateSql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
-        jdbcTemplate.update(updateSql, dangKyId);
+        String sql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
+        jdbcTemplate.update(sql, dangKyId);
     }
 }

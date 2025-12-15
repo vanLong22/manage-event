@@ -6,6 +6,7 @@ import com.example.demo.model.Registration;
 import com.example.demo.repository.ActivityHistoryRepository;
 import com.example.demo.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,38 +30,42 @@ public class RegistrationService {
     @Autowired
     private EventService eventService;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate; // Đảm bảo đã có
+
     public List<Registration> getRegistrationsByUser(Long userId) {
         return registrationRepository.findByUserId(userId);
     }
+    
+    public void registerEvent(Long userId, Long suKienId, String ghiChu, String maSuKien) {
 
-    public void registerEvent(Long userId, Long suKienId, String ghiChu, String maSuKien)  {
-        // Tạo đối tượng Registration
         Registration registration = new Registration();
         registration.setNguoiDungId(userId);
         registration.setSuKienId(suKienId);
         registration.setGhiChu(ghiChu);
-        registration.setThoiGianDangKy(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        // Mặc định trạng thái là "DaDuyet"
         registration.setTrangThai("DaDuyet");
+        registration.setThoiGianDangKy(
+            Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
+        );
 
-        // Lưu vào DB
+        // Lưu (nếu full sẽ throw Exception)
         registrationRepository.save(registration);
 
-        // lấy tên sự kiện từ mã sự kiện
+        // Ghi lịch sử
         Event eventInfor = eventService.getEventById(suKienId);
 
-        // Ghi log lịch sử hoạt động
         ActivityHistory history = new ActivityHistory();
         history.setNguoiDungId(userId);
         history.setLoaiHoatDong("DangKy");
         history.setSuKienId(suKienId);
-        history.setChiTiet("Đăng ký sự kiện: " + eventInfor.getTenSuKien() + 
-                          (ghiChu != null && !ghiChu.isEmpty() ? " - Ghi chú: " + ghiChu : ""));
-        history.setThoiGian(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
+        history.setChiTiet("Đăng ký sự kiện: " + eventInfor.getTenSuKien());
+        history.setThoiGian(new Date());
+
         historyRepository.save(history);
     }
 
-    // public void cancelRegistration(Long dangKyId, Long userId) {
+
+// public void cancelRegistration(Long dangKyId, Long userId) {
     //     registrationRepository.cancel(dangKyId);
 
     //     // Log lịch sử
@@ -144,43 +149,46 @@ public class RegistrationService {
     }
 
 
-    // Phương thức hiện tại cần sửa đổi
     public void cancelRegistration(Long dangKyId, Long userId) {
-        // Kiểm tra đăng ký tồn tại và thuộc về user
-        Registration registration = registrationRepository.findById(dangKyId);
-        if (registration == null) {
-            throw new RuntimeException("Không tìm thấy đăng ký");
-        }
-        
-        if (!registration.getNguoiDungId().equals(userId)) {
-            throw new RuntimeException("Bạn không có quyền hủy đăng ký này");
-        }
-        
-        // Lấy thông tin sự kiện để kiểm tra
-        Event event = eventService.getEventById(registration.getSuKienId());
-        if (event != null) {
-            // Kiểm tra nếu sự kiện đã bắt đầu thì không cho hủy
-            Date now = new Date();
-            if (event.getThoiGianBatDau() != null && event.getThoiGianBatDau().before(now)) {
-                throw new RuntimeException("Không thể hủy đăng ký sự kiện đã bắt đầu");
+        try {
+            // 1. Kiểm tra đăng ký tồn tại
+            Registration registration = registrationRepository.findById(dangKyId);
+            if (registration == null) {
+                throw new RuntimeException("Không tìm thấy đăng ký với ID: " + dangKyId);
             }
+            
+            // 2. Kiểm tra quyền (người dùng có phải chủ đăng ký không)
+            if (!registration.getNguoiDungId().equals(userId)) {
+                throw new RuntimeException("Bạn không có quyền hủy đăng ký này");
+            }
+            
+            // 3. Kiểm tra trạng thái hiện tại
+            if ("DaHuy".equals(registration.getTrangThai())) {
+                throw new RuntimeException("Đăng ký đã bị hủy trước đó");
+            }
+            
+            // 4. Cập nhật trạng thái thay vì xóa
+            String updateSql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
+            jdbcTemplate.update(updateSql, dangKyId);
+            
+            // 5. Giảm số lượng đăng ký trong sự kiện
+            String decreaseSql = "UPDATE su_kien SET so_luong_da_dang_ky = GREATEST(so_luong_da_dang_ky - 1, 0) WHERE su_kien_id = ?";
+            jdbcTemplate.update(decreaseSql, registration.getSuKienId());
+            
+            // 6. Ghi log lịch sử hoạt động
+            ActivityHistory history = new ActivityHistory();
+            history.setNguoiDungId(userId);
+            history.setLoaiHoatDong("HuyDangKy");
+            history.setSuKienId(registration.getSuKienId());
+            history.setChiTiet("Hủy đăng ký ID: " + dangKyId + " cho sự kiện ID: " + registration.getSuKienId());
+            history.setThoiGian(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
+            historyRepository.save(history);
+            
+        } catch (Exception e) {
+            // Ném lại exception để controller xử lý
+            throw new RuntimeException("Lỗi khi hủy đăng ký: " + e.getMessage());
         }
-        
-        // Hủy đăng ký
-        registrationRepository.cancel(dangKyId);
-        
-        // Giảm số lượng đăng ký trong sự kiện
-        registrationRepository.decreaseEventRegistrationCount(registration.getSuKienId());
-
-        // Log lịch sử
-        ActivityHistory history = new ActivityHistory();
-        history.setNguoiDungId(userId);
-        history.setLoaiHoatDong("HUY_DANG_KY");
-        history.setSuKienId(registration.getSuKienId());
-        history.setChiTiet("Hủy đăng ký ID: " + dangKyId + " cho sự kiện ID: " + registration.getSuKienId());
-        history.setThoiGian(
-            Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
-        );
-        historyRepository.save(history);
     }
+
+
 }

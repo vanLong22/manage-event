@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,9 @@ public class ParticipantController {
     
     @Autowired
     private CommentService commentService;
+
+    @Autowired
+    private DataExportService dataExportService;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String PYTHON_API_URL = "http://127.0.0.1:5000/suggest"; // Thay bằng IP server nếu deploy
@@ -86,6 +90,14 @@ public class ParticipantController {
         // lịch sử tương tác 
         model.addAttribute("histories", historyService.getHistoryByUser(userId));
 
+        // === EXPORT LỊCH SỬ USER TRƯỚC KHI GỌI API GỢI Ý ===
+        try {
+            dataExportService.exportUserHistoryForRecommendation(userId);
+        } catch (IOException e) {
+            System.err.println("Không thể export lịch sử cho user " + userId + ": " + e.getMessage());
+            // Không crash trang, chỉ log lỗi
+        }
+
         /*lấy sự kiện gợi ý từ mô hình đã huấn luyện */
         List<Long> suggestedIds = getSuggestedEventIdsFromPython(userId);
         List<Event> suggestedEvents = suggestedIds.isEmpty() 
@@ -114,46 +126,48 @@ public class ParticipantController {
     // API: Tham gia sự kiện
     @PostMapping(value = "/api/register-event", consumes = "application/json")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> registerEvent(@RequestBody Map<String, Object> payload, HttpSession session) {
-        System.out.println("Received registration payload: " + payload);
+    public ResponseEntity<Map<String, Object>> registerEvent(
+            @RequestBody Map<String, Object> payload,
+            HttpSession session) {
 
         Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        if (userId == null) {
+            return ResponseEntity.status(401)
+                .body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
 
         try {
             Long suKienId = Long.valueOf(payload.get("suKienId").toString());
             String ghiChu = (String) payload.get("ghiChu");
-            String maSuKien = (String) payload.get("maSuKien"); 
+            String maSuKien = (String) payload.get("maSuKien");
 
-            // Lấy thông tin sự kiện để kiểm tra
             Event event = eventService.getEventById(suKienId);
             if (event == null) {
-                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Sự kiện không tồn tại"));
+                return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Sự kiện không tồn tại"));
             }
 
-            // Kiểm tra nếu sự kiện là riêng tư
-            boolean isPrivate = "RiengTu".equals(event.getLoaiSuKien()); 
-            if (isPrivate) {
-                // Nếu riêng tư, yêu cầu mã và kiểm tra tính hợp lệ
-                if (maSuKien == null || maSuKien.trim().isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mã sự kiện là bắt buộc cho sự kiện riêng tư"));
+            // Kiểm tra sự kiện riêng tư
+            if ("RiengTu".equals(event.getLoaiSuKien())) {
+                if (maSuKien == null || !maSuKien.equals(event.getMatKhauSuKienRiengTu())) {
+                    return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Mã sự kiện không đúng"));
                 }
-                if (!maSuKien.equals(event.getMatKhauSuKienRiengTu())) {  
-                    return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mã sự kiện không đúng"));
-                }
-            } else {
-                // Nếu công khai, không cần mã (có thể bỏ qua nếu được gửi)
-                maSuKien = null; // Đặt null để không sử dụng
             }
 
-            // Gọi service để đăng ký (giữ nguyên)
             registrationService.registerEvent(userId, suKienId, ghiChu, maSuKien);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công!"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+
+            return ResponseEntity.ok(
+                Map.of("success", true, "message", "Đăng ký thành công!")
+            );
+
+        } catch (RuntimeException e) {
+            // ❗ Bắt lỗi full slot
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-    
+
     // API: Hủy đăng ký
     // @PostMapping("/api/cancel-registration")
     // @ResponseBody
@@ -730,41 +744,77 @@ public class ParticipantController {
 
 
     // API: Hủy đăng ký - Cải tiến
-    @PostMapping("/api/cancel-registration")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> cancelRegistration(@RequestBody Map<String, Long> payload, HttpSession session) {
-        Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) {
-            return ResponseEntity.status(401).body(Map.of(
-                "success", false, 
-                "message", "Bạn cần đăng nhập để thực hiện thao tác này"
-            ));
-        }
-
-        Long dangKyId = payload.get("dangKyId");
-        if (dangKyId == null) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "message", "Thiếu thông tin đăng ký"
-            ));
-        }
-
-        try {
-            registrationService.cancelRegistration(dangKyId, userId);
-            return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "message", "Hủy đăng ký thành công!"
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "message", e.getMessage()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of(
-                "success", false, 
-                "message", "Lỗi hệ thống khi hủy đăng ký"
-            ));
-        }
+    // API: Hủy đăng ký - Sửa lỗi
+@PostMapping("/api/cancel-registration")
+@ResponseBody
+public ResponseEntity<Map<String, Object>> cancelRegistration(@RequestBody Map<String, Object> payload, HttpSession session) {
+    System.out.println("Received cancel payload: " + payload); // Debug log
+    
+    Long userId = (Long) session.getAttribute("userId");
+    if (userId == null) {
+        System.out.println("User not logged in"); // Debug
+        return ResponseEntity.status(401).body(Map.of(
+            "success", false, 
+            "message", "Bạn cần đăng nhập để thực hiện thao tác này"
+        ));
     }
+
+    try {
+        // Lấy dangKyId từ payload - xử lý nhiều định dạng
+        Long dangKyId = null;
+        Object idObj = payload.get("dangKyId");
+        
+        if (idObj == null) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "message", "Thiếu thông tin đăng ký (dangKyId)"
+            ));
+        }
+        
+        // Chuyển đổi sang Long
+        if (idObj instanceof Integer) {
+            dangKyId = ((Integer) idObj).longValue();
+        } else if (idObj instanceof Long) {
+            dangKyId = (Long) idObj;
+        } else if (idObj instanceof String) {
+            try {
+                dangKyId = Long.parseLong((String) idObj);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, 
+                    "message", "ID đăng ký không hợp lệ"
+                ));
+            }
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "message", "Định dạng ID đăng ký không hợp lệ"
+            ));
+        }
+        
+        System.out.println("Attempting to cancel registration ID: " + dangKyId + " for user: " + userId); // Debug
+        
+        // Gọi service hủy đăng ký
+        registrationService.cancelRegistration(dangKyId, userId);
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true, 
+            "message", "Hủy đăng ký thành công!"
+        ));
+        
+    } catch (RuntimeException e) {
+        System.err.println("Cancel registration error: " + e.getMessage()); // Debug
+        return ResponseEntity.badRequest().body(Map.of(
+            "success", false, 
+            "message", e.getMessage()
+        ));
+    } catch (Exception e) {
+        System.err.println("Unexpected error during cancellation: " + e.getMessage()); // Debug
+        e.printStackTrace();
+        return ResponseEntity.status(500).body(Map.of(
+            "success", false, 
+            "message", "Lỗi hệ thống khi hủy đăng ký"
+        ));
+    }
+}
 }

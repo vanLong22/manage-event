@@ -133,4 +133,49 @@ public class DataExportService {
         }
         return str;
     }
+
+    public void exportUserHistoryForRecommendation(Long userId) throws IOException {
+        String dirPath = "D:\\2022-2026\\HOC KI 7\\XD HTTT\\quanLySuKien\\demo\\src\\main\\webapp\\static\\csv";
+        createDirectoryIfNotExists(dirPath);
+
+        String filePath = dirPath + "\\user_" + userId + "_history.csv";
+
+        String sql = """
+            SELECT sk.su_kien_id AS event_id,
+                sk.loai_su_kien,
+                sk.dia_diem,
+                DATEDIFF(sk.thoi_gian_bat_dau, CURDATE()) AS thoi_gian_diff_days
+            FROM dang_ky_su_kien dk
+            JOIN su_kien sk ON dk.su_kien_id = sk.su_kien_id
+            WHERE dk.nguoi_dung_id = ?
+            AND dk.trang_thai = 'DaDuyet'
+            """;
+
+        List<Map<String, Object>> data = jdbcTemplate.queryForList(sql, userId);
+
+        try (Writer writer = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
+
+            writer.write("event_id,loai_su_kien,dia_diem,thoi_gian_diff_days\n");
+
+            for (Map<String, Object> row : data) {
+                writer.write(String.format("%s,\"%s\",\"%s\",%s\n",
+                        row.get("event_id"),
+                        row.get("loai_su_kien"),
+                        row.get("dia_diem"),
+                        row.get("thoi_gian_diff_days")
+                ));
+            }
+        }
+
+        System.out.println("✅ Exported history for user " + userId + " to " + filePath);
+    }
+    private void createDirectoryIfNotExists(String path) {
+        File dir = new File(path);
+        if (!dir.exists()) {
+            dir.mkdirs();
+            System.out.println("Created directory: " + path);
+        }
+    }
+
 }

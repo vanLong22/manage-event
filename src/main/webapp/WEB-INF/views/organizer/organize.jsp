@@ -1131,15 +1131,6 @@
                             <option value="500">Trên 500 người</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="filter-suggestion-status">Trạng thái phê duyệt</label>
-                        <select id="filter-suggestion-status">
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="ChoDuyet">Chờ duyệt</option>
-                            <option value="DaDuyet">Đã duyệt</option>
-                            <option value="TuChoi">Từ chối</option>
-                        </select>
-                    </div>
                 </div>
                 <div class="table-container">
                     <table id="suggestions-table">
@@ -1152,7 +1143,6 @@
                                 <th>Số lượng khách</th>
                                 <th>Giá cả mong muốn</th>
                                 <th>Người đề xuất</th>
-                                <th>Trạng thái phê duyệt</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
@@ -2491,20 +2481,23 @@
                                 '<td>' + (suggestion.soLuongKhach || 0) + '</td>' +
                                 '<td>' + escapeHtml(giaCaDisplay) + '</td>' +
                                 '<td>' + escapeHtml(suggestion.user ? suggestion.user.hoTen : 'N/A') + '</td>' +
-                                '<td><span class="status ' + status.class + '">' + status.text + '</span></td>' +
                                 '<td class="action-buttons">' +
                                     '<div class="action-btn view-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Xem chi tiết">' +
                                         '<i class="fas fa-eye"></i>' +
                                     '</div>';
                     
-                    if (suggestion.trangThaiPheDuyet === 'ChoDuyet') {
+                    // if (suggestion.trangThai === 'ChoDuyet') {
+                    //     html += '<div class="action-btn accept-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Chấp nhận">' +
+                    //                 '<i class="fas fa-check"></i>' +
+                    //             '</div>' +
+                    //             '<div class="action-btn reject-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Từ chối">' +
+                    //                 '<i class="fas fa-times"></i>' +
+                    //             '</div>';
+                    // }
+
                         html += '<div class="action-btn accept-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Chấp nhận">' +
                                     '<i class="fas fa-check"></i>' +
-                                '</div>' +
-                                '<div class="action-btn reject-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '" title="Từ chối">' +
-                                    '<i class="fas fa-times"></i>' +
                                 '</div>';
-                    }
                     
                     html += '</td></tr>';
                 });

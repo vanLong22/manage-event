@@ -2958,90 +2958,185 @@
                 });
         }
 
-        // Gửi đăng ký
-        $('#registration-form').submit(function(e) {
+        // GỬI FORM ĐĂNG KÝ SỰ KIỆN
+        // ===============================
+        $('#registration-form').on('submit', function (e) {
             e.preventDefault();
-            const suKienId = $(this).data('suKienId');
+
+            const $form = $(this);
+            const suKienId = $form.data('suKienId');
+
+            if (!suKienId) {
+                showToast('Không tìm thấy ID sự kiện', false);
+                return;
+            }
+
+            // Payload gửi lên backend
             const payload = {
                 suKienId: suKienId,
-                ghiChu: $('#reg-note').val(),
+                ghiChu: $('#reg-note').val()?.trim() || null
             };
 
-            // Thêm mã sự kiện nếu là sự kiện riêng tư
+            // Nếu là sự kiện riêng tư → thêm mã
             if ($('#event-code-group').is(':visible')) {
-                payload.maSuKien = $('#event-code').val();
+                const maSuKien = $('#event-code').val()?.trim();
+
+                if (!maSuKien) {
+                    showToast('Vui lòng nhập mã sự kiện', false);
+                    return;
+                }
+
+                payload.maSuKien = maSuKien;
             }
+
+            console.log('📤 Sending registration payload:', payload);
+
+            // Disable button để tránh click nhiều lần
+            const $btnSubmit = $form.find('button[type="submit"]');
+            $btnSubmit.prop('disabled', true).text('Đang đăng ký...');
 
             $.ajax({
                 url: '/participant/api/register-event',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(payload),
-                success: function(res) {
+
+                success: function (res) {
+                    console.log('✅ Register success:', res);
+
                     if (res.success) {
-                        showToast(res.message, true);
-                        $('#registration-modal').css('display', 'none');
-                        // Làm mới danh sách sự kiện của tôi
-                        loadMyEvents();
+                        showToast(res.message || 'Đăng ký thành công!', true);
+
+                        // Đóng modal
+                        $('#registration-modal').fadeOut(200);
+
+                        // Reset form
+                        $form[0].reset();
+
+                        // Reload danh sách sự kiện của tôi
+                        if (typeof loadMyEvents === 'function') {
+                            loadMyEvents();
+                        }
+
+                        // Reload danh sách sự kiện (nếu có)
+                        if (typeof loadEvents === 'function') {
+                            loadEvents();
+                        }
                     } else {
-                        showToast(res.message, false);
+                        showToast(res.message || 'Đăng ký thất bại', false);
                     }
                 },
-                error: function(xhr) {
-                    showToast('Đăng ký thất bại: ' + (xhr.responseJSON?.message || 'Lỗi hệ thống'), false);
+
+                error: function (xhr) {
+                    console.error('❌ Register error:', xhr);
+
+                    let message = 'Đăng ký thất bại';
+
+                    // Ưu tiên message từ backend
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    } 
+                    // Lỗi chưa đăng nhập
+                    else if (xhr.status === 401) {
+                        message = 'Bạn cần đăng nhập để đăng ký sự kiện';
+                    }
+
+                    showToast(message, false);
+                },
+
+                complete: function () {
+                    // Enable lại button
+                    $btnSubmit.prop('disabled', false).text('Đăng ký');
                 }
             });
         });
 
+        
         // Hủy đăng ký
         $(document).on('click', '.btn-cancel-registration', function(e) {
-            e.stopPropagation();
-            const dangKyId = $(this).data('registration-id');
-            const eventName = $(this).closest('tr').find('td:first').text();
-            const $row = $(this).closest('tr');
-            
-            if (confirm('Bạn có chắc muốn hủy đăng ký sự kiện "' + eventName + '"?')) {
-                $.ajax({
-                    url: '/participant/api/cancel-registration',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ dangKyId: dangKyId }),
-                    success: function(res) {
-                        if (res.success) {
-                            showToast(res.message, true);
-                            
-                            // Hiệu ứng mờ dần và xóa hàng
-                            $row.fadeOut(500, function() {
-                                $(this).remove();
-                                
-                                // Kiểm tra nếu không còn sự kiện nào
-                                if ($('#my-events-table tbody tr').length === 0) {
-                                    $('#my-events-table tbody').html(
-                                        '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--gray);">' +
-                                        '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
-                                        '<h3>Chưa có sự kiện nào</h3>' +
-                                        '<p>Bạn chưa đăng ký tham gia sự kiện nào.</p>' +
-                                        '</td></tr>'
-                                    );
-                                }
-                                
-                                // Cập nhật thống kê
-                                updateDashboardStats();
-                            });
-                        } else {
-                            showToast(res.message, false);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        let errorMessage = 'Hủy đăng ký thất bại';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        }
-                        showToast(errorMessage, false);
-                    }
-                });
+    e.stopPropagation();
+    const dangKyId = $(this).data('registration-id');
+    const eventName = $(this).closest('tr').find('td:first').text();
+    const $row = $(this).closest('tr');
+    
+    console.log('Attempting to cancel registration ID:', dangKyId); // Debug
+    
+    if (!dangKyId) {
+        showToast('Không tìm thấy ID đăng ký', false);
+        return;
+    }
+    
+    if (confirm('Bạn có chắc muốn hủy đăng ký sự kiện "' + eventName + '"?')) {
+        // Hiển thị loading
+        const $btn = $(this);
+        $btn.html('<i class="fas fa-spinner fa-spin"></i>');
+        $btn.prop('disabled', true);
+        
+        $.ajax({
+            url: '/participant/api/cancel-registration',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 
+                dangKyId: dangKyId,
+                _csrf: $('meta[name="_csrf"]').attr('content') // Nếu có CSRF
+            }),
+            success: function(res) {
+                console.log('Cancel response:', res); // Debug
+                if (res.success) {
+                    showToast(res.message, true);
+                    
+                    // Hiệu ứng xóa hàng
+                    $row.fadeOut(500, function() {
+                        $(this).remove();
+                        updateEventTable();
+                    });
+                } else {
+                    showToast(res.message, false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Cancel error:', xhr.responseText); // Debug
+                let errorMessage = 'Hủy đăng ký thất bại';
+                
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.status === 400) {
+                    errorMessage = 'Dữ liệu gửi lên không hợp lệ';
+                } else if (xhr.status === 401) {
+                    errorMessage = 'Bạn cần đăng nhập lại';
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (xhr.status === 404) {
+                    errorMessage = 'Không tìm thấy API';
+                }
+                
+                showToast(errorMessage, false);
+            },
+            complete: function() {
+                $btn.html('<i class="fas fa-times"></i>');
+                $btn.prop('disabled', false);
             }
         });
+    }
+});
+
+// Hàm cập nhật bảng sự kiện
+function updateEventTable() {
+    const $tbody = $('#my-events-table tbody');
+    if ($tbody.find('tr').length === 0) {
+        $tbody.html(`
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px; color: var(--gray);">
+                    <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>
+                    <h3>Chưa có sự kiện nào</h3>
+                    <p>Bạn chưa đăng ký tham gia sự kiện nào.</p>
+                </td>
+            </tr>
+        `);
+    }
+}
+
 
         // Hàm cập nhật thống kê dashboard
         function updateDashboardStats() {

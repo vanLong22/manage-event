@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Event;
+import com.example.demo.model.EventSuggestion;
 import com.example.demo.model.User;
 import com.example.demo.service.EventService;
 import com.example.demo.service.EventSuggestionService;
@@ -58,11 +59,9 @@ public class AdminController {
         // Lấy danh sách sự kiện
         List<Event> allEvents = eventService.getAllEvents();
         long activeEvents = allEvents.stream()
-            .filter(e -> "DangDienRa".equals(e.getTrangThaiThoiGian()))
+            .filter(e -> "DangDienRa".equals(e.getTrangThaiThoigian()))
             .count();
-        long pendingEvents = allEvents.stream()
-            .filter(e -> "ChoDuyet".equals(e.getTrangThaiPheDuyet()))
-            .count();
+        long pendingEvents =  eventService.countActiveEvents();
 
         model.addAttribute("activeEvents", activeEvents);
         model.addAttribute("pendingEvents", pendingEvents);
@@ -94,11 +93,9 @@ public class AdminController {
         List<Event> allEvents = eventService.getAllEvents();
         
         long activeEvents = allEvents.stream()
-            .filter(e -> "DangDienRa".equals(e.getTrangThaiThoiGian()))
+            .filter(e -> "DangDienRa".equals(e.getTrangThaiThoigian()))
             .count();
-        long pendingEvents = allEvents.stream()
-            .filter(e -> "ChoDuyet".equals(e.getTrangThaiPheDuyet()))
-            .count();
+        long pendingEvents =  eventService.countActiveEvents();
             
         data.put("totalUsers", allUsers.size());
         data.put("activeEvents", activeEvents);
@@ -117,7 +114,7 @@ public class AdminController {
                 eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
                 eventData.put("diaDiem", event.getDiaDiem());
                 eventData.put("loaiSuKien", event.getLoaiSuKien());
-                eventData.put("trangThai", event.getTrangThaiThoiGian());
+                eventData.put("trangThai", event.getTrangThaiThoigian());
                 eventData.put("trangThaiPheDuyet", event.getTrangThaiPheDuyet());
                 eventData.put("soLuongToiDa", event.getSoLuongToiDa());
                 eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
@@ -317,7 +314,7 @@ public class AdminController {
                     allEvents = allEvents.stream()
                         .filter(event -> {
                             Date startDate = event.getThoiGianBatDau();
-                            return startDate.after(now) && !"Huy".equals(event.getTrangThaiThoiGian());
+                            return startDate.after(now) && !"Huy".equals(event.getTrangThaiThoigian());
                         })
                         .collect(Collectors.toList());
                     break;
@@ -329,7 +326,7 @@ public class AdminController {
                             Date endDate = event.getThoiGianKetThuc();
                             return (startDate.before(now) || startDate.equals(now)) &&
                                 (endDate.after(now) || endDate.equals(now)) &&
-                                !"Huy".equals(event.getTrangThaiThoiGian());
+                                !"Huy".equals(event.getTrangThaiThoigian());
                         })
                         .collect(Collectors.toList());
                     break;
@@ -338,14 +335,14 @@ public class AdminController {
                     allEvents = allEvents.stream()
                         .filter(event -> {
                             Date endDate = event.getThoiGianKetThuc();
-                            return endDate.before(now) && !"Huy".equals(event.getTrangThaiThoiGian());
+                            return endDate.before(now) && !"Huy".equals(event.getTrangThaiThoigian());
                         })
                         .collect(Collectors.toList());
                     break;
                     
                 case "Huy":
                     allEvents = allEvents.stream()
-                        .filter(event -> "Huy".equals(event.getTrangThaiThoiGian()))
+                        .filter(event -> "Huy".equals(event.getTrangThaiThoigian()))
                         .collect(Collectors.toList());
                     break;
             }
@@ -373,7 +370,7 @@ public class AdminController {
             
             String realTimeStatus = calculateRealTimeStatus(event, now);
             eventData.put("realTimeStatus", realTimeStatus);
-            eventData.put("needsStatusUpdate", !realTimeStatus.equals(event.getTrangThaiThoiGian()));
+            eventData.put("needsStatusUpdate", !realTimeStatus.equals(event.getTrangThaiThoigian()));
             
             User organizer = userService.findById(event.getNguoiToChucId());
             eventData.put("organizerName", organizer != null ? organizer.getHoTen() : "N/A");
@@ -383,7 +380,7 @@ public class AdminController {
     }
 
     private String calculateRealTimeStatus(Event event, Date now) {
-        if ("Huy".equals(event.getTrangThaiThoiGian())) {
+        if ("Huy".equals(event.getTrangThaiThoigian())) {
             return "Huy";
         }
         
@@ -403,7 +400,7 @@ public class AdminController {
             return "SapDienRa";
         }
         
-        return event.getTrangThaiThoiGian();
+        return event.getTrangThaiThoigian();
     }
 
     @PostMapping("/api/events/{id}/sync-status")
@@ -424,8 +421,8 @@ public class AdminController {
                 Date now = new Date();
                 String realTimeStatus = calculateRealTimeStatus(event, now);
                 
-                if (!realTimeStatus.equals(event.getTrangThaiThoiGian())) {
-                    event.setTrangThaiThoiGian(realTimeStatus);
+                if (!realTimeStatus.equals(event.getTrangThaiThoigian())) {
+                    event.setTrangThaiThoigian(realTimeStatus);
                     eventService.updateSuKien(event);
                     response.put("success", true);
                     response.put("message", "Đã đồng bộ trạng thái sự kiện: " + realTimeStatus);
@@ -465,7 +462,7 @@ public class AdminController {
             eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
             eventData.put("diaDiem", event.getDiaDiem());
             eventData.put("loaiSuKien", event.getLoaiSuKien());
-            eventData.put("trangThai", event.getTrangThaiThoiGian());
+            eventData.put("trangThai", event.getTrangThaiThoigian());
             eventData.put("trangThaiPheDuyet", event.getTrangThaiPheDuyet());
             eventData.put("soLuongToiDa", event.getSoLuongToiDa());
             eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
@@ -522,7 +519,7 @@ public class AdminController {
                 response.put("success", true);
                 response.put("message", "Đã xóa sự kiện thành công");
                 response.put("deletedEventId", id);
-                response.put("eventStatus", eventToDelete.getTrangThaiThoiGian());
+                response.put("eventStatus", eventToDelete.getTrangThaiThoigian());
             } else {
                 response.put("success", false);
                 response.put("message", "Không tìm thấy sự kiện");
@@ -547,7 +544,7 @@ public class AdminController {
             List<Event> allEvents = eventService.getAllEvents();
             
             List<Event> availableEvents = allEvents.stream()
-                .filter(event -> !"Huy".equals(event.getTrangThaiThoiGian()))
+                .filter(event -> !"Huy".equals(event.getTrangThaiThoigian()))
                 .sorted((e1, e2) -> e2.getThoiGianBatDau().compareTo(e1.getThoiGianBatDau()))
                 .collect(Collectors.toList());
             
@@ -565,7 +562,7 @@ public class AdminController {
                 eventData.put("thoiGianKetThuc", replacementEvent.getThoiGianKetThuc());
                 eventData.put("diaDiem", replacementEvent.getDiaDiem());
                 eventData.put("loaiSuKien", replacementEvent.getLoaiSuKien());
-                eventData.put("trangThai", replacementEvent.getTrangThaiThoiGian());
+                eventData.put("trangThai", replacementEvent.getTrangThaiThoigian());
                 eventData.put("soLuongToiDa", replacementEvent.getSoLuongToiDa());
                 eventData.put("soLuongDaDangKy", replacementEvent.getSoLuongDaDangKy());
                 
@@ -647,8 +644,8 @@ public class AdminController {
                 
                 if (eventData.containsKey("trangThai")) {
                     String newStatus = (String) eventData.get("trangThai");
-                    if (!newStatus.equals(existingEvent.getTrangThaiThoiGian())) {
-                        existingEvent.setTrangThaiThoiGian(newStatus);
+                    if (!newStatus.equals(existingEvent.getTrangThaiThoigian())) {
+                        existingEvent.setTrangThaiThoigian(newStatus);
                         hasChanges = true;
                     }
                 }
@@ -740,7 +737,7 @@ public class AdminController {
         
         stats.put("totalUsers", allUsers.size());
         stats.put("activeEvents", allEvents.stream()
-            .filter(e -> "DangDienRa".equals(e.getTrangThaiThoiGian()))
+            .filter(e -> "DangDienRa".equals(e.getTrangThaiThoigian()))
             .count());
         stats.put("pendingEvents", allEvents.stream()
             .filter(e -> "ChoDuyet".equals(e.getTrangThaiPheDuyet()))
@@ -881,7 +878,7 @@ public class AdminController {
                     organizerEvents = organizerEvents.stream()
                         .filter(event -> {
                             String eventStatus = event.getTrangThaiPheDuyet();
-                            if ("CHO_DUYET".equals(status)) {
+                            if ("ChoDuyet".equals(status)) {
                                 return "ChoDuyet".equals(eventStatus);
                             }
                             return status.equals(eventStatus);
@@ -904,7 +901,7 @@ public class AdminController {
                     eventData.put("thoiGianKetThuc", event.getThoiGianKetThuc());
                     eventData.put("diaDiem", event.getDiaDiem());
                     eventData.put("loaiSuKien", event.getLoaiSuKien());
-                    eventData.put("trangThai", event.getTrangThaiPheDuyet());
+                    eventData.put("trangThaiPheDuyet", event.getTrangThaiPheDuyet());
                     eventData.put("soLuongToiDa", event.getSoLuongToiDa());
                     eventData.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
                     eventData.put("nguoiToChucId", event.getNguoiToChucId());
@@ -919,6 +916,7 @@ public class AdminController {
             
             // Lấy sự kiện từ suggestion nếu source là "suggestion" hoặc không có source
             if (source == null || source.isEmpty() || "suggestion".equals(source)) {
+                System.out.println("Fetching suggestion events with status filter: " + status);
                 // Xác định trạng thái lọc cho suggestion
                 String suggestionStatus = null;
                 if (status != null && !status.isEmpty()) {
@@ -944,7 +942,7 @@ public class AdminController {
                     eventData.put("thoiGianDuKien", suggestion.get("thoiGianDuKien"));
                     eventData.put("diaDiem", suggestion.get("diaDiem"));
                     eventData.put("soLuongKhach", suggestion.get("soLuongKhach"));
-                    eventData.put("trangThai", suggestion.get("trangThai"));
+                    eventData.put("trangThaiPheDuyet", suggestion.get("trangThaiPheDuyet"));
                     eventData.put("source", "suggestion");
                     
                     // Thông tin user
@@ -1028,5 +1026,73 @@ public class AdminController {
         return response;
     }
 
-
+    //câp nhật đề xuất sự kiện
+    @PutMapping("/api/suggestions/{id}")
+    @ResponseBody
+    public Map<String, Object> updateSuggestion(@PathVariable Long id, 
+                                            @RequestBody Map<String, Object> suggestionData,
+                                            HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Long adminId = (Long) session.getAttribute("userId");
+        if (adminId == null) {
+            response.put("success", false);
+            response.put("message", "Unauthorized");
+            return response;
+        }
+        
+        try {
+            // Lấy đề xuất hiện tại
+            EventSuggestion existingSuggestion = eventSuggestionService.getSuggestionById(id);
+            if (existingSuggestion == null) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy đề xuất");
+                return response;
+            }
+            
+            // Cập nhật các trường được gửi lên
+            if (suggestionData.containsKey("tieuDe")) {
+                existingSuggestion.setTieuDe((String) suggestionData.get("tieuDe"));
+            }
+            if (suggestionData.containsKey("moTaNhuCau")) {
+                existingSuggestion.setMoTaNhuCau((String) suggestionData.get("moTaNhuCau"));
+            }
+            if (suggestionData.containsKey("diaDiem")) {
+                existingSuggestion.setDiaDiem((String) suggestionData.get("diaDiem"));
+            }
+            if (suggestionData.containsKey("thoiGianDuKien")) {
+                String dateTimeStr = (String) suggestionData.get("thoiGianDuKien");
+                dateTimeStr = dateTimeStr.replace("T", " ") + ":00";
+                existingSuggestion.setThoiGianDuKien(java.sql.Timestamp.valueOf(dateTimeStr));
+            }
+            if (suggestionData.containsKey("soLuongKhach")) {
+                existingSuggestion.setSoLuongKhach(Integer.parseInt(suggestionData.get("soLuongKhach").toString()));
+            }
+            if (suggestionData.containsKey("giaCaLong")) {
+                existingSuggestion.setGiaCaLong((String) suggestionData.get("giaCaLong"));
+            }
+            if (suggestionData.containsKey("thongTinLienLac")) {
+                existingSuggestion.setThongTinLienLac((String) suggestionData.get("thongTinLienLac"));
+            }
+            if (suggestionData.containsKey("trangThaiPheDuyet")) {
+                existingSuggestion.setTrangThaiPheDuyet((String) suggestionData.get("trangThaiPheDuyet"));
+            }
+            
+            // Gọi service để cập nhật
+            boolean updateResult = eventSuggestionService.updateSuggestion(existingSuggestion);
+            if (updateResult) {
+                response.put("success", true);
+                response.put("message", "Đã cập nhật đề xuất thành công");
+            } else {
+                response.put("success", false);
+                response.put("message", "Lỗi cập nhật đề xuất");
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi cập nhật: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return response;
+    }
 }

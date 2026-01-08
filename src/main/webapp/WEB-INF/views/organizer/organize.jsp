@@ -856,6 +856,24 @@
             background-color: rgba(231, 76, 60, 0.2);
             color: var(--danger);
         }
+
+        .approve-registration {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .reject-registration {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .approve-registration:hover {
+            background-color: #218838;
+        }
+
+        .reject-registration:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -953,14 +971,6 @@
                     
                     <!-- Dropdown user -->
                     <div class="user-dropdown" id="user-dropdown">
-                        <div class="user-dropdown-item" id="profile-link">
-                            <i class="fas fa-user"></i>
-                            <span>Hồ sơ</span>
-                        </div>
-                        <div class="user-dropdown-item" id="settings-link">
-                            <i class="fas fa-cog"></i>
-                            <span>Cài đặt</span>
-                        </div>
                         <div class="user-dropdown-item" id="logout-link">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Đăng xuất</span>
@@ -993,13 +1003,13 @@
                         <h3 id="upcoming-events"><c:out value="${stats.upcomingEvents}"/></h3>
                         <p>Sự kiện sắp diễn ra</p>
                     </div>
-                    <div class="card">
+                    <!-- <div class="card">
                         <div class="card-icon danger">
                             <i class="fas fa-exclamation-circle"></i>
                         </div>
                         <h3 id="attention-events"><c:out value="${stats.attentionEvents}"/></h3>
                         <p>Sự kiện cần chú ý</p>
-                    </div>
+                    </div> -->
                 </div>
 
                 <div class="section-header">
@@ -1027,11 +1037,11 @@
                                 </div>
                                 <p><c:out value="${fn:substring(event.moTa, 0, 100)}${fn:length(event.moTa) > 100 ? '...' : ''}"/></p>
                                 <div class="event-footer">
-                                    <span class="status <c:out value="${fn:toLowerCase(event.trangThaiThoiGian)}"/>">
+                                    <span class="status <c:out value="${fn:toLowerCase(event.trangThaiThoigian)}"/>">
                                         <c:choose>
-                                            <c:when test="${event.trangThaiThoiGian == 'DangDienRa'}">Đang diễn ra</c:when>
-                                            <c:when test="${event.trangThaiThoiGian == 'DaKetThuc'}">Đã kết thúc</c:when>
-                                            <c:when test="${event.trangThaiThoiGian == 'SapDienRa'}">Sắp diễn ra</c:when>
+                                            <c:when test="${event.trangThaiThoigian == 'DangDienRa'}">Đang diễn ra</c:when>
+                                            <c:when test="${event.trangThaiThoigian == 'DaKetThuc'}">Đã kết thúc</c:when>
+                                            <c:when test="${event.trangThaiThoigian == 'SapDienRa'}">Sắp diễn ra</c:when>
                                             <c:otherwise>Không xác định</c:otherwise>
                                         </c:choose>
                                     </span>
@@ -1071,11 +1081,11 @@
                                     <td><fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/></td>
                                     <td><c:out value="${event.diaDiem}"/></td>
                                     <td>
-                                        <span class="status <c:out value='${fn:toLowerCase(event.trangThaiThoiGian)}'/>">
+                                        <span class="status <c:out value='${fn:toLowerCase(event.trangThaiThoigian)}'/>">
                                             <c:choose>
-                                                <c:when test="${event.trangThaiThoiGian == 'DangDienRa'}">Đang Diễn Ra</c:when>
-                                                <c:when test="${event.trangThaiThoiGian == 'DaKetThuc'}">Đã Kết Thúc</c:when>
-                                                <c:when test="${event.trangThaiThoiGian == 'SapDienRa'}">Sắp Diễn Ra</c:when>
+                                                <c:when test="${event.trangThaiThoigian == 'DangDienRa'}">Đang Diễn Ra</c:when>
+                                                <c:when test="${event.trangThaiThoigian == 'DaKetThuc'}">Đã Kết Thúc</c:when>
+                                                <c:when test="${event.trangThaiThoigian == 'SapDienRa'}">Sắp Diễn Ra</c:when>
                                                 <c:otherwise>Không xác định</c:otherwise>
                                             </c:choose>
                                         </span>
@@ -1269,12 +1279,6 @@
                         </tbody>
                     </table>
                 </div>
-
-                <div class="form-group" style="margin-top: 20px;">
-                    <button class="btn btn-success" id="save-attendance">
-                        <i class="fas fa-save"></i> Lưu điểm danh
-                    </button>
-                </div>
             </div>
 
             <!-- Participants Content -->
@@ -1326,9 +1330,6 @@
                                 <div class="user-avatar" style="width: 80px; height: 80px; font-size: 32px;" id="account-avatar">
                                     <c:out value="${fn:substring(user.hoTen, 0, 1)}${fn:substring(user.hoTen, fn:indexOf(user.hoTen, ' ') + 1, fn:indexOf(user.hoTen, ' ') + 2)}"/>
                                 </div>
-                                <button type="button" class="btn btn-outline" id="change-avatar">
-                                    <i class="fas fa-camera"></i> Thay đổi ảnh
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -1724,10 +1725,10 @@
                                     '</div>' +
                                     '<p>' + (event.moTa ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : '') + '</p>' +
                                     '<div class="event-footer">' +
-                                        '<span class="status ' + event.trangThaiThoiGian.toLowerCase() + '">' + 
-                                            (event.trangThaiThoiGian == 'DangDienRa' ? 'Đang diễn ra' : 
-                                             event.trangThaiThoiGian == 'DaKetThuc' ? 'Đã kết thúc' : 
-                                             event.trangThaiThoiGian == 'SapDienRa' ? 'Sắp diễn ra' : 'Không xác định') + 
+                                        '<span class="status ' + event.trangThaiThoigian.toLowerCase() + '">' + 
+                                            (event.trangThaiThoigian == 'DangDienRa' ? 'Đang diễn ra' : 
+                                             event.trangThaiThoigian == 'DaKetThuc' ? 'Đã kết thúc' : 
+                                             event.trangThaiThoigian == 'SapDienRa' ? 'Sắp diễn ra' : 'Không xác định') + 
                                         '</span>' +
                                         '<span><i class="fas fa-users"></i> ' + event.soLuongDaDangKy + ' / ' + event.soLuongToiDa + '</span>' +
                                     '</div>' +
@@ -1760,7 +1761,7 @@
                 for (var i = 0; i < data.length; i++) {
                     var event = data[i];
                     var trangThaiText = '';
-                    switch(event.trangThaiThoiGian) {
+                    switch(event.trangThaiThoigian) {
                         case 'DangDienRa': trangThaiText = 'Đang diễn ra'; break;
                         case 'SapDienRa': trangThaiText = 'Sắp diễn ra'; break;
                         case 'DaKetThuc': trangThaiText = 'Đã kết thúc'; break;
@@ -1771,7 +1772,7 @@
                                 '<td>' + event.tenSuKien + '</td>' +
                                 '<td>' + new Date(event.thoiGianBatDau).toLocaleString('vi-VN') + '</td>' +
                                 '<td>' + event.diaDiem + '</td>' +
-                                '<td><span class="status ' + event.trangThaiThoiGian.toLowerCase() + '">' + trangThaiText + '</span></td>' +
+                                '<td><span class="status ' + event.trangThaiThoigian.toLowerCase() + '">' + trangThaiText + '</span></td>' +
                                 '<td>' + event.soLuongDaDangKy + ' / ' + event.soLuongToiDa + '</td>' +
                                 '<td class="action-buttons">' +
                                     '<div class="action-btn edit-event" data-event-id="' + event.suKienId + '" title="Chỉnh sửa">' +
@@ -1966,8 +1967,25 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    showToast('Lỗi xử lý sự kiện: ' + error, false);
-                }
+    console.error('Error details:', xhr.responseJSON); // Thêm dòng này để debug
+    
+    if (xhr.status === 401) {
+        showToast('Bạn cần đăng nhập để thực hiện thao tác này', false);
+        return;
+    }
+    
+    // Kiểm tra nếu backend trả về JSON với message
+    if (xhr.responseJSON && xhr.responseJSON.message) {
+        showToast(xhr.responseJSON.message, false);
+    } 
+    // Nếu là lỗi 400 nhưng không có responseJSON
+    else if (xhr.status === 400) {
+        showToast('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin nhập vào.', false);
+    }
+    else {
+        showToast('Lỗi xử lý sự kiện: ' + error, false);
+    }
+}
             });
         });
         
@@ -2132,9 +2150,31 @@
                                     '<td class="action-buttons">' +
                                         '<div class="action-btn view-participant-detail" data-reg-id="' + reg.dangKyId + '" title="Xem chi tiết">' +
                                             '<i class="fas fa-eye"></i>' +
-                                        '</div>' +
-                                    '</td>' +
-                                '</tr>';
+                                        '</div>';
+                                        
+                                // Thêm nút phê duyệt nếu đang chờ duyệt
+                                if (trangThaiGoc === 'ChoDuyet') {
+                                    html += '<div class="action-btn approve-registration" data-reg-id="' + reg.dangKyId + '" title="Phê duyệt">' +
+                                                '<i class="fas fa-check"></i>' +
+                                            '</div>' +
+                                            '<div class="action-btn reject-registration" data-reg-id="' + reg.dangKyId + '" title="Từ chối">' +
+                                                '<i class="fas fa-times"></i>' +
+                                            '</div>';
+                                }
+                                // Thêm nút từ chối nếu đã duyệt (để hủy phê duyệt)
+                                else if (trangThaiGoc === 'DaDuyet') {
+                                    html += '<div class="action-btn reject-registration" data-reg-id="' + reg.dangKyId + '" title="Hủy phê duyệt">' +
+                                                '<i class="fas fa-ban"></i>' +
+                                            '</div>';
+                                }
+                                // Thêm nút phê duyệt nếu đã từ chối (để phê duyệt lại)
+                                else if (trangThaiGoc === 'TuChoi') {
+                                    html += '<div class="action-btn approve-registration" data-reg-id="' + reg.dangKyId + '" title="Phê duyệt lại">' +
+                                                '<i class="fas fa-check"></i>' +
+                                            '</div>';
+                                }
+                                
+                                html += '</td></tr>';
                     }
                 } else {
                     html = '<tr><td colspan="6" style="text-align: center;">Không có dữ liệu người tham gia</td></tr>';
@@ -2147,6 +2187,50 @@
                 $('#participants-table tbody').html('<tr><td colspan="6" style="text-align: center; color: red;">Lỗi khi tải dữ liệu</td></tr>');
             });
         });
+
+
+        // Thêm sự kiện cho nút phê duyệt
+        $('#participants-table tbody').on('click', '.approve-registration', function() {
+            var regId = $(this).data('reg-id');
+            updateRegistrationStatus(regId, 'DaDuyet');
+        });
+
+        // Thêm sự kiện cho nút từ chối
+        $('#participants-table tbody').on('click', '.reject-registration', function() {
+            var regId = $(this).data('reg-id');
+            updateRegistrationStatus(regId, 'TuChoi');
+        });
+
+        // Hàm cập nhật trạng thái
+        function updateRegistrationStatus(regId, trangThai) {
+            var actionText = trangThai === 'DaDuyet' ? 'phê duyệt' : 'từ chối';
+            
+            if (!confirm('Bạn có chắc chắn muốn ' + actionText + ' người tham gia này?')) {
+                return;
+            }
+            
+            $.ajax({
+                url: '/organizer/api/registrations/update-status',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ 
+                    dangKyId: regId, 
+                    trangThai: trangThai 
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        showToast(response.message, true);
+                        // Tải lại danh sách
+                        $('#filter-event-participants').trigger('change');
+                    } else {
+                        showToast(response.message || 'Lỗi cập nhật trạng thái', false);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showToast('Lỗi cập nhật trạng thái: ' + error, false);
+                }
+            });
+        }
 
         // Attach events for participants table
         $('#participants-table tbody').on('click', '.action-btn', function() {
@@ -2161,8 +2245,10 @@
         function loadAccount() {
             $.get('/organizer/api/account', function(user) {
                 var names = user.hoTen.split(' ');
-                $('#first-name').val(names[0] || '');
-                $('#last-name').val(names.slice(1).join(' ') || '');
+                var fullName = (user?.hoTen || '').trim();
+                var i = fullName.indexOf(' ');
+                $('#first-name').val(i !== -1 ? fullName.substring(0, i) : fullName);
+                $('#last-name').val(i !== -1 ? fullName.substring(i + 1) : '');
                 $('#user-email').val(user.email);
                 $('#user-phone').val(user.soDienThoai);
                 $('#user-address').val(user.diaChi);
@@ -2222,7 +2308,7 @@
             $.get('/organizer/api/events/' + suKienId, function(event) {
                 var trangThaiHienThi = '';
 
-                switch (event.trangThaiThoiGian) {
+                switch (event.trangThaiThoigian) {
                     case 'DangDienRa':
                         trangThaiHienThi = 'Đang diễn ra';
                         break;
@@ -2251,7 +2337,7 @@
                             '<div class="form-row">' +
                                 '<div class="form-group">' +
                                     '<label>Trạng thái:</label>' +
-                                    '<span class="status ' + event.trangThaiThoiGian.toLowerCase() + '">' + trangThaiHienThi + '</span>' +
+                                    '<span class="status ' + event.trangThaiThoigian.toLowerCase() + '">' + trangThaiHienThi + '</span>' +
                                 '</div>' +
                                 '<div class="form-group">' +
                                     '<label>Số người tham gia:</label>' +

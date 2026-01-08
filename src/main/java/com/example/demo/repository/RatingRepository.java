@@ -79,4 +79,10 @@ public class RatingRepository {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getJdbcTemplate'");
     }
+
+    public boolean hasUserRegisteredEvent(Long userId, Long suKienId) {
+        String sql = "SELECT COUNT(*) FROM dang_ky_su_kien WHERE nguoi_dung_id = ? AND su_kien_id = ? AND trang_thai != 'DaHuy'";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, suKienId);
+        return count != null && count > 0;
+    }
 }

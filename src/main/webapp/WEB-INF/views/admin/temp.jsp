@@ -854,6 +854,12 @@
                         <span>Thống kê</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link" data-target="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Cài đặt hệ thống</span>
+                    </a>
+                </li>
             </ul>
         </div>
         <!-- Main Content -->
@@ -900,7 +906,7 @@
                             <i class="fas fa-calendar-check"></i>
                         </div>
                         <h3 id="active-events">0</h3>
-                        <p>Sự kiện đang diễn ra</p>
+                        <p>Sự kiện đang hoạt động</p>
                     </div>
                     <div class="card">
                         <div class="card-icon warning">
@@ -908,6 +914,13 @@
                         </div>
                         <h3 id="pending-events">0</h3>
                         <p>Sự kiện chờ duyệt</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h3 id="violation-events">0</h3>
+                        <p>Sự kiện vi phạm</p>
                     </div>
                 </div>
                 <!-- Recent Events -->
@@ -1051,6 +1064,20 @@
             <div id="analytics" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Thống kê hệ thống</h3>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-total-users">0</div>
+                        <div class="stat-label">Tổng số người dùng</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-active-events">0</div>
+                        <div class="stat-label">Sự kiện đang hoạt động</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-pending-events">0</div>
+                        <div class="stat-label">Sự kiện chờ duyệt</div>
+                    </div>
                 </div>
                
                 <!-- Charts Section -->
@@ -1213,80 +1240,8 @@
             </div>
         </div>
     </div>
-
-    <!-- Edit Suggestion Modal -->
-    <div class="modal" id="edit-suggestion-modal">
-        <div class="modal-content" style="max-width: 700px;">
-            <div class="modal-header">
-                <h3>Chỉnh sửa đề xuất sự kiện</h3>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-suggestion-form">
-                    <input type="hidden" id="edit-suggestion-id">
-                
-                    <div class="form-group">
-                        <label for="edit-suggestion-title">Tiêu đề *</label>
-                        <input type="text" id="edit-suggestion-title" class="form-control" required>
-                    </div>
-                
-                    <div class="form-group">
-                        <label for="edit-suggestion-description">Mô tả nhu cầu</label>
-                        <textarea id="edit-suggestion-description" class="form-control" rows="4" placeholder="Nhập mô tả nhu cầu..."></textarea>
-                    </div>
-                
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-suggestion-location">Địa điểm *</label>
-                            <input type="text" id="edit-suggestion-location" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-suggestion-expected-time">Thời gian dự kiến *</label>
-                            <input type="datetime-local" id="edit-suggestion-expected-time" class="form-control" required>
-                        </div>
-                    </div>
-                
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="edit-suggestion-guest-count">Số lượng khách *</label>
-                            <input type="number" id="edit-suggestion-guest-count" class="form-control" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-suggestion-budget">Khoảng giá (VND)</label>
-                            <input type="text" id="edit-suggestion-budget" class="form-control" placeholder="Ví dụ: 1,000,000 - 2,000,000">
-                        </div>
-                    </div>
-                
-                    <div class="form-group">
-                        <label for="edit-suggestion-contact">Thông tin liên lạc</label>
-                        <input type="text" id="edit-suggestion-contact" class="form-control">
-                    </div>
-                
-                    <div class="form-group">
-                        <label for="edit-suggestion-status">Trạng thái phê duyệt</label>
-                        <select id="edit-suggestion-status" class="form-control">
-                            <option value="ChoDuyet">Chờ duyệt</option>
-                            <option value="DaDuyet">Đã duyệt</option>
-                            <option value="TuChoi">Từ chối</option>
-                        </select>
-                    </div>
-                
-                    <div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Lưu thay đổi
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="btn-cancel-edit-suggestion">
-                            <i class="fas fa-times"></i> Hủy
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Toast Container -->
     <div class="toast-container" id="toast-container"></div>
-
     <script>
     // Global variables
     let currentUsers = [];
@@ -1390,13 +1345,13 @@
             filterTables(searchTerm);
         });
        
+        // Cập nhật sự kiện đóng modal
         $('.close-modal').click(function() {
-            $('#user-modal, #event-modal, #edit-event-modal, #suggestion-modal, #edit-suggestion-modal').hide();
+            $('#user-modal, #event-modal, #edit-event-modal, #suggestion-modal').hide();
         });
-
         $(window).click(function(e) {
             if ($(e.target).hasClass('modal')) {
-                $('#user-modal, #event-modal, #edit-event-modal, #suggestion-modal, #edit-suggestion-modal').hide();
+                $('#user-modal, #event-modal, #edit-event-modal, #suggestion-modal').hide();
             }
         });
         // Button events
@@ -1733,78 +1688,57 @@
         });
     }
     function createApprovalEventCard(event, source) {
-    const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') :
-                    (event.thoiGianDuKien ? new Date(event.thoiGianDuKien).toLocaleDateString('vi-VN') : 'N/A');
-
-    const sourceText = source === 'organizer' ? 'Từ Organizer' : 'Từ Joiner';
-    const organizerName = source === 'organizer' ? event.organizerName :
-                        (event.joinerName || event.user?.hoTen || 'N/A');
-    const eventName = source === 'organizer' ? event.tenSuKien : event.tieuDe;
-    const eventDescription = source === 'organizer' ? event.moTa : event.moTaNhuCau;
-
-    const rawStatus = event.trangThaiPheDuyet || '';
-    const statusText = getApprovalStatusText(rawStatus);
-    const statusClass = getApprovalStatusClass(rawStatus);
-
-    const eventId = source === 'organizer' ? event.suKienId : (event.dangSuKienId || event.suKienId);
-
-    // ====== LOGIC HIỂN THỊ ACTION BUTTONS ======
-    const canApproveReject = rawStatus === 'ChoDuyet';
-    const canEdit = rawStatus === 'DaDuyet';
-    const canDelete = rawStatus === 'DaDuyet' || rawStatus === 'TuChoi';
-
-    return '<div class="event-card" data-event-id="' + eventId + '" data-source="' + source + '">' +
-        '<div class="event-source-badge" style="background-color: ' +
-            (source === 'organizer' ? 'var(--primary)' : 'var(--secondary)') + '">' +
-            sourceText + '</div>' +
-        '<div class="event-image">' +
-            '<i class="fas ' + (source === 'organizer' ? 'fa-calendar-alt' : 'fa-lightbulb') + '"></i>' +
-        '</div>' +
-        '<div class="event-content">' +
-            '<h4 class="event-title">' + (eventName || 'N/A') + '</h4>' +
-            '<div class="event-meta">' +
-                '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
-                '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'N/A') + '</span>' +
+        const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') :
+                        (event.thoiGianDuKien ? new Date(event.thoiGianDuKien).toLocaleDateString('vi-VN') : 'N/A');
+        const sourceText = source === 'organizer' ? 'Từ Organizer' : 'Từ Joiner';
+        const organizerName = source === 'organizer' ? event.organizerName :
+                            (event.joinerName || event.user?.hoTen || 'N/A');
+        const eventName = source === 'organizer' ? event.tenSuKien : event.tieuDe;
+        const eventDescription = source === 'organizer' ? event.moTa : event.moTaNhuCau;
+        const statusText = getApprovalStatusText(event.trangThai || event.trangThaiPheDuyet);
+        const statusClass = getApprovalStatusClass(event.trangThai || event.trangThaiPheDuyet);
+       
+        // QUAN TRỌNG: Sửa cách lấy eventId
+        const eventId = source === 'organizer' ? event.suKienId : (event.dangSuKienId || event.suKienId);
+       
+        return '<div class="event-card" data-event-id="' + eventId + '" data-source="' + source + '">' +
+            '<div class="event-source-badge" style="background-color: ' +
+                (source === 'organizer' ? 'var(--primary)' : 'var(--secondary)') + '">' +
+                sourceText + '</div>' +
+            '<div class="event-image">' +
+                '<i class="fas ' + (source === 'organizer' ? 'fa-calendar-alt' : 'fa-lightbulb') + '"></i>' +
             '</div>' +
-            '<p><strong>Người gửi:</strong> ' + organizerName + '</p>' +
-            '<p><strong>Trạng thái:</strong> <span class="status ' + statusClass + '">' + statusText + '</span></p>' +
-            '<p>' + ((eventDescription) ?
-                (eventDescription.length > 100 ? eventDescription.substring(0, 100) + '...' : eventDescription) :
-                'Không có mô tả') + '</p>' +
-            '<div class="event-footer">' +
-                '<div class="action-buttons">' +
-
-                    (canApproveReject ?
+            '<div class="event-content">' +
+                '<h4 class="event-title">' + (eventName || 'N/A') + '</h4>' +
+                '<div class="event-meta">' +
+                    '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
+                    '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'N/A') + '</span>' +
+                '</div>' +
+                '<p><strong>Người gửi:</strong> ' + organizerName + '</p>' +
+                '<p><strong>Trạng thái:</strong> <span class="status ' + statusClass + '">' + statusText + '</span></p>' +
+                '<p>' + ((eventDescription) ?
+                    (eventDescription.length > 100 ? eventDescription.substring(0, 100) + '...' : eventDescription) :
+                    'Không có mô tả') + '</p>' +
+                '<div class="event-footer">' +
+                    '<div class="action-buttons">' +
                         '<div class="action-btn success btn-approve-event" data-event-id="' + eventId + '" data-source="' + source + '" title="Chấp nhận">' +
                             '<i class="fas fa-check"></i>' +
                         '</div>' +
                         '<div class="action-btn danger btn-reject-event" data-event-id="' + eventId + '" data-source="' + source + '" title="Từ chối">' +
                             '<i class="fas fa-times"></i>' +
-                        '</div>'
-                    : '') +
-
-                    (source === 'suggestion' && canEdit ?
-                        '<div class="action-btn primary btn-edit-suggestion" data-suggestion-id="' + eventId + '" title="Chỉnh sửa">' +
-                            '<i class="fas fa-edit"></i>' +
-                        '</div>'
-                    : source !== 'suggestion' && canEdit ?
+                        '</div>' +
                         '<div class="action-btn primary btn-edit-event" data-event-id="' + eventId + '" data-source="' + source + '" title="Chỉnh sửa">' +
                             '<i class="fas fa-edit"></i>' +
-                        '</div>'
-                    : '') +
-
-                    (canDelete ?
+                        '</div>' +
                         '<div class="action-btn warning btn-delete-event" data-event-id="' + eventId + '" data-source="' + source + '" title="Xóa">' +
                             '<i class="fas fa-trash"></i>' +
-                        '</div>'
-                    : '') +
-
+                        '</div>' +
+                    '</div>' +
                 '</div>' +
             '</div>' +
-        '</div>' +
-    '</div>';
-}
-
+        '</div>';
+    }
+    
     
     $(document).on('click', '.btn-approve-suggestion', function() {
         const suggestionId = $(this).data('suggestion-id');
@@ -1814,7 +1748,6 @@
         const suggestionId = $(this).data('suggestion-id');
         rejectEvent(suggestionId, 'suggestion');
     });
-
     function displayRecentEvents(events) {
         let html = '';
        
@@ -1831,7 +1764,7 @@
                 const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleDateString('vi-VN') : 'N/A';
                
                 // Thêm class để phân biệt với sự kiện có thể click
-                html += '<div class="event-card" data-event-id="' + event.suKienId + '" data-source="organizer">' +
+                html += '<div class="event-card no-modal" data-event-id="' + event.suKienId + '">' +
                     '<div class="event-image">' +
                         '<i class="fas fa-calendar-alt"></i>' +
                     '</div>' +
@@ -1971,14 +1904,14 @@
             '</div>';
            
             // Thêm nút hành động
-            // html += '<div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
-            //     '<button class="btn btn-primary btn-edit-event" data-event-id="' + event.suKienId + '">' +
-            //         '<i class="fas fa-edit"></i> Chỉnh sửa' +
-            //     '</button>' +
-            //     '<button class="btn btn-danger btn-delete-event" data-event-id="' + event.suKienId + '">' +
-            //         '<i class="fas fa-trash"></i> Xóa sự kiện' +
-            //     '</button>' +
-            // '</div>';
+            html += '<div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
+                '<button class="btn btn-primary btn-edit-event" data-event-id="' + event.suKienId + '">' +
+                    '<i class="fas fa-edit"></i> Chỉnh sửa' +
+                '</button>' +
+                '<button class="btn btn-danger btn-delete-event" data-event-id="' + event.suKienId + '">' +
+                    '<i class="fas fa-trash"></i> Xóa sự kiện' +
+                '</button>' +
+            '</div>';
            
             $('#event-modal-content').html(html);
             $('#event-modal').show();
@@ -2014,7 +1947,7 @@
     }
     function getApprovalStatusClass(status) {
         const classes = {
-            'ChoDuyet': 'pending',
+            'CHO_DUYET': 'pending',
             'DaDuyet': 'approved',
             'TuChoi': 'cancelled'
         };
@@ -2022,7 +1955,7 @@
     }
     function getApprovalStatusText(status) {
         const texts = {
-            'ChoDuyet': 'Chờ duyệt',
+            'CHO_DUYET': 'Chờ duyệt',
             'DaDuyet': 'Đã duyệt',
             'TuChoi': 'Từ chối'
         };
@@ -2491,16 +2424,16 @@
             '</div>';
            
             // Nếu đang chờ duyệt, hiển thị nút chấp nhận và từ chối
-            // if (suggestion.trangThaiPheDuyet === 'ChoDuyet') {
-            //     html += '<div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
-            //         '<button class="btn btn-success btn-approve-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
-            //             '<i class="fas fa-check"></i> Chấp nhận' +
-            //         '</button>' +
-            //         '<button class="btn btn-danger btn-reject-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
-            //             '<i class="fas fa-times"></i> Từ chối' +
-            //         '</button>' +
-            //     '</div>';
-            // }
+            if (suggestion.trangThaiPheDuyet === 'ChoDuyet') {
+                html += '<div class="form-group" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
+                    '<button class="btn btn-success btn-approve-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                        '<i class="fas fa-check"></i> Chấp nhận' +
+                    '</button>' +
+                    '<button class="btn btn-danger btn-reject-suggestion" data-suggestion-id="' + suggestion.dangSuKienId + '">' +
+                        '<i class="fas fa-times"></i> Từ chối' +
+                    '</button>' +
+                '</div>';
+            }
            
             $('#suggestion-modal-content').html(html);
             $('#suggestion-modal').show();
@@ -2684,131 +2617,6 @@
             }
         }
     });
-
-
-    // Hàm mở modal chỉnh sửa đề xuất
-function openEditSuggestionModal(suggestionId) {
-    $.get('/admin/api/suggestions/' + suggestionId, function(suggestion) {
-        if (!suggestion) {
-            showToast('Không tìm thấy thông tin đề xuất', false);
-            return;
-        }
-       
-        // Format datetime để hiển thị trong input datetime-local
-        const formatDateTimeForInput = (dateString) => {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toISOString().slice(0, 16);
-        };
-       
-        // Điền dữ liệu vào form
-        $('#edit-suggestion-id').val(suggestion.dangSuKienId || suggestion.suKienId);
-        $('#edit-suggestion-title').val(suggestion.tieuDe);
-        $('#edit-suggestion-description').val(suggestion.moTaNhuCau || '');
-        $('#edit-suggestion-location').val(suggestion.diaDiem);
-        $('#edit-suggestion-expected-time').val(formatDateTimeForInput(suggestion.thoiGianDuKien));
-        $('#edit-suggestion-guest-count').val(suggestion.soLuongKhach);
-        $('#edit-suggestion-budget').val(suggestion.giaCaLong);
-        $('#edit-suggestion-contact').val(suggestion.thongTinLienLac);
-        $('#edit-suggestion-status').val(suggestion.trangThaiPheDuyet || 'ChoDuyet');
-       
-        // Hiển thị modal
-        $('#suggestion-modal').hide();
-        $('#edit-suggestion-modal').show();
-       
-    }).fail(function(xhr, status, error) {
-        console.error('Error loading suggestion for edit:', error);
-        showToast('Lỗi tải thông tin đề xuất để chỉnh sửa: ' + error, false);
-    });
-}
-
-// Xử lý submit form chỉnh sửa đề xuất
-$('#edit-suggestion-form').on('submit', function(e) {
-    e.preventDefault();
-    const suggestionId = $('#edit-suggestion-id').val();
-    saveSuggestionChanges(suggestionId);
-});
-
-// Xử lý nút hủy
-$('#btn-cancel-edit-suggestion').click(function() {
-    $('#edit-suggestion-modal').hide();
-});
-
-// Hàm lưu thay đổi đề xuất
-function saveSuggestionChanges(suggestionId) {
-    const formData = {
-        tieuDe: $('#edit-suggestion-title').val(),
-        moTaNhuCau: $('#edit-suggestion-description').val(),
-        diaDiem: $('#edit-suggestion-location').val(),
-        thoiGianDuKien: $('#edit-suggestion-expected-time').val(),
-        soLuongKhach: $('#edit-suggestion-guest-count').val(),
-        giaCaLong: $('#edit-suggestion-budget').val(),
-        thongTinLienLac: $('#edit-suggestion-contact').val(),
-        trangThaiPheDuyet: $('#edit-suggestion-status').val()
-    };
-   
-    // Validate dữ liệu
-    if (!formData.tieuDe.trim()) {
-        showToast('Tiêu đề không được để trống', false);
-        return;
-    }
-   
-    if (!formData.diaDiem.trim()) {
-        showToast('Địa điểm không được để trống', false);
-        return;
-    }
-   
-    if (!formData.thoiGianDuKien) {
-        showToast('Thời gian dự kiến không được để trống', false);
-        return;
-    }
-   
-    if (formData.soLuongKhach < 1) {
-        showToast('Số lượng khách phải lớn hơn 0', false);
-        return;
-    }
-   
-    // Gửi request cập nhật
-    $.ajax({
-        url: '/admin/api/suggestions/' + suggestionId,
-        method: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify(formData),
-        beforeSend: function() {
-            $('#edit-suggestion-form button[type="submit"]')
-                .html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...')
-                .prop('disabled', true);
-        },
-        success: function(response) {
-            if (response.success) {
-                showToast('Đã cập nhật đề xuất thành công', true);
-                // Đóng modal
-                $('#edit-suggestion-modal').hide();
-                // Reload dữ liệu
-                loadApprovalEvents();
-                loadDashboardData();
-            } else {
-                showToast(response.message || 'Lỗi cập nhật đề xuất', false);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error updating suggestion:', error);
-            showToast('Lỗi cập nhật đề xuất: ' + error, false);
-        },
-        complete: function() {
-            $('#edit-suggestion-form button[type="submit"]')
-                .html('<i class="fas fa-save"></i> Lưu thay đổi')
-                .prop('disabled', false);
-        }
-    });
-}
-
-// Cập nhật sự kiện click cho nút chỉnh sửa đề xuất
-$(document).on('click', '.btn-edit-suggestion', function(e) {
-    e.stopPropagation();
-    const suggestionId = $(this).data('suggestion-id');
-    openEditSuggestionModal(suggestionId);
-});
    
 </script>
 </body>

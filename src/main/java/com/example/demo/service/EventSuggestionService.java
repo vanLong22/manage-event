@@ -122,7 +122,7 @@ public class EventSuggestionService {
         if (result) {
             ActivityHistory history = new ActivityHistory();
             history.setNguoiDungId(suggestion.getNguoiDungId());
-            history.setLoaiHoatDong("CapNhatSuKien");
+            history.setLoaiHoatDong("CapNhat");
             history.setChiTiet("Cập nhật đề xuất sự kiện: " + suggestion.getTieuDe());
             history.setThoiGian(new Date());
             historyRepository.save(history);
@@ -269,6 +269,14 @@ public class EventSuggestionService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public List<Map<String, Object>> getAllSuggestions(Integer loaiSuKienId, String diaDiem, 
+            String soLuongKhachRange) {
+        // Tự động cập nhật trạng thái trước khi lấy danh sách
+        suggestionRepository.autoUpdateStatusForUpcomingEvents();
+        
+        return eventSuggestionRepository.findSuggestions(loaiSuKienId, diaDiem, soLuongKhachRange);
     }
 
     // Phương thức mới: Lấy đề xuất với bộ lọc trạng thái cụ thể

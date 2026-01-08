@@ -607,12 +607,12 @@
                             <div class="error-message" id="password-error">Vui lòng nhập mật khẩu</div>
                         </div>
 
-                        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+                        <!-- <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
                             <label style="margin-bottom: 0;">
                                 <input type="checkbox" name="remember-me"> Ghi nhớ đăng nhập
                             </label>
                             <a href="#" style="color: var(--primary); text-decoration: none; font-size: 14px;">Quên mật khẩu?</a>
-                        </div>
+                        </div> -->
 
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary" id="login-btn">
@@ -621,7 +621,7 @@
                         </div>
                     </form>
 
-                    <div class="divider"><span>Hoặc đăng nhập với</span></div>
+                    <!-- <div class="divider"><span>Hoặc đăng nhập với</span></div>
 
                     <div class="social-buttons">
                         <div class="social-btn">
@@ -633,7 +633,7 @@
                         <div class="social-btn">
                             <i class="fab fa-apple" style="color: #000;"></i>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="form-footer">
                         Chưa có tài khoản? <a id="show-register">Đăng ký ngay</a>
@@ -679,7 +679,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="tenDangNhap">Tên đăng nhập *</label>
-                                <input type="text" id="tenDangNhap" name="tenDangNhap" value="${user.tenDangNhap}" placeholder="Nhập tên đăng nhập" required>
+                                <input type="text" id="tenDangNhap" name="tenDangNhap" placeholder="Nhập tên đăng nhập" required>
                                 <div class="error-message" id="tenDangNhap-error">Vui lòng nhập tên đăng nhập</div>
                             </div>
                         </div>
@@ -719,11 +719,10 @@
 
                         <div class="form-group">
                             <label for="gioiTinh">Giới tính</label>
-                            <select id="gioiTinh" name="gioiTinh">
+                            <select id="gioiTinh" name="gioiTinh" required>
                                 <option value="">Chọn giới tính</option>
                                 <option value="Nam" <c:if test='${user.gioiTinh == "Nam"}'>selected</c:if>>Nam</option>
                                 <option value="Nu" <c:if test='${user.gioiTinh == "Nu"}'>selected</c:if>>Nữ</option>
-                                <option value="Khac" <c:if test='${user.gioiTinh == "Khac"}'>selected</c:if>>Khác</option>
                             </select>
                         </div>
 
@@ -866,47 +865,53 @@
                 $('#vaiTro').val(role);
             });
 
-            // Xử lý form đăng ký bằng AJAX
-            $('#registerForm').on('submit', function(e) {
-                e.preventDefault();
-                
-                // Reset lỗi trước khi validate
-                resetErrors();
-                
-                if (!validateRegisterForm()) {
-                    return;
+            /// Xử lý form đăng ký bằng AJAX
+$('#registerForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    // Reset lỗi trước khi validate
+    resetErrors();
+    
+    if (!validateRegisterForm()) {
+        return;
+    }
+    
+    const formData = $(this).serialize();
+    
+    // Hiển thị trạng thái loading
+    $('#register-btn').addClass('loading');
+
+    $.ajax({
+        url: '${pageContext.request.contextPath}/register-process',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            $('#register-btn').removeClass('loading');
+            
+            // QUAN TRỌNG: Kiểm tra response.success
+            if (response.success) {
+                showToast('Đăng ký thành công! Vui lòng đăng nhập.', true);
+                setTimeout(() => {
+                    window.location.href = '${pageContext.request.contextPath}/login';
+                }, 1500);
+            } else {
+                // Hiển thị thông báo lỗi từ server
+                showToast(response.message, false);
+            }
+        },
+        error: function(xhr) {
+            $('#register-btn').removeClass('loading');
+            let errorMsg = 'Có lỗi xảy ra khi đăng ký!';
+            try {
+                const errorResponse = xhr.responseJSON;
+                if (errorResponse && errorResponse.message) {
+                    errorMsg = errorResponse.message;
                 }
-                
-                const formData = $(this).serialize();
-                
-                // Hiển thị trạng thái loading
-                $('#register-btn').addClass('loading');
-
-                $.ajax({
-                    url: '${pageContext.request.contextPath}/register-process',
-                    type: 'POST',
-                    data: formData,
-                    success: function(response) {
-                        $('#register-btn').removeClass('loading');
-                        showToast('Đăng ký thành công! Vui lòng đăng nhập.', true);
-                        setTimeout(() => {
-                            window.location.href = '${pageContext.request.contextPath}/login';
-                        }, 1500);
-                    },
-                    error: function(xhr) {
-                        $('#register-btn').removeClass('loading');
-                        let errorMsg = 'Có lỗi xảy ra khi đăng ký!';
-                        try {
-                            const errorResponse = xhr.responseJSON;
-                            if (errorResponse && errorResponse.message) {
-                                errorMsg = errorResponse.message;
-                            }
-                        } catch (e) {}
-                        showToast(errorMsg, false);
-                    }
-                });
-            });
-
+            } catch (e) {}
+            showToast(errorMsg, false);
+        }
+    });
+});
             // Hàm validate form đăng nhập
             function validateLoginForm() {
                 let isValid = true;

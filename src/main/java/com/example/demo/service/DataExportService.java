@@ -77,7 +77,8 @@ public class DataExportService {
             SELECT sk.su_kien_id                                          AS event_id,
                    sk.loai_su_kien                                        AS loai_su_kien,
                    sk.dia_diem                                            AS dia_diem,
-                   DATEDIFF(sk.thoi_gian_bat_dau, NOW())                  AS thoi_gian_diff_days
+                   DATEDIFF(sk.thoi_gian_bat_dau, NOW())                  AS thoi_gian_diff_days,
+                   sk.so_luong_da_dang_ky                                 AS so_luong_da_dang_ky
             FROM su_kien sk
             WHERE sk.trang_thai IN ('SapDienRa', 'DangDienRa')
               AND sk.so_luong_da_dang_ky < sk.so_luong_toi_da
@@ -90,15 +91,16 @@ public class DataExportService {
 
             writer.write('\ufeff'); // BOM cho Excel
 
-            // Header giữ nguyên tiếng Anh
-            writer.write("event_id,loai_su_kien,dia_diem,thoi_gian_diff_days\n");
+            // Header giữ nguyên tiếng Anh, thêm so_luong_da_dang_ky
+            writer.write("event_id,loai_su_kien,dia_diem,thoi_gian_diff_days,so_luong_da_dang_ky\n");
 
             for (Map<String, Object> row : data) {
                 writer.write(
                         row.get("event_id") + "," +
                         escapeCsv(row.get("loai_su_kien")) + "," +
                         escapeCsv(row.get("dia_diem")) + "," +
-                        row.get("thoi_gian_diff_days") + "\n"
+                        row.get("thoi_gian_diff_days") + "," +
+                        row.get("so_luong_da_dang_ky") + "\n"
                 );
             }
         }
@@ -156,10 +158,10 @@ public class DataExportService {
         try (Writer writer = new BufferedWriter(
                 new OutputStreamWriter(new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
 
-            writer.write("event_id,loai_su_kien,dia_diem,thoi_gian_diff_days\n");
+            writer.write("event_id,loai_su_kien,dia_diem,thoi_gian_diff_days,label\n");
 
             for (Map<String, Object> row : data) {
-                writer.write(String.format("%s,\"%s\",\"%s\",%s\n",
+                writer.write(String.format("%s,\"%s\",\"%s\",%s,1\n",
                         row.get("event_id"),
                         row.get("loai_su_kien"),
                         row.get("dia_diem"),

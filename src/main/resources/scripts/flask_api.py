@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import os
+import pickle
 
 app = Flask(__name__)
 
@@ -13,11 +14,18 @@ df_events = pd.read_csv('D:/2022-2026/HOC KI 7/XD HTTT/dataForModel/preprocessed
 # Thư mục lưu lịch sử từng user (do Java export)
 HISTORY_DIR = 'D:/2022-2026/HOC KI 7/XD HTTT/quanLySuKien/demo/src/main/webapp/static/csv/'
 
+# Load encoders (để encode history)
+with open('D:/2022-2026/HOC KI 7/XD HTTT/modelTrained/label_encoder_loai.pkl', 'rb') as f:
+    le_loai = pickle.load(f)
+with open('D:/2022-2026/HOC KI 7/XD HTTT/modelTrained/label_encoder_dia_diem.pkl', 'rb') as f:
+    le_dia = pickle.load(f)
+
 @app.route('/suggest', methods=['POST'])
 def suggest():
     try:
         data = request.get_json()
         user_id = data.get('user_id')
+        print(f"Received suggestion request for user_id: {user_id}")
         
         if not user_id:
             return jsonify({"error": "user_id is required"}), 400
@@ -27,6 +35,10 @@ def suggest():
         # 1. Trường hợp user có lịch sử
         if os.path.exists(history_file):
             df_history = pd.read_csv(history_file)
+            
+            # Encode history (thêm cột encoded)
+            df_history['loai_su_kien_encoded'] = le_loai.transform(df_history['loai_su_kien'])
+            df_history['dia_diem_encoded'] = le_dia.transform(df_history['dia_diem'])
             
             # Chỉ lấy các sự kiện đã tham gia thành công (label=1)
             df_positive = df_history[df_history['label'] == 1]

@@ -8,9 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
@@ -95,53 +97,66 @@ public class AuthController {
         }
     }
 
-    // Xử lý đăng ký (form submit)
+    // Xử lý đăng ký  
+    // Import không đổi
     @PostMapping("/register-process")
-    public String registerProcess(User user, 
-                                @RequestParam("confirmPassword") String confirmPassword,
-                                Model model) {
+    @ResponseBody
+    public ResponseEntity<?> registerProcess(@ModelAttribute User user,
+                                            @RequestParam("confirmPassword") String confirmPassword) {
+        Map<String, Object> response = new HashMap<>();
+
         try {
             // Kiểm tra mật khẩu xác nhận
             if (!user.getMatKhau().equals(confirmPassword)) {
-                model.addAttribute("error", "Mật khẩu xác nhận không khớp!");
-                model.addAttribute("user", user);
-                return "dndk";
+                response.put("success", false);
+                response.put("message", "Mật khẩu xác nhận không khớp!");
+                return ResponseEntity.ok(response);
             }
 
             // Kiểm tra username đã tồn tại
+            System.out.println("Checking username: " + user.getTenDangNhap());
             User existingUser = userRepository.findByUsername(user.getTenDangNhap());
             if (existingUser != null) {
-                model.addAttribute("error", "Tên đăng nhập đã tồn tại!");
-                model.addAttribute("user", user);
-                return "dndk";
+                System.out.println("Username already exists: " + user.getTenDangNhap());
+                response.put("success", false);
+                response.put("message", "Tên đăng nhập đã tồn tại!");
+                return ResponseEntity.ok(response);
             }
 
             // Kiểm tra email đã tồn tại
+            System.out.println("Checking email: " + user.getEmail());
             List<User> usersByEmail = userService.findByEmail(user.getEmail());
             if (!usersByEmail.isEmpty()) {
-                model.addAttribute("error", "Email đã được đăng ký!");
-                model.addAttribute("user", user);
-                return "dndk";
+                System.out.println("Email already exists: " + user.getEmail());
+                response.put("success", false);
+                response.put("message", "Email đã được đăng ký!");
+                return ResponseEntity.ok(response);
             }
 
             // Set vai trò mặc định
             if (user.getVaiTro() == null || user.getVaiTro().isEmpty()) {
-                user.setVaiTro("NguoiDung"); // Mặc định là người dùng thường
+                user.setVaiTro("NguoiDung");
             }
 
             // Lưu user
+            System.out.println("Saving user: " + user.getTenDangNhap() + ", " + user.getEmail());
             userService.save(user);
             
-            model.addAttribute("message", "Đăng ký thành công! Vui lòng đăng nhập.");
-            return "dndk";
+            // Log để kiểm tra
+            System.out.println("User saved successfully. ID: " + user.getNguoiDungId());
+
+            response.put("success", true);
+            response.put("message", "Đăng ký thành công! Vui lòng đăng nhập.");
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             e.printStackTrace();
-            model.addAttribute("error", "Có lỗi xảy ra khi đăng ký: " + e.getMessage());
-            model.addAttribute("user", user);
-            return "dndk";
+            response.put("success", false);
+            response.put("message", "Có lỗi xảy ra khi đăng ký: " + e.getMessage());
+            return ResponseEntity.ok(response);
         }
     }
+
     /*
     @GetMapping("/renter/join")
     public String renterJoinPage() {

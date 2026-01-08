@@ -46,6 +46,11 @@ public class EventService {
         return eventRepository.findAll();
     }
 
+    // đếm số sự kiện đang diễn ra
+    public int countActiveEvents() {
+        return eventRepository.countActiveEvents();
+    }
+
     public List<Event> getFeaturedEvents() {
         return eventRepository.findFeatured();
     }
@@ -193,7 +198,7 @@ public class EventService {
             eventMap.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
             eventMap.put("loaiSuKienId", event.getLoaiSuKienId());
             
-            eventMap.put("trangThaiThoiGian", getTimeStatusInVietnamese(event.getTrangThaiThoiGian()));
+            eventMap.put("trangThaiThoigian", event.getTrangThaiThoigian());  
             eventMap.put("trangThaiPheDuyet", getApprovalStatusInVietnamese(event.getTrangThaiPheDuyet()));
             eventMap.put("loaiSuKien", getEventTypeInVietnamese(event.getLoaiSuKien()));
             eventMap.put("loaiSuKienTen", getEventTypeName(event.getLoaiSuKienId()));
@@ -209,7 +214,7 @@ public class EventService {
 
     public List<Event> getRecentEvents(int limit) {
         return eventRepository.findAll().stream()
-            .filter(event -> !"DaKetThuc".equals(event.getTrangThaiThoiGian()))
+            .filter(event -> !"DaKetThuc".equals(event.getTrangThaiThoigian()))
             .sorted((e1, e2) -> e2.getThoiGianBatDau().compareTo(e1.getThoiGianBatDau()))
             .limit(limit)
             .collect(Collectors.toList());
@@ -217,7 +222,7 @@ public class EventService {
 
     public Event getNextAvailableEvent(int currentCount) {
         List<Event> allEvents = eventRepository.findAll().stream()
-            .filter(event -> !"DaKetThuc".equals(event.getTrangThaiThoiGian()))
+            .filter(event -> !"DaKetThuc".equals(event.getTrangThaiThoigian()))
             .sorted((e1, e2) -> e2.getThoiGianBatDau().compareTo(e1.getThoiGianBatDau()))
             .collect(Collectors.toList());
         
@@ -260,7 +265,7 @@ public class EventService {
             
             // Cập nhật trạng thái sự kiện
             event.setTrangThaiPheDuyet(newStatus);
-            event.setTrangThaiThoiGian(newTimeStatus);
+            event.setTrangThaiThoigian(newTimeStatus);
             eventRepository.update(event);
             
             // Gửi thông báo cho người tổ chức
@@ -319,7 +324,7 @@ public class EventService {
             eventDetail.put("thoiGianBatDau", event.getThoiGianBatDau());
             eventDetail.put("thoiGianKetThuc", event.getThoiGianKetThuc());
             eventDetail.put("loaiSuKien", event.getLoaiSuKien());
-            eventDetail.put("trangThaiThoiGian", event.getTrangThaiThoiGian());
+            eventDetail.put("trangThaiThoigian", event.getTrangThaiThoigian());
             eventDetail.put("soLuongToiDa", event.getSoLuongToiDa());
             eventDetail.put("soLuongDaDangKy", event.getSoLuongDaDangKy());
             eventDetail.put("averageRating", averageRating != null ? averageRating : 0);
@@ -337,4 +342,7 @@ public class EventService {
         return result;
     }
 
+
+    
+    
 }

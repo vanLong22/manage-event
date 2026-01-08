@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,9 @@ public class RegistrationRepository {
 
     @Transactional
     public void save(Registration registration) {
+        System.err.println("Attempting to register user " + registration.getNguoiDungId() + " for event " + registration.getSuKienId());
+        System.out.println(registration.getGhiChu());
+        System.out.println(registration.getThoiGianDangKy());
 
         // 1️⃣ Kiểm tra & tăng số lượng tham gia (atomic)
         String updateSql =
@@ -54,7 +58,7 @@ public class RegistrationRepository {
             registration.getNguoiDungId(),
             registration.getSuKienId(),
             registration.getThoiGianDangKy(),
-            registration.getTrangThai(),
+            "ChoDuyet",
             registration.getGhiChu()
         );
     }
@@ -100,7 +104,7 @@ public class RegistrationRepository {
             event.setThoiGianKetThuc(rs.getTimestamp("thoi_gian_ket_thuc"));
             event.setAnhBia(rs.getString("anh_bia"));
             event.setMoTa(rs.getString("mo_ta"));
-            event.setTrangThaiThoiGian(rs.getString("trang_thai_thoigian"));
+            event.setTrangThaiThoigian(rs.getString("trang_thai_thoigian"));
             event.setTrangThaiPheDuyet(rs.getString("trang_thai_phe_duyet"));
             event.setSoLuongDaDangKy(rs.getInt("so_luong_da_dang_ky"));
             event.setSoLuongToiDa(rs.getInt("so_luong_toi_da"));
@@ -148,7 +152,7 @@ public class RegistrationRepository {
 
                 Event event = new Event();
                 event.setTenSuKien(rs.getString("tenSuKien"));
-                event.setTrangThaiThoiGian(rs.getString("trangThaiThoiGian"));
+                event.setTrangThaiThoigian(rs.getString("trangThaiThoiGian"));
                 event.setTrangThaiPheDuyet(rs.getString("trangThaiPheDuyet"));
 
                 reg.setEvent(event);
@@ -256,5 +260,43 @@ public class RegistrationRepository {
         // Cập nhật trạng thái thay vì xóa
         String sql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
         jdbcTemplate.update(sql, dangKyId);
+    }
+
+    public boolean updateRegistrationStatus(Long dangKyId, String trangThai) {
+        String sql = "UPDATE dang_ky_su_kien SET trang_thai = ? WHERE dang_ky_su_kien_id = ?";
+        int affectedRows = jdbcTemplate.update(sql, trangThai, dangKyId);
+        return affectedRows > 0;
+    }
+
+    public Registration findRegistrationWithEvent(Long dangKyId) {
+        String sql = """
+            SELECT dk.*, sk.nguoi_to_chuc_id, sk.ten_su_kien, sk.so_luong_da_dang_ky, sk.so_luong_toi_da
+            FROM dang_ky_su_kien dk
+            JOIN su_kien sk ON dk.su_kien_id = sk.su_kien_id
+            WHERE dk.dang_ky_su_kien_id = ?
+            """;
+        try {
+            return jdbcTemplate.queryForObject(sql, new RowMapper<Registration>() {
+                @Override
+                public Registration mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Registration reg = new Registration();
+                    reg.setDangKyId(rs.getLong("dang_ky_su_kien_id"));
+                    reg.setNguoiDungId(rs.getLong("nguoi_dung_id"));
+                    reg.setSuKienId(rs.getLong("su_kien_id"));
+                    reg.setTrangThai(rs.getString("trang_thai"));
+                    
+                    Event event = new Event();
+                    event.setNguoiToChucId(rs.getLong("nguoi_to_chuc_id"));
+                    event.setTenSuKien(rs.getString("ten_su_kien"));
+                    event.setSoLuongDaDangKy(rs.getInt("so_luong_da_dang_ky"));
+                    event.setSoLuongToiDa(rs.getInt("so_luong_toi_da"));
+                    
+                    reg.setEvent(event);
+                    return reg;
+                }
+            }, dangKyId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

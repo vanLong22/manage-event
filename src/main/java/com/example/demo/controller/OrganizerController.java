@@ -79,7 +79,7 @@ public class OrganizerController {
         model.addAttribute("allEvents", allEvents);
         return "organizer/organize";
     }
-
+    
     // API create event 
     @PostMapping(value = "/api/events/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createEvent(
@@ -95,6 +95,31 @@ public class OrganizerController {
             // Convert JSON string to Event object
             ObjectMapper objectMapper = new ObjectMapper();
             Event event = objectMapper.readValue(eventJson, Event.class);
+            
+            // KIỂM TRA RÀNG BUỘC THỜI GIAN
+            if (event.getThoiGianBatDau() == null || event.getThoiGianKetThuc() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Thời gian bắt đầu và kết thúc không được để trống"
+                ));
+            }
+            
+            // Kiểm tra thời gian kết thúc phải sau thời gian bắt đầu
+            if (!event.getThoiGianKetThuc().after(event.getThoiGianBatDau())) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Thời gian kết thúc phải sau thời gian bắt đầu"
+                ));
+            }
+            
+            // Kiểm tra thời gian bắt đầu không được trong quá khứ (tùy chọn)
+            java.util.Date now = new java.util.Date();
+            if (event.getThoiGianBatDau().before(now)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Thời gian bắt đầu không được trong quá khứ"
+                ));
+            }
             
             event.setNguoiToChucId(organizerId);
             if (anhBiaFile != null && !anhBiaFile.isEmpty()) {
@@ -117,6 +142,7 @@ public class OrganizerController {
         }
     }
 
+
     // API lấy tất cả events của organizer
     @GetMapping("/api/events")
     public ResponseEntity<List<Event>> getEvents(HttpSession session) {
@@ -138,7 +164,7 @@ public class OrganizerController {
     }
 
     // API get event by id
-    @GetMapping("/api/events/{id}")
+    @GetMapping("/api/events/{id:\\d+}")
     public ResponseEntity<Event> getEvent(@PathVariable Long id, HttpSession session) {
         Long organizerId = (Long) session.getAttribute("userId");
         if (organizerId == null) {
@@ -195,6 +221,22 @@ public class OrganizerController {
                 return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "ID trong URL không khớp với ID trong dữ liệu"
+                ));
+            }
+
+            // KIỂM TRA RÀNG BUỘC THỜI GIAN
+            if (event.getThoiGianBatDau() == null || event.getThoiGianKetThuc() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Thời gian bắt đầu và kết thúc không được để trống"
+                ));
+            }
+
+            // Kiểm tra thời gian kết thúc phải sau thời gian bắt đầu
+            if (!event.getThoiGianKetThuc().after(event.getThoiGianBatDau())) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Thời gian kết thúc phải sau thời gian bắt đầu"
                 ));
             }
             
@@ -665,8 +707,7 @@ public class OrganizerController {
             return ResponseEntity.status(401).build();
         }
         
-        List<Map<String, Object>> suggestions = eventSuggestionService.getSuggestionsWithFilters(
-            loaiSuKienId, diaDiem, soLuongKhach, trangThai);
+        List<Map<String, Object>> suggestions = eventSuggestionService.getAllSuggestions(loaiSuKienId, diaDiem, soLuongKhach);
         
         return ResponseEntity.ok(suggestions);
     }
@@ -815,6 +856,27 @@ public class OrganizerController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng xuất thành công"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi đăng xuất"));
+        }
+    }
+
+
+    @PostMapping("/api/registrations/update-status")
+    public ResponseEntity<Map<String, Object>> updateRegistrationStatus(@RequestBody Map<String, Object> request, HttpSession session) {
+        Long organizerId = (Long) session.getAttribute("userId");
+        if (organizerId == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Chưa đăng nhập"));
+        }
+        
+        try {
+            Long dangKyId = Long.parseLong(request.get("dangKyId").toString());
+            String trangThai = (String) request.get("trangThai");
+            
+            Map<String, Object> result = registrationService.updateRegistrationStatus(dangKyId, trangThai, organizerId);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Lỗi hệ thống: " + e.getMessage()));
         }
     }
 

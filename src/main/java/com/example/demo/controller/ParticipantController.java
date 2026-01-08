@@ -80,7 +80,7 @@ public class ParticipantController {
 
         List<Notification> notifications = notificationService.getNotificationsByUser(userId);
         long unreadCount = notifications.stream()
-            .filter(n -> n.getDaDoc() == 0)  // 0 = chưa đọc
+            .filter(n -> n.getDaDoc() == 0)
             .count();        
         model.addAttribute("notifications", notifications);
         model.addAttribute("unreadNotificationCount", unreadCount);
@@ -95,7 +95,6 @@ public class ParticipantController {
             dataExportService.exportUserHistoryForRecommendation(userId);
         } catch (IOException e) {
             System.err.println("Không thể export lịch sử cho user " + userId + ": " + e.getMessage());
-            // Không crash trang, chỉ log lỗi
         }
 
         /*lấy sự kiện gợi ý từ mô hình đã huấn luyện */
@@ -815,6 +814,33 @@ public ResponseEntity<Map<String, Object>> cancelRegistration(@RequestBody Map<S
             "success", false, 
             "message", "Lỗi hệ thống khi hủy đăng ký"
         ));
+    }
+}
+
+// API: Kiểm tra sự kiện có thể đăng ký không
+@GetMapping("/api/events/{id}/check-availability")
+@ResponseBody
+public ResponseEntity<Map<String, Object>> checkEventAvailability(@PathVariable Long id) {
+    try {
+        Event event = eventService.getEventById(id);
+        if (event == null) {
+            return ResponseEntity.ok(Map.of("available", false, "message", "Sự kiện không tồn tại"));
+        }
+        
+        // Kiểm tra sự kiện đã kết thúc chưa
+        if ("DaKetThuc".equals(event.getTrangThaiThoigian())) {
+            return ResponseEntity.ok(Map.of("available", false, "message", "Sự kiện đã kết thúc"));
+        }
+        
+        // Kiểm tra còn chỗ không
+        if (event.getSoLuongDaDangKy() >= event.getSoLuongToiDa()) {
+            return ResponseEntity.ok(Map.of("available", false, "message", "Sự kiện đã đủ số lượng"));
+        }
+        
+        return ResponseEntity.ok(Map.of("available", true, "message", "Có thể đăng ký"));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(Map.of("available", false, "message", "Lỗi kiểm tra trạng thái"));
     }
 }
 }

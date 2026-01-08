@@ -16,6 +16,7 @@ public class UserRepository {
     private JdbcTemplate jdbcTemplate;
 
     public User findByUsername(String username) {
+        System.out.println("Finding user by username: " + username);
         try {
             String sql = "SELECT * FROM nguoi_dung WHERE ten_dang_nhap = ?";
             return jdbcTemplate.queryForObject(sql, new BeanPropertyRowMapper<>(User.class), username);

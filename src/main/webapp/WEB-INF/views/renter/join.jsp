@@ -1777,7 +1777,7 @@
                             <i class="fas fa-clock"></i>
                         </div>
                         <h3 id="pending-events"><c:out value="${stats.pendingEvents}"/></h3>
-                        <p>Sự kiện đang chờ</p>
+                        <p>Sự kiện chờ duyệt</p>
                     </div>
                     <div class="card">
                         <div class="card-icon secondary">
@@ -1822,14 +1822,26 @@
                                         <div class="event-meta">
                                             <span><i class="far fa-calendar"></i> 
                                                 <fmt:formatDate value="${event.thoiGianBatDau}" pattern="dd/MM/yyyy HH:mm"/>
-                                                
                                             </span>
                                             <span><i class="fas fa-map-marker-alt"></i> <c:out value="${event.diaDiem}"/></span>
                                         </div>
                                         <p class="event-description"><c:out value="${fn:substring(event.moTa, 0, 100)}${fn:length(event.moTa) > 100 ? '...' : ''}"/></p>
                                         <div class="event-footer">
-                                            <span class="status ${fn:toLowerCase(event.trangThaiThoiGian)}">
-                                                <c:out value="${event.trangThaiThoiGian}"/>
+                                            <span class="status ${fn:toLowerCase(event.trangThaiThoigian)}">
+                                                <c:choose>
+                                                    <c:when test="${event.trangThaiThoigian == 'DaKetThuc'}">
+                                                        Đã kết thúc
+                                                    </c:when>
+                                                    <c:when test="${event.trangThaiThoigian == 'DangDienRa'}">
+                                                        Đang diễn ra
+                                                    </c:when>
+                                                    <c:when test="${event.trangThaiThoigian == 'SapDienRa'}">
+                                                        Sắp diễn ra
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <c:out value="${event.trangThaiThoigian}"/>
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </span>
                                             <span><i class="fas fa-users"></i> 
                                                 <c:out value="${event.soLuongDaDangKy}"/>/<c:out value="${event.soLuongToiDa}"/>
@@ -1948,11 +1960,29 @@
                                 </div>
                                 <p><c:out value="${event.moTa}"/></p>
                                 <div class="event-footer">
-                                    <button class="btn btn-primary btn-sm btn-join-event" 
-                                            data-event-id="${event.suKienId}" 
-                                            data-event-name="<c:out value='${event.tenSuKien}'/>">
-                                        <i class="fas fa-plus"></i> Tham gia
-                                    </button>
+                                    <c:choose>
+                                        <c:when test="${event.trangThaiThoigian == 'DaKetThuc'}">
+                                            <button class="btn btn-secondary btn-sm" disabled
+                                                    title="Sự kiện đã kết thúc">
+                                                <i class="fas fa-ban"></i> Đã kết thúc
+                                            </button>
+                                        </c:when>
+
+                                        <c:when test="${event.soLuongDaDangKy >= event.soLuongToiDa}">
+                                            <button class="btn btn-secondary btn-sm" disabled
+                                                    title="Đã đủ số lượng tham gia">
+                                                <i class="fas fa-user-slash"></i> Đã đủ người
+                                            </button>
+                                        </c:when>
+
+                                        <c:otherwise>
+                                            <button class="btn btn-primary btn-sm btn-join-event"
+                                                    data-event-id="${event.suKienId}"
+                                                    data-event-name="<c:out value='${event.tenSuKien}'/>">
+                                                <i class="fas fa-plus"></i> Tham gia
+                                            </button>
+                                        </c:otherwise>
+                                    </c:choose>
                                     <span><i class="fas fa-users"></i> 
                                         <c:out value="${event.soLuongDaDangKy}"/>/<c:out value="${event.soLuongToiDa}"/>
                                     </span>
@@ -2450,14 +2480,33 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group">
-                            <label for="first-name">Họ *</label>
-                            <input type="text" id="first-name" value="${fn:split(user.hoTen, ' ')[0]}" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="last-name">Tên *</label>
-                            <input type="text" id="last-name" value="${fn:split(user.hoTen, ' ')[1]}" required>
-                        </div>
+                        <c:if test="${not empty user.hoTen}">
+                            <c:set var="spaceIndex" value="${fn:indexOf(user.hoTen, ' ')}"/>
+
+                            <!-- Họ -->
+                            <div class="form-group">
+                                <label for="first-name">Họ *</label>
+                                <input type="text"
+                                    id="first-name"
+                                    name="ho"
+                                    value="${spaceIndex != -1 
+                                            ? fn:substring(user.hoTen, 0, spaceIndex) 
+                                            : user.hoTen}"
+                                    required>
+                            </div>
+
+                            <!-- Tên -->
+                            <div class="form-group">
+                                <label for="last-name">Tên *</label>
+                                <input type="text"
+                                    id="last-name"
+                                    name="ten"
+                                    value="${spaceIndex != -1 
+                                            ? fn:substring(user.hoTen, spaceIndex + 1, fn:length(user.hoTen)) 
+                                            : ''}"
+                                    required>
+                            </div>
+                        </c:if>
                     </div>
 
                     <div class="form-row">
@@ -2519,7 +2568,7 @@
                     </div>
                 </div>
                 
-                <form id="registration-form" action="POST">
+                <form id="registration-form" method="post" action="#">
                     <div class="form-group" id="event-code-group" style="display: none;">
                         <label for="event-code">Mã sự kiện (dành cho sự kiện riêng tư) *</label>
                         <input type="text" id="event-code" placeholder="Nhập mã sự kiện" >
@@ -2868,36 +2917,52 @@
                         'DaKetThuc': 'Đã kết thúc'
                     };
                     
-                    const trangThaiText = statusMap[event.trangThaiThoiGian] || event.trangThaiThoiGian || 'Không xác định';
+                    const trangThaiText = statusMap[event.trangThaiThoigian] || event.trangThaiThoigian || 'Không xác định';
 
-                    const html = 
-                        '<div class="event-image" style="margin-bottom: 20px;">' +
-                            '<img src="' + (event.anhBia || '/default-image.jpg') + '" alt="' + event.tenSuKien + '" style="width:100%; max-height: 300px; object-fit: cover; border-radius:8px;">' +
-                        '</div>' +
-                        '<h4 style="margin-bottom: 15px; color: #2c3e50;">' + event.tenSuKien + '</h4>' +
-                        '<div class="event-meta" style="margin-bottom: 15px; color: #7f8c8d; display: flex; flex-direction: column; gap: 8px;">' +
-                            '<span><i class="far fa-calendar"></i> ' + (event.thoiGianBatDau) + '</span>' +
-                            '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'Chưa xác định') + '</span>' +
-                            '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + ' người</span>' +
-                        '</div>' +
-                        '<p style="margin-bottom: 20px; line-height: 1.6; white-space: pre-wrap;">' + (event.moTa || 'Không có mô tả') + '</p>' +
-                        '<div style="display: flex; gap: 20px; margin-bottom: 20px;">' +
-                            '<div>' +
-                                '<label style="font-weight: 600; color: #555;">Trạng thái:</label>' +
-                                '<span class="status ' + (event.trangThaiThoiGian ? event.trangThaiThoiGian.toLowerCase() : '') + '" style="margin-left: 8px;">' + trangThaiText + '</span>' +
+                    const html =
+                            '<div class="event-image" style="margin-bottom:20px;">' +
+                                '<img src="' + (event.anhBia || '/default-image.jpg') + '" alt="' + event.tenSuKien + '" ' +
+                                'style="width:100%;max-height:300px;object-fit:cover;border-radius:8px;">' +
                             '</div>' +
-                            '<div>' +
-                                '<label style="font-weight: 600; color: #555;">Loại sự kiện:</label>' +
-                                '<span style="margin-left: 8px;">' + (event.loaiSuKien == 'RiengTu' ? 'Riêng tư' : 'Công khai') + '</span>' +
+
+                            '<h4 style="margin-bottom:15px;color:#2c3e50;">' + event.tenSuKien + '</h4>' +
+
+                            '<div class="event-meta" style="margin-bottom:15px;color:#7f8c8d;display:flex;flex-direction:column;gap:8px;">' +
+                                '<span><i class="far fa-calendar"></i> ' + (event.thoiGianBatDau || 'Chưa xác định') + '</span>' +
+                                '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'Chưa xác định') + '</span>' +
+                                '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + ' người</span>' +
                             '</div>' +
-                        '</div>' +
-                        '<div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">' +
-                            '<button class="btn btn-outline close-modal">Đóng</button>' +
-                            '<button class="btn btn-primary btn-join-event-from-modal" data-event-id="' + event.suKienId + '" data-event-name="' + event.tenSuKien + '">' +
-                                '<i class="fas fa-plus"></i> Tham gia ngay' +
-                            '</button>' +
-                        '</div>';
-                    
+
+                            '<p style="margin-bottom:20px;line-height:1.6;white-space:pre-wrap;">' +
+                                (event.moTa || 'Không có mô tả') +
+                            '</p>' +
+
+                            '<div style="display:flex;gap:20px;margin-bottom:20px;">' +
+                                '<div><b>Trạng thái:</b> ' + trangThaiText + '</div>' +
+                                '<div><b>Loại:</b> ' + (event.loaiSuKien === 'RiengTu' ? 'Riêng tư' : 'Công khai') + '</div>' +
+                            '</div>' +
+
+                            '<div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid #eee;padding-top:20px;">' +
+                                '<button class="btn btn-outline close-modal">Đóng</button>' +
+
+                                (
+                                    event.trangThaiThoigian === 'DaKetThuc'
+                                    ? '<button class="btn btn-secondary" disabled>' +
+                                        '<i class="fas fa-ban"></i> Đã kết thúc' +
+                                    '</button>'
+                                    : (event.soLuongDaDangKy >= event.soLuongToiDa
+                                        ? '<button class="btn btn-secondary" disabled>' +
+                                            '<i class="fas fa-user-slash"></i> Đã đủ người' +
+                                        '</button>'
+                                        : '<button class="btn btn-primary btn-join-event-from-modal" ' +
+                                            'data-event-id="' + event.suKienId + '" ' +
+                                            'data-event-name="' + event.tenSuKien + '">' +
+                                            '<i class="fas fa-plus"></i> Tham gia ngay' +
+                                        '</button>'
+                                    )
+                                ) +
+                            '</div>';
+                
                     $('#event-modal-body').html(html);
                     $('#event-modal').css('display', 'flex');
                 })
@@ -2962,6 +3027,7 @@
         // ===============================
         $('#registration-form').on('submit', function (e) {
             e.preventDefault();
+            e.stopPropagation();
 
             const $form = $(this);
             const suKienId = $form.data('suKienId');
@@ -3695,39 +3761,74 @@ function updateEventTable() {
             
             $.get('/participant/api/events', filters, function(events) {
                 let html = '';
-                if (events.length == 0) {
-                    html = '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
-                        '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
-                        '<h3>Không tìm thấy sự kiện</h3>' +
-                        '<p>Không có sự kiện nào phù hợp với bộ lọc của bạn.</p>' +
+
+                if (!events || events.length === 0) {
+                    html =
+                        '<div class="no-events" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">' +
+                            '<i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 15px;"></i>' +
+                            '<h3>Không tìm thấy sự kiện</h3>' +
+                            '<p>Không có sự kiện nào phù hợp với bộ lọc của bạn.</p>' +
                         '</div>';
                 } else {
                     events.forEach(function(event) {
-                        const eventDate = event.thoiGianBatDau ? new Date(event.thoiGianBatDau).toLocaleString('vi-VN') : 'Chưa xác định';
-                        
-                        html += '<div class="event-card" data-event-id="' + event.suKienId + '">' +
-                            '<div class="event-image">' +
-                                '<img src="' + (event.anhBia || '/default-image.jpg') + '" alt="' + event.tenSuKien + '">' +
-                            '</div>' +
-                            '<div class="event-content">' +
-                                '<h4 class="event-title">' + event.tenSuKien + '</h4>' +
-                                '<div class="event-meta">' +
-                                    '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
-                                    '<span><i class="fas fa-map-marker-alt"></i> ' + event.diaDiem + '</span>' +
+
+                        const eventDate = event.thoiGianBatDau
+                            ? new Date(event.thoiGianBatDau).toLocaleString('vi-VN')
+                            : 'Chưa xác định';
+
+                        const description = event.moTa
+                            ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa)
+                            : 'Không có mô tả';
+
+                        html +=
+                            '<div class="event-card" data-event-id="' + event.suKienId + '">' +
+
+                                '<div class="event-image">' +
+                                    '<img src="' + (event.anhBia || '/default-image.jpg') + '" alt="' + event.tenSuKien + '">' +
                                 '</div>' +
-                                '<p>' + (event.moTa ? (event.moTa.length > 100 ? event.moTa.substring(0, 100) + '...' : event.moTa) : 'Không có mô tả') + '</p>' +
-                                '<div class="event-footer">' +
-                                    '<button class="btn btn-primary btn-sm btn-join-event" ' +
-                                            'data-event-id="' + event.suKienId + '" ' +
-                                            'data-event-name="' + event.tenSuKien + '">' +
-                                        '<i class="fas fa-plus"></i> Tham gia' +
-                                    '</button>' +
-                                    '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + '</span>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>';
+
+                                '<div class="event-content">' +
+
+                                    '<h4 class="event-title">' + event.tenSuKien + '</h4>' +
+
+                                    '<div class="event-meta">' +
+                                        '<span><i class="far fa-calendar"></i> ' + eventDate + '</span>' +
+                                        '<span><i class="fas fa-map-marker-alt"></i> ' + (event.diaDiem || 'Chưa xác định') + '</span>' +
+                                    '</div>' +
+
+                                    '<p>' + description + '</p>' +
+
+                                    '<div class="event-footer">' +
+
+                                        (
+                                            event.trangThaiThoigian === 'DaKetThuc'
+                                            ? '<button class="btn btn-secondary btn-sm" disabled title="Sự kiện đã kết thúc">' +
+                                                '<i class="fas fa-ban"></i> Đã kết thúc' +
+                                            '</button>'
+                                            : (event.soLuongDaDangKy >= event.soLuongToiDa
+                                                ? '<button class="btn btn-secondary btn-sm" disabled title="Đã đủ số lượng tham gia">' +
+                                                    '<i class="fas fa-user-slash"></i> Đã đủ người' +
+                                                '</button>'
+                                                : '<button class="btn btn-primary btn-sm btn-join-event" ' +
+                                                    'data-event-id="' + event.suKienId + '" ' +
+                                                    'data-event-name="' + event.tenSuKien + '">' +
+                                                    '<i class="fas fa-plus"></i> Tham gia' +
+                                                '</button>'
+                                            )
+                                        ) +
+
+                                        '<span><i class="fas fa-users"></i> ' +
+                                            (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa +
+                                        '</span>' +
+
+                                    '</div>' +   // event-footer
+
+                                '</div>' +       // event-content
+
+                            '</div>';            // event-card
                     });
                 }
+
                 $('#all-events-grid').html(html);
             });
         });
@@ -3823,15 +3924,19 @@ function updateEventTable() {
                             '</div>' +
                             '<p class="event-description">' + description + '</p>' +
                             '<div class="event-footer">' +
-                                '<span class="status ' + (event.trangThaiThoiGian ? event.trangThaiThoiGian.toLowerCase().replace(' ', '-') : '') + '">' + 
-                                    event.trangThaiThoiGian + 
+                                '<span class="status ' + (event.trangThaiThoigian ? event.trangThaiThoigian.toLowerCase().replace(' ', '-') : '') + '">' + 
+                                    event.trangThaiThoigian + 
+                                '</span>';
+                                if (event.trangThaiThoigian !== 'DaKetThuc') {
+                                    html += '<button class="btn btn-primary btn-sm btn-join-event" ' +
+                                                'data-event-id="' + event.suKienId + '" ' +
+                                                'data-event-name="' + event.tenSuKien + '">' +
+                                                '<i class="fas fa-plus"></i> Tham gia' +
+                                            '</button>';
+                                }
+                                html += '<span><i class="fas fa-users"></i> ' +
+                                    (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa +
                                 '</span>' +
-                                '<button class="btn btn-primary btn-sm btn-join-event" ' +
-                                        'data-event-id="' + event.suKienId + '" ' +
-                                        'data-event-name="' + event.tenSuKien + '">' +
-                                    '<i class="fas fa-plus"></i> Tham gia' +
-                                '</button>' +
-                                '<span><i class="fas fa-users"></i> ' + (event.soLuongDaDangKy || 0) + '/' + event.soLuongToiDa + '</span>' +
                             '</div>' +
                         '</div>' +
                     '</div>';
@@ -4564,32 +4669,6 @@ const accountFormStyles = `
 $(accountFormStyles).appendTo('head');
 
 
-// Xử lý đăng xuất
-$('#logout-btn').click(function(e) {
-    e.preventDefault();
-    if (confirm('Bạn có chắc muốn đăng xuất?')) {
-        $.ajax({
-            url: '/participant/api/logout',
-            type: 'POST',
-            success: function(response) {
-                if (response.success) {
-                    showToast('Đăng xuất thành công!', true);
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 1500);
-                } else {
-                    showToast('Đăng xuất thất bại: ' + response.message, false);
-                }
-            },
-            error: function() {
-                showToast('Lỗi kết nối khi đăng xuất', false);
-            }
-        });
-    }
-});
-
-
-
 // Biến lưu trữ sự kiện hiện tại
 let currentEventId = null;
 let userRating = 0;
@@ -4623,7 +4702,7 @@ function openEventDetailSidebar(eventId) {
                 'DaKetThuc': 'Đã kết thúc'
             };
             
-            const trangThaiText = statusMap[event.trangThaiThoiGian] || event.trangThaiThoiGian || 'Không xác định';
+            const trangThaiText = statusMap[event.trangThaiThoigian] || event.trangThaiThoigian || 'Không xác định';
             
             var html =
     '<div class="event-detail-section">' +
@@ -5058,31 +5137,7 @@ $('#view-all-notifications-dropdown').click(function(e) {
     $('.dropdown-overlay').hide();
 });
 
-// Logout from dropdown
-$('#logout-dropdown').click(function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (confirm('Bạn có chắc muốn đăng xuất?')) {
-        $.ajax({
-            url: '/participant/api/logout',
-            type: 'POST',
-            success: function(response) {
-                if (response.success) {
-                    showToast('Đăng xuất thành công!', true);
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 1500);
-                } else {
-                    showToast('Đăng xuất thất bại: ' + response.message, false);
-                }
-            },
-            error: function() {
-                showToast('Lỗi kết nối khi đăng xuất', false);
-            }
-        });
-    }
-});
+
 
 // Navigate to account from dropdown
 $('.dropdown-item[data-target="account"]').click(function(e) {

@@ -26,7 +26,7 @@ public class SuKienRepository {
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql, suKien.getTenSuKien(), suKien.getMoTa(), suKien.getDiaDiem(), 
                 suKien.getAnhBia(), suKien.getNguoiToChucId(), suKien.getThoiGianBatDau(), 
-                suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getTrangThaiThoiGian(), 
+                suKien.getThoiGianKetThuc(), suKien.getLoaiSuKien(), suKien.getTrangThaiThoigian(), 
                 suKien.getSoLuongToiDa(), suKien.getNgayTao());
     }
 

@@ -15,8 +15,8 @@ with open('D:/2022-2026/HOC KI 7/XD HTTT/modelTrained/label_encoder_dia_diem.pkl
 df_new['loai_su_kien_encoded'] = le_loai.transform(df_new['loai_su_kien'])
 df_new['dia_diem_encoded'] = le_dia.transform(df_new['dia_diem'])
 
-# Chỉ giữ các cột cần thiết
-df_final = df_new[['event_id', 'loai_su_kien_encoded', 'dia_diem_encoded', 'thoi_gian_diff_days']]
+# Chỉ giữ các cột cần thiết, giữ so_luong_da_dang_ky cho fallback
+df_final = df_new[['event_id', 'loai_su_kien_encoded', 'dia_diem_encoded', 'thoi_gian_diff_days', 'so_luong_da_dang_ky']]
 
 df_final.to_csv('D:/2022-2026/HOC KI 7/XD HTTT/dataForModel/preprocessed_new_events.csv', index=False)
 print("Đã tạo: dataForModel/preprocessed_new_events.csv")

@@ -8,6 +8,7 @@ import com.example.demo.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -38,6 +39,24 @@ public class RegistrationService {
     }
     
     public void registerEvent(Long userId, Long suKienId, String ghiChu, String maSuKien) {
+    
+        // Kiểm tra xem người dùng đã đăng ký sự kiện này chưa
+        String checkSql = "SELECT COUNT(*) FROM dang_ky_su_kien WHERE nguoi_dung_id = ? AND su_kien_id = ? AND trang_thai != 'DaHuy'";
+        Integer existingCount = jdbcTemplate.queryForObject(checkSql, Integer.class, userId, suKienId);
+        
+        if (existingCount != null && existingCount > 0) {
+            throw new RuntimeException("Bạn đã đăng ký sự kiện này rồi!");
+        }
+
+        // Kiểm tra sự kiện có tồn tại và còn chỗ không
+        Event eventInfor = eventService.getEventById(suKienId);
+        if (eventInfor == null) {
+            throw new RuntimeException("Sự kiện không tồn tại");
+        }
+        
+        if (eventInfor.getSoLuongDaDangKy() >= eventInfor.getSoLuongToiDa()) {
+            throw new RuntimeException("Sự kiện đã đủ số lượng tham gia");
+        }
 
         Registration registration = new Registration();
         registration.setNguoiDungId(userId);
@@ -52,8 +71,6 @@ public class RegistrationService {
         registrationRepository.save(registration);
 
         // Ghi lịch sử
-        Event eventInfor = eventService.getEventById(suKienId);
-
         ActivityHistory history = new ActivityHistory();
         history.setNguoiDungId(userId);
         history.setLoaiHoatDong("DangKy");
@@ -187,6 +204,110 @@ public class RegistrationService {
         } catch (Exception e) {
             // Ném lại exception để controller xử lý
             throw new RuntimeException("Lỗi khi hủy đăng ký: " + e.getMessage());
+        }
+    }
+
+    // Thêm vào RegistrationService.java
+    @Transactional
+    public Map<String, Object> updateRegistrationStatus(Long dangKyId, String trangThai, Long organizerId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // Lấy thông tin đăng ký
+            Registration registration = registrationRepository.findRegistrationWithEvent(dangKyId);
+            if (registration == null) {
+                result.put("success", false);
+                result.put("message", "Không tìm thấy đăng ký");
+                return result;
+            }
+            
+            // Kiểm tra quyền (sự kiện thuộc về organizer)
+            if (!registration.getEvent().getNguoiToChucId().equals(organizerId)) {
+                result.put("success", false);
+                result.put("message", "Bạn không có quyền thực hiện hành động này");
+                return result;
+            }
+            
+            String oldStatus = registration.getTrangThai();
+            
+            // Kiểm tra nếu đang phê duyệt và sự kiện đã đủ người
+            if ("DaDuyet".equals(trangThai)) {
+                Event event = eventService.getEventById(registration.getSuKienId());
+                if (event.getSoLuongDaDangKy() >= event.getSoLuongToiDa()) {
+                    result.put("success", false);
+                    result.put("message", "Sự kiện đã đủ số lượng tham gia");
+                    return result;
+                }
+            }
+            
+            // Cập nhật trạng thái
+            boolean updated = registrationRepository.updateRegistrationStatus(dangKyId, trangThai);
+            
+            if (updated) {
+                // Cập nhật số lượng tham gia nếu trạng thái thay đổi từ/tới DaDuyet
+                if ("DaDuyet".equals(oldStatus) && !"DaDuyet".equals(trangThai)) {
+                    // Từ DaDuyet sang trạng thái khác -> giảm số lượng
+                    registrationRepository.decreaseEventRegistrationCount(registration.getSuKienId());
+                } else if (!"DaDuyet".equals(oldStatus) && "DaDuyet".equals(trangThai)) {
+                    // Từ trạng thái khác sang DaDuyet -> tăng số lượng
+                    String updateSql = "UPDATE su_kien SET so_luong_da_dang_ky = so_luong_da_dang_ky + 1 WHERE su_kien_id = ?";
+                    jdbcTemplate.update(updateSql, registration.getSuKienId());
+                }
+                
+                // Gửi thông báo cho người dùng
+                sendRegistrationNotification(registration, trangThai);
+                
+                // Ghi log
+                ActivityHistory history = new ActivityHistory();
+                history.setNguoiDungId(organizerId);
+                history.setLoaiHoatDong("PheDuyetDangKy");
+                history.setSuKienId(registration.getSuKienId());
+                history.setChiTiet("Cập nhật trạng thái đăng ký ID " + dangKyId + " thành: " + trangThai);
+                history.setThoiGian(new Date());
+                historyRepository.save(history);
+                
+                result.put("success", true);
+                result.put("message", "Cập nhật trạng thái thành công");
+            } else {
+                result.put("success", false);
+                result.put("message", "Cập nhật trạng thái thất bại");
+            }
+            
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "Lỗi hệ thống: " + e.getMessage());
+        }
+        
+        return result;
+    }
+
+    private void sendRegistrationNotification(Registration registration, String trangThai) {
+        String title = "";
+        String content = "";
+        
+        switch (trangThai) {
+            case "DaDuyet":
+                title = "Đăng ký sự kiện được phê duyệt";
+                content = "Đăng ký tham gia sự kiện '" + registration.getEvent().getTenSuKien() + "' của bạn đã được phê duyệt.";
+                break;
+            case "TuChoi":
+                title = "Đăng ký sự kiện bị từ chối";
+                content = "Đăng ký tham gia sự kiện '" + registration.getEvent().getTenSuKien() + "' của bạn đã bị từ chối.";
+                break;
+            case "ChoDuyet":
+                title = "Đăng ký sự kiện đang chờ duyệt";
+                content = "Đăng ký tham gia sự kiện '" + registration.getEvent().getTenSuKien() + "' của bạn đang chờ duyệt.";
+                break;
+        }
+        
+        if (!title.isEmpty()) {
+            notificationService.createNotification(
+                registration.getNguoiDungId(),
+                title,
+                content,
+                "SuKien",
+                registration.getSuKienId()
+            );
         }
     }
 

@@ -22,25 +22,25 @@ public class UserService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public User register(User user) {
-        if (userRepository.findByUsername(user.getTenDangNhap()) != null) {
-            throw new RuntimeException("Tên đăng nhập đã tồn tại!");
-        }
+    // public User register(User user) {
+    //     if (userRepository.findByUsername(user.getTenDangNhap()) != null) {
+    //         throw new RuntimeException("Tên đăng nhập đã tồn tại!");
+    //     }
 
-        if (isEmailExists(user.getEmail())) {
-            throw new RuntimeException("Email đã được sử dụng!");
-        }
+    //     if (isEmailExists(user.getEmail())) {
+    //         throw new RuntimeException("Email đã được sử dụng!");
+    //     }
 
-        if (isPhoneExists(user.getSoDienThoai())) {
-            throw new RuntimeException("Số điện thoại đã được sử dụng!");
-        }
+    //     if (isPhoneExists(user.getSoDienThoai())) {
+    //         throw new RuntimeException("Số điện thoại đã được sử dụng!");
+    //     }
 
-        user.setNgayTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        user.setTrangThai(1);
+    //     user.setNgayTao(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
+    //     user.setTrangThai(1);
 
-        userRepository.save(user);
-        return user;
-    }
+    //     userRepository.save(user);
+    //     return user;
+    // }
 
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);

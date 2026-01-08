@@ -17,7 +17,7 @@ public class Event {
     private Integer soLuongToiDa;
     private Integer soLuongDaDangKy;
     private Date ngayTao;
-    private String trangThaiThoiGian; 
+    private String trangThaiThoigian; 
     private String trangThaiPheDuyet;   
     
 
@@ -29,7 +29,7 @@ public class Event {
     public Event(Long suKienId, String tenSuKien, String moTa, String diaDiem, String anhBia,
                  Long loaiSuKienId, Long nguoiToChucId, Date thoiGianBatDau,
                  Date thoiGianKetThuc, String loaiSuKien, String matKhauSuKienRiengTu,
-                 Integer soLuongToiDa, Integer soLuongDaDangKy, Date ngayTao, String trangThaiThoiGian,String trangThaiPheDuyet) {
+                 Integer soLuongToiDa, Integer soLuongDaDangKy, Date ngayTao, String trangThaiThoigian,String trangThaiPheDuyet) {
 
         this.suKienId = suKienId;
         this.tenSuKien = tenSuKien;
@@ -45,7 +45,7 @@ public class Event {
         this.soLuongToiDa = soLuongToiDa;
         this.soLuongDaDangKy = soLuongDaDangKy;
         this.ngayTao = ngayTao;
-        this.trangThaiThoiGian = trangThaiThoiGian;
+        this.trangThaiThoigian = trangThaiThoigian;
         this.trangThaiPheDuyet = trangThaiPheDuyet;
     }
 
@@ -148,12 +148,12 @@ public class Event {
         this.trangThaiPheDuyet = trangThaiPheDuyet;
     }
 
-    public String getTrangThaiThoiGian() {
-        return trangThaiThoiGian;
+    public String getTrangThaiThoigian() {
+        return trangThaiThoigian;
     }
 
-    public void setTrangThaiThoiGian(String trangThaiThoiGian) {
-        this.trangThaiThoiGian = trangThaiThoiGian;
+    public void setTrangThaiThoigian(String trangThaiThoigian) {
+        this.trangThaiThoigian = trangThaiThoigian;
     }
 
     public Integer getSoLuongToiDa() {

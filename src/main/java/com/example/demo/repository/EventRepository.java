@@ -19,17 +19,27 @@ public class EventRepository {
     // Hàm tính toán trạng thái thời gian
     private String calculateTimeStatus(Date startTime, Date endTime) {
         Date now = new Date();
-        if (now.before(startTime)) {
-            return "SapDienRa";
-        } else if (now.after(endTime)) {
-            return "DaKetThuc";
-        } else {
-            return "DangDienRa";
+
+        if (startTime == null) return "SapDienRa";
+
+        if (endTime == null) {
+            return now.before(startTime) ? "SapDienRa" : "DangDienRa";
         }
+
+        if (now.before(startTime)) return "SapDienRa";
+        if (now.after(endTime)) return "DaKetThuc";
+        return "DangDienRa";
     }
+
 
     public List<Event> findAll() {
         return jdbcTemplate.query("SELECT * FROM su_kien", new BeanPropertyRowMapper<>(Event.class));
+    }
+
+    // đếm số sự kiện đang diễn ra
+    public int countActiveEvents() {
+        String sql = "SELECT COUNT(*) FROM su_kien WHERE trang_thai_thoigian = 'DangDienRa' AND trang_thai_phe_duyet = 'DaDuyet'";
+        return jdbcTemplate.queryForObject(sql, Integer.class);
     }
 
     public List<Event> findFeatured() {
@@ -43,13 +53,30 @@ public class EventRepository {
     }
 
     public Event findById(Long id) {
+        System.out.println("➡️ findById được gọi với id = " + id);
+
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM su_kien WHERE su_kien_id = ?", 
-                new BeanPropertyRowMapper<>(Event.class), id);
+            Event event = jdbcTemplate.queryForObject(
+                "SELECT * FROM su_kien WHERE su_kien_id = ?",
+                new BeanPropertyRowMapper<>(Event.class),
+                id
+            );
+
+            System.out.println("✅ Tìm thấy sự kiện:");
+            System.out.println("   - suKienId = " + event.getSuKienId());
+            System.out.println("   - tenSuKien = " + event.getTenSuKien());
+            System.out.println("   - trangThaiThoiGian = " + event.getTrangThaiThoigian());
+            System.out.println("   - trangThaiPheDuyet = " + event.getTrangThaiPheDuyet());
+
+            return event;
+
         } catch (Exception e) {
+            System.out.println("❌ Lỗi khi findById với id = " + id);
+            e.printStackTrace();
             return null;
         }
     }
+
 
     public int countRegistrations(Long suKienId) {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM dang_ky_su_kien WHERE su_kien_id = ? AND trang_thai_phe_duyet = 'DA_DUYET'", Integer.class, suKienId);
@@ -73,6 +100,7 @@ public class EventRepository {
             WHERE loai_su_kien = 'CongKhai' 
               AND trang_thai_thoigian IN ('SapDienRa', 'DangDienRa')
               AND so_luong_da_dang_ky < so_luong_toi_da
+              AND trang_thai_phe_duyet = 'DaDuyet'
             ORDER BY thoi_gian_bat_dau ASC
             """;
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class));
@@ -132,12 +160,32 @@ public class EventRepository {
     }
 
     public void save(Event suKien) {
+
+        System.out.println("==== DEBUG SAVE EVENT ====");
+        System.out.println("Ten su kien: " + suKien.getTenSuKien());
+        System.out.println("Mo ta: " + suKien.getMoTa());
+        System.out.println("Dia diem: " + suKien.getDiaDiem());
+        System.out.println("Anh bia: " + suKien.getAnhBia());
+        System.out.println("Loai su kien ID: " + suKien.getLoaiSuKienId());
+        System.out.println("Nguoi to chuc ID: " + suKien.getNguoiToChucId());
+        System.out.println("Thoi gian bat dau: " + suKien.getThoiGianBatDau());
+        System.out.println("Thoi gian ket thuc: " + suKien.getThoiGianKetThuc());
+        System.out.println("Loai su kien: " + suKien.getLoaiSuKien());
+        System.out.println("Mat khau rieng tu: " + suKien.getMatKhauSuKienRiengTu());
+        System.out.println("So luong toi da: " + suKien.getSoLuongToiDa());
+        System.out.println("Ngay tao: " + suKien.getNgayTao());
+        
+        
         // Tính toán trạng thái thời gian dựa trên ngày hiện tại
         String trangThaiThoiGian = calculateTimeStatus(suKien.getThoiGianBatDau(), suKien.getThoiGianKetThuc());
         
         // Trạng thái phê duyệt mặc định khi tạo mới
         String trangThaiPheDuyet = "ChoDuyet";
         
+        System.out.println("Trang thai thoi gian: " + trangThaiThoiGian);
+        System.out.println("Trang thai phe duyet: " + trangThaiPheDuyet);
+
+
         String sql = "INSERT INTO su_kien (ten_su_kien, mo_ta, dia_diem, anh_bia, loai_su_kien_id, nguoi_to_chuc_id, " +
                      "thoi_gian_bat_dau, thoi_gian_ket_thuc, loai_su_kien, mat_khau_su_kien_rieng_tu, " +
                      "trang_thai_thoigian, trang_thai_phe_duyet, so_luong_toi_da, so_luong_da_dang_ky, ngay_tao) " +
@@ -237,6 +285,7 @@ public class EventRepository {
             params.add(status);
         }
 
+        sql.append(" AND trang_thai_phe_duyet = 'DaDuyet'"); // Chỉ lấy sự kiện đã được phê duyệt
         sql.append(" ORDER BY thoi_gian_bat_dau ASC");
 
         return jdbcTemplate.query(sql.toString(), params.toArray(), new BeanPropertyRowMapper<>(Event.class));

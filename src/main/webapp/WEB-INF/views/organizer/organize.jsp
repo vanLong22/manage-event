@@ -955,9 +955,10 @@
                             <div class="notification-body" id="notification-list">
                                 <!-- Thông báo sẽ được tải ở đây -->
                             </div>
+                            <!--
                             <div class="notification-footer">
                                 <a href="#" id="view-all-notifications">Xem tất cả thông báo</a>
-                            </div>
+                            </div>-->
                         </div>
                     </div>
                     
@@ -1741,16 +1742,6 @@
                 showToast('Lỗi tải sự kiện sắp diễn ra: ' + error, false);
             });
 
-            // Load stats
-            $.get('/organizer/api/analytics/stats', function(data) {
-                $('#active-events').text(data.activeEvents);
-                $('#total-participants').text(data.totalParticipants);
-                $('#upcoming-events').text(data.upcomingEvents);
-                $('#attention-events').text(data.attentionEvents);
-            }).fail(function(xhr, status, error) {
-                console.error('Error loading stats:', error);
-                showToast('Lỗi tải thống kê: ' + error, false);
-            });
         }
 
         // Load events

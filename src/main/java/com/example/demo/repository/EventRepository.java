@@ -123,7 +123,7 @@ public class EventRepository {
     }
 
     public List<Event> searchEventsWithFilters(String keyword, String status, String privacy, Long categoryId) {
-        String sql = "SELECT * FROM su_kien WHERE 1=1";
+        String sql = "SELECT * FROM su_kien WHERE 1=1 AND trang_thai_phe_duyet = 'DaDuyet'";
         List<Object> params = new ArrayList<>();
 
         if (keyword != null && !keyword.isEmpty()) {
@@ -155,8 +155,8 @@ public class EventRepository {
     }
 
     public List<Event> findByOrganizer(Long organizerId) {
-        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ?";
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId);
+        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ? AND trang_thai_phe_duyet = ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId, "DaDuyet");
     }
 
     public void save(Event suKien) {
@@ -212,7 +212,7 @@ public class EventRepository {
 
     // Thêm mới: Upcoming by organizer
     public List<Event> findUpcomingByOrganizer(Long organizerId) {
-        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ? AND thoi_gian_bat_dau > NOW() ORDER BY thoi_gian_bat_dau ASC";
+        String sql = "SELECT * FROM su_kien WHERE nguoi_to_chuc_id = ? AND thoi_gian_bat_dau > NOW() AND trang_thai_phe_duyet = 'DaDuyet' ORDER BY thoi_gian_bat_dau ASC";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(Event.class), organizerId);
     }
 

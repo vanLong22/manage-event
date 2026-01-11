@@ -1900,7 +1900,7 @@
             '<div class="form-group" style="margin-top: 20px;">' +
                 '<button class="btn ' + (user.trangThai == 1 ? 'btn-danger' : 'btn-success') + ' btn-toggle-user-status" data-user-id="' + user.nguoiDungId + '" data-is-active="' + (user.trangThai == 1) + '" style="margin-left: 10px;">' +
                 '<i class="fas ' + (user.trangThai == 0 ? 'fa-unlock' : 'fa-lock') + '"></i> ' +
-                (user.trangThai == 1 ? 'Khóa tài khoản' : 'Mở khóa tài khoản') +
+                (user.trangThai == 1 ? 'Mở khóa tài khoản' : 'Khóa tài khoản') +
                 '</button>' +
             '</div>';
            

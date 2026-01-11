@@ -1722,11 +1722,12 @@
                                     </c:otherwise>
                                 </c:choose>
                             </div>
+                            <!--
                             <div class="notification-dropdown-footer">
                                 <a href="#" class="view-all-notifications" id="view-all-notifications-dropdown">
                                     <i class="fas fa-list"></i> Xem tất cả thông báo
                                 </a>
-                            </div>
+                            </div>-->
                         </div>
                     </div>
                     
@@ -1901,7 +1902,7 @@
                                 </c:forEach>
                             </select>
                         </div>
-                        
+                        <!--
                         <div class="filter-group">
                             <label for="filter-status">Trạng thái</label>
                             <select id="filter-status">
@@ -1911,6 +1912,7 @@
                                 <option value="DaKetThuc">Đã kết thúc</option>
                             </select>
                         </div>
+                        -->
                     </div>
                     
                     <div class="filter-row">
@@ -2363,12 +2365,14 @@
             <div id="history" class="content-section">
                 <div class="section-header">
                     <h3 class="section-title">Lịch sử hoạt động</h3>
+                    <!--
                     <div class="filter-buttons">
                         <button class="btn btn-outline btn-sm active" data-filter="all">Tất cả</button>
                         <button class="btn btn-outline btn-sm" data-filter="dangky">Đăng ký</button>
                         <button class="btn btn-outline btn-sm" data-filter="sukien">Sự kiện</button>
                         <button class="btn btn-outline btn-sm" data-filter="de-xuat">Đề xuất</button>
                     </div>
+                    -->
                 </div>
 
                 <div class="activity-timeline" id="activity-timeline">

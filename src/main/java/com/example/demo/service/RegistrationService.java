@@ -4,12 +4,14 @@ import com.example.demo.model.ActivityHistory;
 import com.example.demo.model.Event;
 import com.example.demo.model.Registration;
 import com.example.demo.repository.ActivityHistoryRepository;
+import com.example.demo.repository.EventRepository;
 import com.example.demo.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -30,6 +32,9 @@ public class RegistrationService {
 
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private EventRepository eventRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate; // Đảm bảo đã có
@@ -167,45 +172,60 @@ public class RegistrationService {
 
 
     public void cancelRegistration(Long dangKyId, Long userId) {
-        try {
-            // 1. Kiểm tra đăng ký tồn tại
-            Registration registration = registrationRepository.findById(dangKyId);
-            if (registration == null) {
-                throw new RuntimeException("Không tìm thấy đăng ký với ID: " + dangKyId);
-            }
-            
-            // 2. Kiểm tra quyền (người dùng có phải chủ đăng ký không)
-            if (!registration.getNguoiDungId().equals(userId)) {
-                throw new RuntimeException("Bạn không có quyền hủy đăng ký này");
-            }
-            
-            // 3. Kiểm tra trạng thái hiện tại
-            if ("DaHuy".equals(registration.getTrangThai())) {
-                throw new RuntimeException("Đăng ký đã bị hủy trước đó");
-            }
-            
-            // 4. Cập nhật trạng thái thay vì xóa
-            String updateSql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
-            jdbcTemplate.update(updateSql, dangKyId);
-            
-            // 5. Giảm số lượng đăng ký trong sự kiện
-            String decreaseSql = "UPDATE su_kien SET so_luong_da_dang_ky = GREATEST(so_luong_da_dang_ky - 1, 0) WHERE su_kien_id = ?";
-            jdbcTemplate.update(decreaseSql, registration.getSuKienId());
-            
-            // 6. Ghi log lịch sử hoạt động
-            ActivityHistory history = new ActivityHistory();
-            history.setNguoiDungId(userId);
-            history.setLoaiHoatDong("HuyDangKy");
-            history.setSuKienId(registration.getSuKienId());
-            history.setChiTiet("Hủy đăng ký ID: " + dangKyId + " cho sự kiện ID: " + registration.getSuKienId());
-            history.setThoiGian(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-            historyRepository.save(history);
-            
-        } catch (Exception e) {
-            // Ném lại exception để controller xử lý
-            throw new RuntimeException("Lỗi khi hủy đăng ký: " + e.getMessage());
+    try {
+        // 1. Kiểm tra đăng ký tồn tại
+        Registration registration = registrationRepository.findById(dangKyId);
+        if (registration == null) {
+            throw new RuntimeException("Không tìm thấy đăng ký với ID: " + dangKyId);
         }
+
+        // 2. Kiểm tra quyền sở hữu
+        if (!registration.getNguoiDungId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền hủy đăng ký này");
+        }
+
+        // 3. Kiểm tra trạng thái đã hủy chưa
+        if ("DaHuy".equals(registration.getTrangThai())) {
+            throw new RuntimeException("Đăng ký đã bị hủy trước đó");
+        }
+
+        // 4. Kiểm tra sự kiện đã diễn ra chưa
+        Event event = eventRepository.findById(registration.getSuKienId());
+        if (event == null) {
+            throw new RuntimeException("Không tìm thấy sự kiện tương ứng");
+        }
+
+        Date now = new Date();
+        if (event.getThoiGianBatDau().before(now)) {
+            throw new RuntimeException("Không thể hủy đăng ký vì sự kiện đã diễn ra hoặc đang diễn ra");
+        }
+
+        // 5. Cập nhật trạng thái đăng ký
+        String updateSql = "UPDATE dang_ky_su_kien SET trang_thai = 'DaHuy' WHERE dang_ky_su_kien_id = ?";
+        jdbcTemplate.update(updateSql, dangKyId);
+
+        // 6. Giảm số lượng đăng ký của sự kiện
+        String decreaseSql = """
+            UPDATE su_kien 
+            SET so_luong_da_dang_ky = GREATEST(so_luong_da_dang_ky - 1, 0) 
+            WHERE su_kien_id = ?
+            """;
+        jdbcTemplate.update(decreaseSql, registration.getSuKienId());
+
+        // 7. Ghi log lịch sử
+        ActivityHistory history = new ActivityHistory();
+        history.setNguoiDungId(userId);
+        history.setLoaiHoatDong("HuyDangKy");
+        history.setSuKienId(registration.getSuKienId());
+        history.setChiTiet("Hủy đăng ký ID: " + dangKyId + " cho sự kiện ID: " + registration.getSuKienId());
+        history.setThoiGian(new Date());
+        historyRepository.save(history);
+
+    } catch (Exception e) {
+        throw new RuntimeException("Lỗi khi hủy đăng ký: " + e.getMessage());
     }
+}
+
 
     // Thêm vào RegistrationService.java
     @Transactional
